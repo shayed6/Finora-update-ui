@@ -83,7 +83,7 @@ fun PrivacyPolicyScreen(
                         text = "১০০% অন-ডিভাইস প্রাইভেসি নিশ্চয়তা",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = FinoraNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "আপনার আর্থিক হিসাব সর্বদা আপনার নিজের ডিভাইসেই সুরক্ষিত",
@@ -99,7 +99,7 @@ fun PrivacyPolicyScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -112,7 +112,7 @@ fun PrivacyPolicyScreen(
                     text = "গোপনীয়তা নীতি (Privacy Policy)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = FinoraNavy
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
@@ -139,7 +139,7 @@ fun PrivacyPolicyScreen(
 
                 PolicySection(
                     title = "৪. বাহ্যিক ওয়েব লিংক",
-                    content = "অ্যাপটিতে শিক্ষামূলক উদ্দেশ্যে Investaloy, Learn with Kabir, Learn with Rafiq এর মতো বাহ্যিক ওয়েবসাইটের লিংক প্রদান করা হয়েছে। এই লিংকগুলোতে ক্লিক করলে ব্যবহারকারী তাদের নিজস্ব প্ল্যাটফর্মে প্রবেশ করবেন, যার গোপনীয়তা নীতি তাদের নিজস্ব নিয়ন্ত্রণাধীন।"
+                    content = "অ্যাপটিতে শিক্ষামূলক উদ্দেশ্যে Investaloy, Investment mentor Kabir, Finance with  Rafyq এর মতো বাহ্যিক ওয়েবসাইটের লিংক প্রদান করা হয়েছে। এই লিংকগুলোতে ক্লিক করলে ব্যবহারকারী তাদের নিজস্ব প্ল্যাটফর্মে প্রবেশ করবেন, যার গোপনীয়তা নীতি তাদের নিজস্ব নিয়ন্ত্রণাধীন।"
                 )
 
                 PolicySection(
@@ -168,7 +168,7 @@ private fun PolicySection(
             text = title,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = FinoraNavy
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(

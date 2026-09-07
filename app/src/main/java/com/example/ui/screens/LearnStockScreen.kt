@@ -73,18 +73,18 @@ fun LearnStockScreen(
             badgeBn = "ফান্ডামেন্টাল"
         ),
         LearningPlatform(
-            name = "Learn with Kabir",
-            titleBn = "লার্ন উইথ কবির (Learn with Kabir)",
+            name = "Investment mentor Kabir",
+            titleBn = "Investment mentor Kabir",
             descriptionBn = "চার্ট প্যাটার্ন, টেকনিক্যাল ইন্ডিকেটর, সুইং ট্রেডিং কৌশল ও ঝুঁকি ব্যবস্থাপনা সম্পর্কিত বিস্তারিত ভিডিও গাইড।",
-            url = AppConfig.URL_LEARN_WITH_KABIR,
+            url = AppConfig.URL_INVESTMENT_MENTOR_KABIR,
             badgeBn = "টেকনিক্যাল"
         ),
         LearningPlatform(
-            name = "Learn with Rafiq",
-            titleBn = "লার্ন উইথ রফিক (Learn with Rafiq)",
+            name = "Finance with  Rafyq",
+            titleBn = "Finance with  Rafyq",
             descriptionBn = "নতুন বিনিয়োগকারীদের জন্য ডিএসই গাইডলাইন, স্টক পিকিং স্ট্র্যাটেজি ও পোর্টফোলিও ম্যানেজমেন্ট।",
-            url = AppConfig.URL_LEARN_WITH_RAFIQ,
-            badgeBn = "শিক্ষানবিস গাইড"
+            url = AppConfig.URL_FINANCE_WITH_RAFYQ,
+            badgeBn = "স্টক গাইড"
         )
     )
 
@@ -172,7 +172,7 @@ fun LearnStockScreen(
                     .testTag("learning_link_${platform.name.lowercase().replace(" ", "_")}"),
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, BorderSubtle),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(
@@ -189,15 +189,15 @@ fun LearnStockScreen(
                             text = platform.titleBn,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Surface(
                             shape = CircleShape,
-                            color = PrimaryBlue.copy(alpha = 0.12f)
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                         ) {
                             Text(
                                 text = platform.badgeBn,
-                                color = PrimaryBlue,
+                                color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -221,8 +221,8 @@ fun LearnStockScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryBlue.copy(alpha = 0.1f),
-                            contentColor = PrimaryBlue
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Text(
@@ -246,7 +246,7 @@ fun LearnStockScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -266,7 +266,7 @@ fun LearnStockScreen(
                         text = "স্মার্ট বিনিয়োগের মূলনীতি",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = FinoraNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 

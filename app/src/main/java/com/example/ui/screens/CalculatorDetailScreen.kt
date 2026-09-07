@@ -61,13 +61,17 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.AlertRedDark
+import com.example.ui.theme.AlertRedDarkTheme
 import com.example.ui.theme.AlertRedLight
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenDark
+import com.example.ui.theme.GrowthGreenDarkTheme
 import com.example.ui.theme.GrowthGreenLight
 import com.example.ui.theme.PrimaryBlue
+import com.example.ui.theme.PrimaryBlueDark
+import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.TabularFigureStyle
 import com.example.util.BengaliFormatter
 
@@ -156,7 +160,7 @@ fun CalculatorDetailScreen(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -185,7 +189,7 @@ fun CalculatorDetailScreen(
                             text = calculator.titleBn,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = calculator.titleEn,
@@ -226,7 +230,7 @@ fun CalculatorDetailScreen(
                         text = "সূত্র: ${calculator.formulaSummaryBn}",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
-                        color = FinoraNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -245,7 +249,7 @@ fun CalculatorDetailScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
-                border = BorderStroke(1.dp, BorderSubtle),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
             Column(
@@ -258,7 +262,7 @@ fun CalculatorDetailScreen(
                     text = "প্রয়োজনীয় তথ্য ইনপুট দিন",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = FinoraNavy
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 calculator.inputs.forEach { inputDef ->
@@ -270,7 +274,7 @@ fun CalculatorDetailScreen(
                             text = inputDef.labelBn,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
-                            color = FinoraNavy,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 4.dp, start = 2.dp)
                         )
 
@@ -311,8 +315,10 @@ fun CalculatorDetailScreen(
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
                                 focusedBorderColor = PrimaryBlue,
-                                unfocusedBorderColor = BorderSubtle,
-                                errorBorderColor = AlertRed
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                errorBorderColor = AlertRed,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -363,7 +369,7 @@ fun CalculatorDetailScreen(
                             .height(48.dp)
                             .testTag("reset_button"),
                         shape = RoundedCornerShape(11.dp),
-                        border = BorderStroke(1.5.dp, BorderSubtle)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -388,7 +394,7 @@ fun CalculatorDetailScreen(
                             .testTag("calculate_button"),
                         shape = RoundedCornerShape(11.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isCalculatePressed) FinoraNavy else PrimaryBlue,
+                            containerColor = if (isCalculatePressed) PrimaryBlueDark else PrimaryBlue,
                             contentColor = Color.White
                         )
                     ) {
@@ -414,18 +420,28 @@ fun CalculatorDetailScreen(
             enter = fadeIn() + slideInVertically()
         ) {
             result?.let { res ->
+                val isDark = MaterialTheme.colorScheme.surface == SurfaceDark
+                val resultContainerColor = if (isDark) {
+                    if (res.isWarning) AlertRed.copy(alpha = 0.15f) else GrowthGreen.copy(alpha = 0.15f)
+                } else {
+                    if (res.isWarning) AlertRedLight else GrowthGreenLight
+                }
+                val resultBorderColor = if (res.isWarning) AlertRed.copy(alpha = 0.6f) else GrowthGreen.copy(alpha = 0.6f)
+                val primaryTextColor = if (isDark) {
+                    if (res.isWarning) AlertRedDarkTheme else GrowthGreenDarkTheme
+                } else {
+                    if (res.isWarning) AlertRedDark else FinoraNavy
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("calculator_result_card"),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (res.isWarning) AlertRedLight else GrowthGreenLight
+                        containerColor = resultContainerColor
                     ),
-                    border = BorderStroke(
-                        1.5.dp,
-                        if (res.isWarning) AlertRed.copy(alpha = 0.6f) else GrowthGreen.copy(alpha = 0.6f)
-                    ),
+                    border = BorderStroke(1.5.dp, resultBorderColor),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -442,7 +458,7 @@ fun CalculatorDetailScreen(
                                 text = res.primaryLabelBn,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = if (res.isWarning) AlertRedDark else FinoraNavy
+                                color = primaryTextColor
                             )
 
                             Icon(
@@ -461,7 +477,7 @@ fun CalculatorDetailScreen(
                             style = TabularFigureStyle.copy(
                                 fontSize = 26.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (res.isWarning) AlertRedDark else FinoraNavy,
+                                color = primaryTextColor,
                                 letterSpacing = 0.5.sp
                             )
                         )
@@ -491,7 +507,7 @@ fun CalculatorDetailScreen(
                                             style = TabularFigureStyle.copy(
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = FinoraNavy
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                         )
                                     }
@@ -501,11 +517,12 @@ fun CalculatorDetailScreen(
 
                         // Explanatory Note / Insight in supporting tone
                         Spacer(modifier = Modifier.height(14.dp))
+                        val noteContainer = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.9f)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color.White.copy(alpha = 0.9f))
+                                .background(noteContainer)
                                 .padding(12.dp),
                             verticalAlignment = Alignment.Top
                         ) {
@@ -519,7 +536,7 @@ fun CalculatorDetailScreen(
                                 text = res.insightNoteBn,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
-                                color = if (res.isWarning) AlertRedDark else GrowthGreenDark,
+                                color = if (isDark) MaterialTheme.colorScheme.onSurface else if (res.isWarning) AlertRedDark else GrowthGreenDark,
                                 lineHeight = 18.sp
                             )
                         }

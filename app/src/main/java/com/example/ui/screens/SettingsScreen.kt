@@ -66,7 +66,7 @@ fun SettingsScreen(
                 .testTag("settings_digit_card"),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -90,7 +90,7 @@ fun SettingsScreen(
                             text = "সংখ্যার প্রদর্শন ভঙ্গি",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "হিসাবের ফলাফল বাংলা বা ইংরেজি অঙ্কে দেখুন",
@@ -144,7 +144,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -165,7 +165,7 @@ fun SettingsScreen(
                             text = "ডিফল্ট ব্রোকারেজ কমিশন",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "বাংলাদেশের বেশিরভাগ ব্রোকারেজে ০.৪০% কমিশন প্রচলিত",
@@ -191,7 +191,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -212,7 +212,7 @@ fun SettingsScreen(
                             text = "গুগল অ্যাডমব ব্যানার স্লট কনফিগারেশন",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "ডেভেলপার সেটিংস ও বিজ্ঞাপন নিয়ন্ত্রণ",

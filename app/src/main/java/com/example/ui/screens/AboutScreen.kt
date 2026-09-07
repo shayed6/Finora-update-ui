@@ -114,7 +114,7 @@ fun AboutScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -126,7 +126,7 @@ fun AboutScreen(
                     text = "Finora পরিচিতি",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = FinoraNavy
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -141,7 +141,7 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "ঢাকা স্টক এক্সচেঞ্জ (DSE) ও সিএসই-র শেয়ার লেনদেন, পি/ই ও ইপিএস অনুপাত, নতুন কেনায় এভারেজিং, ব্রেক-ইভেন দর, এসআইপি এবং ব্যাংক ডিপিএস/এফডি এর মতো ৩৫টি বাস্তবমুখী ক্যালকুলেটর এখন এক অ্যাপে সম্পূর্ণ বাংলায়।",
+                    text = "ঢাকা স্টক এক্সচেঞ্জ (DSE) ও সিএসই-র শেয়ার লেনদেন, পি/ই ও ইপিএস অনুপাত, নতুন কেনায় এভারেজিং, ব্রেক-ইভেন দর, এসআইপি এবং ব্যাংক ডিপিএস/এফডি এর মতো বাস্তবমুখী ক্যালকুলেটর এখন এক অ্যাপে সম্পূর্ণ বাংলায়।",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 22.sp
@@ -154,7 +154,7 @@ fun AboutScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -167,7 +167,7 @@ fun AboutScreen(
                     text = "কেন Finora সেরা?",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = FinoraNavy
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 FeatureRow(
@@ -222,7 +222,7 @@ private fun FeatureRow(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = FinoraNavy
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = desc,

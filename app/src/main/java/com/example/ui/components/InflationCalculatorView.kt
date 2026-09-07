@@ -66,6 +66,7 @@ import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenLight
 import com.example.ui.theme.PrimaryBlue
+import com.example.ui.theme.SurfaceDark
 import com.example.util.BengaliFormatter
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -197,18 +198,19 @@ fun InflationCalculatorView(
 
     val warningColor = Color(0xFFEF4444)
     val accentOrange = Color(0xFFF59E0B)
+    val isDark = MaterialTheme.colorScheme.surface == SurfaceDark
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // ==========================================
         // Mode Switcher Tabs
         // ==========================================
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF1F5F9),
-            border = BorderStroke(1.dp, BorderSubtle),
+            color = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else Color(0xFFF1F5F9),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -227,13 +229,13 @@ fun InflationCalculatorView(
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                            modifier = Modifier.padding(vertical = 7.dp, horizontal = 4.dp)
                         ) {
                             Text(
                                 text = mode.titleBn,
                                 fontSize = 11.5.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else FinoraNavy,
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1
                             )
                         }
@@ -243,21 +245,23 @@ fun InflationCalculatorView(
         }
 
         // ==========================================
-        // 1. Hero Impact Summary Card
+        // 1. Hero Impact Summary Card (Simple Size)
         // ==========================================
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .testTag("inflation_summary_card"),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = FinoraNavy),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant else FinoraNavy
+            ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(16.dp)
             ) {
                 when (selectedMode) {
                     InflationMode.FUTURE_COST -> {
@@ -270,22 +274,22 @@ fun InflationCalculatorView(
                                 Surface(
                                     shape = CircleShape,
                                     color = accentOrange.copy(alpha = 0.2f),
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Default.TrendingUp,
                                             contentDescription = null,
                                             tint = accentOrange,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "${BengaliFormatter.formatNumber(tenureYears.toDouble(), 0, useBengaliDigits)} বছর পর ভবিষ্যৎ খরচ",
-                                    color = Color.White.copy(alpha = 0.85f),
-                                    fontSize = 13.sp,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -298,30 +302,30 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "+${BengaliFormatter.formatNumber(((costMultiplier - 1) * 100), 0, useBengaliDigits)}% বৃদ্ধি",
                                     color = accentOrange,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
                             text = BengaliFormatter.formatTaka(futureCost, useBengaliDigits),
                             color = accentOrange,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 0.5.sp
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.3.sp
                         )
 
                         Text(
                             text = "আজকের ${BengaliFormatter.formatTaka(currentAmount, useBengaliDigits)} মূল্যের জীবনযাত্রা চালাতে এ অর্থের দরকার হবে",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 13.sp
+                            color = Color.White.copy(alpha = 0.75f),
+                            fontSize = 12.sp
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Comparison Progress Bar
                         val origRatio = if (futureCost > 0) (currentAmount / futureCost).toFloat().coerceIn(0f, 1f) else 0.5f
@@ -331,25 +335,25 @@ fun InflationCalculatorView(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp))
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
                                     .background(Color.White.copy(alpha = 0.15f))
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .weight(origRatio.coerceAtLeast(0.01f))
-                                        .height(10.dp)
+                                        .height(6.dp)
                                         .background(PrimaryBlue)
                                 )
                                 Box(
                                     modifier = Modifier
                                         .weight(incRatio.coerceAtLeast(0.01f))
-                                        .height(10.dp)
+                                        .height(6.dp)
                                         .background(accentOrange)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -358,20 +362,20 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "আজকের খরচ: ${(origRatio * 100).roundToInt()}%",
                                     color = Color.White.copy(alpha = 0.8f),
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.sp
                                 )
                                 Text(
                                     text = "মূল্যস্ফীতিজনিত অতিরিক্ত ব্যয়: ${(incRatio * 100).roundToInt()}%",
                                     color = accentOrange,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -381,13 +385,13 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "খরচ বৃদ্ধির পরিমাণ",
                                     color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "+${BengaliFormatter.formatTaka(priceIncrease, useBengaliDigits)}",
                                     color = accentOrange,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -398,13 +402,13 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "খরচ বৃদ্ধির গুণক",
                                     color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "${BengaliFormatter.formatNumber(futureCost / currentAmount, 2, useBengaliDigits)} গুণ",
                                     color = Color.White,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -421,22 +425,22 @@ fun InflationCalculatorView(
                                 Surface(
                                     shape = CircleShape,
                                     color = warningColor.copy(alpha = 0.2f),
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Default.TrendingDown,
                                             contentDescription = null,
                                             tint = warningColor,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "${BengaliFormatter.formatNumber(tenureYears.toDouble(), 0, useBengaliDigits)} বছর পর টাকার প্রকৃত ক্রয়ক্ষমতা",
-                                    color = Color.White.copy(alpha = 0.85f),
-                                    fontSize = 13.sp,
+                                    text = "${BengaliFormatter.formatNumber(tenureYears.toDouble(), 0, useBengaliDigits)} বছর পর প্রকৃত ক্রয়ক্ষমতা",
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -448,30 +452,30 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "-${BengaliFormatter.formatNumber(purchasingPowerLossPercent, 1, useBengaliDigits)}% মানহ্রাস",
                                     color = Color(0xFFFCA5A5),
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
                             text = BengaliFormatter.formatTaka(realPurchasingPower, useBengaliDigits),
                             color = Color(0xFFFCA5A5),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 0.5.sp
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.3.sp
                         )
 
                         Text(
-                            text = "আজকের ${BengaliFormatter.formatTaka(currentAmount, useBengaliDigits)} ক্যাশ ঘরে রাখলে ভবিষ্যৎ বাজারে এর সমান জিনিস কেনা যাবে",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 13.sp
+                            text = "আজকের ${BengaliFormatter.formatTaka(currentAmount, useBengaliDigits)} ক্যাশ রাখলে ভবিষ্যৎ বাজারে এর সমমূল্যের পণ্য মিলবে",
+                            color = Color.White.copy(alpha = 0.75f),
+                            fontSize = 12.sp
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Purchasing Power Retained vs Lost Bar
                         val retainedRatio = (1f - (purchasingPowerLossPercent / 100.0).toFloat()).coerceIn(0f, 1f)
@@ -481,25 +485,25 @@ fun InflationCalculatorView(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp))
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
                                     .background(Color.White.copy(alpha = 0.15f))
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .weight(retainedRatio.coerceAtLeast(0.01f))
-                                        .height(10.dp)
+                                        .height(6.dp)
                                         .background(GrowthGreen)
                                 )
                                 Box(
                                     modifier = Modifier
                                         .weight(lostRatio.coerceAtLeast(0.01f))
-                                        .height(10.dp)
+                                        .height(6.dp)
                                         .background(warningColor)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -508,21 +512,21 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "অবশিষ্ট ক্রয়ক্ষমতা: ${(retainedRatio * 100).roundToInt()}%",
                                     color = GrowthGreen,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "হারানো মান: ${(lostRatio * 100).roundToInt()}%",
                                     color = Color(0xFFFCA5A5),
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -532,13 +536,13 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "অলস টাকায় মোট আর্থিক ক্ষতি",
                                     color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "-${BengaliFormatter.formatTaka(currentAmount - realPurchasingPower, useBengaliDigits)}",
                                     color = warningColor,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -549,13 +553,13 @@ fun InflationCalculatorView(
                                 Text(
                                     text = "ক্রয়ক্ষমতা টিকে থাকবে",
                                     color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = BengaliFormatter.formatPercent(100.0 - purchasingPowerLossPercent, useBengaliDigits),
                                     color = GrowthGreen,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -573,21 +577,21 @@ fun InflationCalculatorView(
                                 Surface(
                                     shape = CircleShape,
                                     color = if (isPositive) GrowthGreen.copy(alpha = 0.2f) else warningColor.copy(alpha = 0.2f),
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
                                             contentDescription = null,
                                             tint = if (isPositive) GrowthGreen else warningColor,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "মূল্যস্ফীতি বাদ দিয়ে প্রকৃত বার্ষিক রিটার্ন (Real CAGR)",
-                                    color = Color.White.copy(alpha = 0.85f),
+                                    text = "মূল্যস্ফীতি বাদ দিয়ে প্রকৃত বার্ষিক রিটার্ন",
+                                    color = Color.White.copy(alpha = 0.9f),
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -602,34 +606,34 @@ fun InflationCalculatorView(
                                     color = if (isPositive) GrowthGreen else Color(0xFFFCA5A5),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
                             text = BengaliFormatter.formatPercent(realReturnRate, useBengaliDigits),
                             color = if (isPositive) GrowthGreen else Color(0xFFFCA5A5),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 0.5.sp
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.3.sp
                         )
 
                         Text(
                             text = if (isPositive)
-                                "আপনার বিনিয়োগ বার্ষিক মূল্যস্ফীতিকে অতিক্রম করে প্রকৃত সম্পদ তৈরি করছে।"
+                                "আপনার বিনিয়োগ বার্ষিক মূল্যস্ফীতি অতিক্রম করে প্রকৃত সম্পদ তৈরি করছে।"
                             else
-                                "সতর্কতা: রিটার্ন হার মূল্যস্ফীতির চেয়ে কম হওয়ায় দিনশেষে আপনার প্রকৃত ক্রয়ক্ষমতা কমে যাচ্ছে!",
+                                "সতর্কতা: রিটার্ন হার মূল্যস্ফীতির চেয়ে কম হওয়ায় প্রকৃত ক্রয়ক্ষমতা কমে যাচ্ছে!",
                             color = Color.White.copy(alpha = 0.75f),
-                            fontSize = 12.5.sp,
-                            lineHeight = 17.sp
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
                         )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -637,15 +641,15 @@ fun InflationCalculatorView(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "নামমাত্র রিটার্ন (Nominal)",
+                                    text = "নামমাত্র রিটার্ন",
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = BengaliFormatter.formatPercent(investmentReturnRate, useBengaliDigits),
                                     color = PrimaryBlue,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -656,11 +660,11 @@ fun InflationCalculatorView(
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "-${BengaliFormatter.formatPercent(inflationRate, useBengaliDigits)}",
                                     color = warningColor,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -671,11 +675,11 @@ fun InflationCalculatorView(
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 11.sp
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = BengaliFormatter.formatPercent(realReturnRate, useBengaliDigits),
                                     color = if (isPositive) GrowthGreen else warningColor,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -691,15 +695,15 @@ fun InflationCalculatorView(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.5.dp, BorderSubtle),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Section Title
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -707,7 +711,7 @@ fun InflationCalculatorView(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(PrimaryBlue.copy(alpha = 0.10f)),
+                            .background(PrimaryBlue.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -723,7 +727,7 @@ fun InflationCalculatorView(
                             text = "মূল্যস্ফীতির পরিমাপ নির্ধারণ করুন",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "টাকার পরিমাণ, বাৎসরিক হার ও সময়কাল পরিবর্তন করুন",
@@ -733,7 +737,7 @@ fun InflationCalculatorView(
                     }
                 }
 
-                HorizontalDivider(color = BorderSubtle.copy(alpha = 0.7f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // --- 1. Current Amount / Expense ---
                 Column {
@@ -745,8 +749,8 @@ fun InflationCalculatorView(
                         Text(
                             text = if (selectedMode == InflationMode.PURCHASING_POWER) "বর্তমান জমানো নগদ অর্থ" else "আজকের মাসিক ব্যয় বা পণ্যের মূল্য",
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.5.sp,
-                            color = FinoraNavy
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = BengaliFormatter.formatTaka(currentAmount, useBengaliDigits),
@@ -789,9 +793,11 @@ fun InflationCalculatorView(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = BorderSubtle,
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
 
@@ -804,7 +810,7 @@ fun InflationCalculatorView(
                         colors = SliderDefaults.colors(
                             thumbColor = PrimaryBlue,
                             activeTrackColor = PrimaryBlue,
-                            inactiveTrackColor = BorderSubtle
+                            inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
 
@@ -818,16 +824,16 @@ fun InflationCalculatorView(
                             val isSelected = (currentAmount == amt)
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (isSelected) PrimaryBlue else Color(0xFFF1F5F9),
+                                color = if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isSelected) PrimaryBlue else BorderSubtle
+                                    if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
                                 ),
                                 modifier = Modifier.clickable { updateAmount(amt) }
                             ) {
                                 Text(
                                     text = BengaliFormatter.formatTaka(amt, useBengaliDigits).replace(".00", ""),
-                                    color = if (isSelected) Color.White else FinoraNavy,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -847,8 +853,8 @@ fun InflationCalculatorView(
                         Text(
                             text = "বার্ষিক মূল্যস্ফীতি হার",
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.5.sp,
-                            color = FinoraNavy
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = BengaliFormatter.formatPercent(inflationRate, useBengaliDigits),
@@ -883,9 +889,11 @@ fun InflationCalculatorView(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = accentOrange,
-                            unfocusedBorderColor = BorderSubtle,
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
 
@@ -898,7 +906,7 @@ fun InflationCalculatorView(
                         colors = SliderDefaults.colors(
                             thumbColor = accentOrange,
                             activeTrackColor = accentOrange,
-                            inactiveTrackColor = BorderSubtle
+                            inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
 
@@ -918,16 +926,16 @@ fun InflationCalculatorView(
                             val isSelected = (inflationRate == rt)
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (isSelected) accentOrange else Color(0xFFF1F5F9),
+                                color = if (isSelected) accentOrange else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isSelected) accentOrange else BorderSubtle
+                                    if (isSelected) accentOrange else MaterialTheme.colorScheme.outlineVariant
                                 ),
                                 modifier = Modifier.clickable { updateInflation(rt) }
                             ) {
                                 Text(
                                     text = if (useBengaliDigits) label else "${rt}%",
-                                    color = if (isSelected) Color.White else FinoraNavy,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -947,8 +955,8 @@ fun InflationCalculatorView(
                         Text(
                             text = "সময়কাল (বছর)",
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.5.sp,
-                            color = FinoraNavy
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${BengaliFormatter.formatNumber(tenureYears.toDouble(), 0, useBengaliDigits)} বছর পর",
@@ -983,9 +991,11 @@ fun InflationCalculatorView(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = BorderSubtle,
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
 
@@ -998,7 +1008,7 @@ fun InflationCalculatorView(
                         colors = SliderDefaults.colors(
                             thumbColor = PrimaryBlue,
                             activeTrackColor = PrimaryBlue,
-                            inactiveTrackColor = BorderSubtle
+                            inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
 
@@ -1012,16 +1022,16 @@ fun InflationCalculatorView(
                             val isSelected = (tenureYears == yr)
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (isSelected) PrimaryBlue else Color(0xFFF1F5F9),
+                                color = if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isSelected) PrimaryBlue else BorderSubtle
+                                    if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
                                 ),
                                 modifier = Modifier.clickable { updateYears(yr) }
                             ) {
                                 Text(
                                     text = "${BengaliFormatter.formatNumber(yr.toDouble(), 0, useBengaliDigits)} বছর",
-                                    color = if (isSelected) Color.White else FinoraNavy,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -1046,8 +1056,8 @@ fun InflationCalculatorView(
                             Text(
                                 text = "বিনিয়োগের বার্ষিক রিটার্ন হার (Nominal Return)",
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.5.sp,
-                                color = FinoraNavy
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = BengaliFormatter.formatPercent(investmentReturnRate, useBengaliDigits),
@@ -1080,9 +1090,11 @@ fun InflationCalculatorView(
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = GrowthGreen,
-                                unfocusedBorderColor = BorderSubtle,
-                                focusedContainerColor = Color(0xFFF8FAFC),
-                                unfocusedContainerColor = Color(0xFFF8FAFC)
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -1094,7 +1106,7 @@ fun InflationCalculatorView(
                             colors = SliderDefaults.colors(
                                 thumbColor = GrowthGreen,
                                 activeTrackColor = GrowthGreen,
-                                inactiveTrackColor = BorderSubtle
+                                inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                             )
                         )
                     }
@@ -1108,14 +1120,14 @@ fun InflationCalculatorView(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.5.dp, BorderSubtle),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -1138,7 +1150,7 @@ fun InflationCalculatorView(
                             text = "সময়ভিত্তিক মূল্যস্ফীতি সময়রেখা (Timeline)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "বছরের পর বছর খরচ বৃদ্ধি এবং টাকার ক্রয়ক্ষমতা ক্ষয়",
@@ -1157,10 +1169,16 @@ fun InflationCalculatorView(
 
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isFinal) Color(0xFFFFFBEB) else if (index % 2 == 0) Color(0xFFFAFCFF) else Color.White,
+                        color = if (isFinal) {
+                            if (isDark) accentOrange.copy(alpha = 0.15f) else Color(0xFFFFFBEB)
+                        } else if (index % 2 == 0) {
+                            if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f) else Color(0xFFFAFCFF)
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
                         border = BorderStroke(
                             1.dp,
-                            if (isFinal) accentOrange.copy(alpha = 0.4f) else BorderSubtle.copy(alpha = 0.6f)
+                            if (isFinal) accentOrange.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1202,7 +1220,7 @@ fun InflationCalculatorView(
                                         text = BengaliFormatter.formatTaka(m.futureCost, useBengaliDigits),
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isFinal) accentOrange else FinoraNavy
+                                        color = if (isFinal) accentOrange else MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "+${BengaliFormatter.formatNumber(m.costIncreasePercent, 0, useBengaliDigits)}% ব্যয়",
@@ -1220,7 +1238,7 @@ fun InflationCalculatorView(
                                     .fillMaxWidth()
                                     .height(4.dp)
                                     .clip(RoundedCornerShape(2.dp))
-                                    .background(Color(0xFFE2E8F0))
+                                    .background(if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFE2E8F0))
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -1242,8 +1260,10 @@ fun InflationCalculatorView(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = GrowthGreenLight.copy(alpha = 0.45f)),
-            border = BorderStroke(1.dp, GrowthGreen.copy(alpha = 0.3f)),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDark) GrowthGreen.copy(alpha = 0.12f) else GrowthGreenLight.copy(alpha = 0.45f)
+            ),
+            border = BorderStroke(1.dp, GrowthGreen.copy(alpha = if (isDark) 0.35f else 0.3f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -1264,7 +1284,7 @@ fun InflationCalculatorView(
                         text = "মূল্যস্ফীতি পরাস্ত করার আর্থিক কৌশল (Beat Inflation)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = FinoraNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -1273,21 +1293,21 @@ fun InflationCalculatorView(
                 Text(
                     text = "• ৭০-এর নিয়ম (Rule of 70): ${BengaliFormatter.formatPercent(inflationRate, useBengaliDigits)} মূল্যস্ফীতি হারে আজ আপনার হাতে থাকা টাকার ক্রয়ক্ষমতা ঠিক প্রায় ${BengaliFormatter.formatNumber(halfLifeYears.toDouble(), 0, useBengaliDigits)} বছর পর অর্ধেকে (৫০%) নেমে যাবে।",
                     fontSize = 12.sp,
-                    color = FinoraNavy,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 18.sp
                 )
 
                 Text(
                     text = "• নগদ বা সেভিংস একাউন্টে অলস টাকা রাখা সবচেয়ে ঝুঁকিপূর্ণ: সেভিংসে ৩-৪% মুনাফা পাওয়া গেলেও মূল্যস্ফীতি যদি ৮-১০% হয়, তবে প্রতি বছর আপনার প্রকৃত মূলধন হারিয়ে যাচ্ছে।",
                     fontSize = 12.sp,
-                    color = FinoraNavy,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 18.sp
                 )
 
                 Text(
                     text = "• সঠিক সম্পদ বিন্যাস (Asset Allocation): মূল্যস্ফীতিকে হারানোর জন্য মিউচুয়াল ফান্ড, স্টক বাজার, রিয়েল এস্টেট বা দীর্ঘমেয়াদী এসআইপি-তে বিনিয়োগ করা সবচেয়ে কার্যকর কৌশল।",
                     fontSize = 12.sp,
-                    color = FinoraNavy,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 18.sp
                 )
             }

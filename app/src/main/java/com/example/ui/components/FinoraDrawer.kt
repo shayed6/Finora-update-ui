@@ -63,6 +63,7 @@ import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
+import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.TextSecondaryLight
 import com.example.util.AppConfig
 
@@ -118,10 +119,11 @@ fun FinoraDrawerContent(
                 .verticalScroll(rememberScrollState())
         ) {
             // Header Section
+            val isDark = MaterialTheme.colorScheme.surface == SurfaceDark
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(FinoraNavy)
+                    .background(if (isDark) Color(0xFF0F1B35) else FinoraNavy)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
@@ -151,11 +153,11 @@ fun FinoraDrawerContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             val drawerItemColors = NavigationDrawerItemDefaults.colors(
-                selectedIconColor = PrimaryBlue,
-                unselectedIconColor = TextSecondaryLight,
-                selectedTextColor = PrimaryBlue,
-                unselectedTextColor = TextSecondaryLight,
-                selectedContainerColor = PrimaryBlue.copy(alpha = 0.08f),
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 unselectedContainerColor = Color.Transparent
             )
 
@@ -246,18 +248,18 @@ fun FinoraDrawerContent(
                             }
                         )
                         LearningLinkItem(
-                            title = "Learn with Kabir",
+                            title = "Investment mentor Kabir",
                             subtitle = "টেকনিক্যাল অ্যানালাইসিস ও স্ট্র্যাটেজি",
                             onClick = {
-                                openExternalUrl(AppConfig.URL_LEARN_WITH_KABIR)
+                                openExternalUrl(AppConfig.URL_INVESTMENT_MENTOR_KABIR)
                                 onCloseDrawer()
                             }
                         )
                         LearningLinkItem(
-                            title = "Learn with Rafiq",
+                            title = "Finance with  Rafyq",
                             subtitle = "ডিএসই ফান্ডামেন্টাল ও গাইড",
                             onClick = {
-                                openExternalUrl(AppConfig.URL_LEARN_WITH_RAFIQ)
+                                openExternalUrl(AppConfig.URL_FINANCE_WITH_RAFYQ)
                                 onCloseDrawer()
                             }
                         )
@@ -309,13 +311,13 @@ fun FinoraDrawerContent(
 
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                color = BorderSubtle,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 thickness = 1.dp
             )
 
             // 5. Rate Us
             NavigationDrawerItem(
-                icon = { Icon(Icons.Default.Star, contentDescription = "Rate Icon", tint = PrimaryBlue) },
+                icon = { Icon(Icons.Default.Star, contentDescription = "Rate Icon", tint = MaterialTheme.colorScheme.primary) },
                 label = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -326,7 +328,7 @@ fun FinoraDrawerContent(
                             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = PrimaryBlue
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -365,7 +367,7 @@ fun FinoraDrawerContent(
 
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                color = BorderSubtle
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
             // Footer info

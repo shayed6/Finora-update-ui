@@ -10,11 +10,13 @@ object AppConfig {
 
     /**
      * Learning Platform External Links
-     * TODO: Replace placeholder URLs with actual web URLs or YouTube channel links.
      */
     const val URL_INVESTALOY = "https://investaloy.com"
-    const val URL_LEARN_WITH_KABIR = "https://youtube.com/@learnwithkabir"
-    const val URL_LEARN_WITH_RAFIQ = "https://youtube.com/@learnwithrafiq"
+    const val URL_INVESTMENT_MENTOR_KABIR = "https://www.youtube.com/@Investment-mentor-Kabir"
+    const val URL_FINANCE_WITH_RAFYQ = "https://www.youtube.com/@FinancewithRafyq"
+    // Backward compatibility aliases
+    const val URL_LEARN_WITH_KABIR = URL_INVESTMENT_MENTOR_KABIR
+    const val URL_LEARN_WITH_RAFIQ = URL_FINANCE_WITH_RAFYQ
 
     /**
      * Google Play Store Package ID for "Rate Us" action

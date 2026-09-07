@@ -185,10 +185,12 @@ fun HomeScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(11.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryBlue,
-                    unfocusedBorderColor = BorderSubtle,
-                    focusedContainerColor = Color(0xFFF8FAFC),
-                    unfocusedContainerColor = Color(0xFFF8FAFC)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -205,7 +207,7 @@ fun HomeScreen(
                     text = "খোঁজার ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())}টি পাওয়া গেছে):",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = FinoraNavy,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -256,30 +258,30 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("featured_sip_card"),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        border = BorderStroke(1.5.dp, BorderSubtle),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = GrowthGreen.copy(alpha = 0.12f),
-                                modifier = Modifier.size(44.dp)
+                                shape = RoundedCornerShape(10.dp),
+                                color = GrowthGreen.copy(alpha = 0.14f),
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.TrendingUp,
                                         contentDescription = "SIP Calculator",
                                         tint = GrowthGreen,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -289,8 +291,8 @@ fun HomeScreen(
                                     Text(
                                         text = "SIP সম্পদ বৃদ্ধি ক্যালকুলেটর",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = FinoraNavy
+                                        fontSize = 14.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
@@ -306,9 +308,9 @@ fun HomeScreen(
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "মাসিক বিনিয়োগ ও চক্রবৃদ্ধি মুনাফায় দীর্ঘমেয়াদী ভবিষ্যৎ তহবিল অনুমান করুন",
+                                    text = "মাসিক বিনিয়োগ ও চক্রবৃদ্ধি মুনাফায় দীর্ঘমেয়াদী ভবিষ্যৎ তহবিল অনুমান",
                                     fontSize = 11.5.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
@@ -317,8 +319,8 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Open SIP Calculator",
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -334,30 +336,30 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("featured_emi_card"),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        border = BorderStroke(1.5.dp, BorderSubtle),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = PrimaryBlue.copy(alpha = 0.10f),
-                                modifier = Modifier.size(44.dp)
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.AccountBalance,
                                         contentDescription = "Loan EMI",
-                                        tint = PrimaryBlue,
-                                        modifier = Modifier.size(24.dp)
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -367,8 +369,8 @@ fun HomeScreen(
                                     Text(
                                         text = "Loan EMI ক্যালকুলেটর",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = FinoraNavy
+                                        fontSize = 14.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
@@ -384,7 +386,7 @@ fun HomeScreen(
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "ঋণের পরিমাণ, সুদের হার ও মেয়াদ দিয়ে মাসিক কিস্তি হিসাব করুন",
                                     fontSize = 11.5.sp,
@@ -395,14 +397,14 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Open EMI Calculator",
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
 
-                // Featured Quick Access 3: Inflation Calculator
+                // Featured Quick Access 3: Inflation Calculator (Simple Compact Size)
                 item(span = { GridItemSpan(2) }) {
                     val inflationCalc = remember { CalculatorRepository.getById("inflation_calc") }
                     Card(
@@ -412,30 +414,30 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("featured_inflation_card"),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        border = BorderStroke(1.5.dp, BorderSubtle),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = Color(0xFFF59E0B).copy(alpha = 0.14f),
-                                modifier = Modifier.size(44.dp)
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.PriceChange,
                                         contentDescription = "Inflation Calculator",
                                         tint = Color(0xFFD97706),
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -445,8 +447,8 @@ fun HomeScreen(
                                     Text(
                                         text = "Inflation (মূল্যস্ফীতি) ক্যালকুলেটর",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = FinoraNavy
+                                        fontSize = 14.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
@@ -454,17 +456,17 @@ fun HomeScreen(
                                         color = Color(0xFFF59E0B).copy(alpha = 0.18f)
                                     ) {
                                         Text(
-                                            text = "নতুন সংযোজন",
-                                            color = Color(0xFFB45309),
+                                            text = "নতুন",
+                                            color = Color(0xFFD97706),
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "ভবিষ্যতের খরচ বৃদ্ধি এবং নগদ টাকার ক্রয়ক্ষমতা হ্রাস পরিমাপ করুন",
+                                    text = "ভবিষ্যতের খরচ বৃদ্ধি এবং নগদ টাকার ক্রয়ক্ষমতা হ্রাস পরিমাপ",
                                     fontSize = 11.5.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
@@ -473,8 +475,8 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Open Inflation Calculator",
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -492,7 +494,7 @@ fun HomeScreen(
                             text = "ক্যালকুলেটর বিভাগসমূহ",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = FinoraNavy
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "মোট ৫টি ক্যাটাগরি",
