@@ -32,8 +32,8 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `all 36 calculators are loaded`() {
-    assertEquals(36, CalculatorRepository.allCalculators.size)
+  fun `all 37 calculators are loaded`() {
+    assertEquals(37, CalculatorRepository.allCalculators.size)
   }
 
   @Test
