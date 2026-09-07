@@ -1,0 +1,6 @@
+{
+  "name": "Finora",
+  "description": "ব্যক্তিগত অর্থায়ন এবং শেয়ার বাজার ক্যালকুলেটর (Personal Finance & Stock Market Calculator for Bangladesh)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
