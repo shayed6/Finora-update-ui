@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -69,6 +70,7 @@ import com.example.util.AppConfig
 
 enum class DrawerDestination {
     HOME,
+    PORTFOLIO,
     SETTINGS,
     ABOUT,
     PRIVACY_POLICY,
@@ -180,6 +182,26 @@ fun FinoraDrawerContent(
                 modifier = Modifier
                     .padding(NavigationDrawerItemDefaults.ItemPadding)
                     .testTag("drawer_item_home")
+            )
+
+            // Portfolio (Item right after Home as per Part B1)
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.PieChart, contentDescription = "Portfolio Icon") },
+                label = {
+                    Text(
+                        text = "পোর্টফোলিও (Portfolio)",
+                        fontWeight = if (currentDestination == DrawerDestination.PORTFOLIO) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.PORTFOLIO,
+                onClick = {
+                    onNavigate(DrawerDestination.PORTFOLIO)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_portfolio")
             )
 
             // 2. Learn Stock (Expandable Section)

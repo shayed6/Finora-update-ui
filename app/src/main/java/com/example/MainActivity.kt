@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.example.data.FavoritesManager
 import com.example.ui.FinoraApp
 import com.example.ui.screens.FinoraSplashScreen
 import com.example.ui.theme.FinoraTheme
@@ -17,6 +18,7 @@ import com.example.ui.theme.FinoraTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FavoritesManager.init(this)
         enableEdgeToEdge()
         setContent {
             FinoraTheme {

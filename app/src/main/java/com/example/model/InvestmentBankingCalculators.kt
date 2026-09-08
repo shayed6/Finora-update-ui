@@ -286,7 +286,7 @@ object InvestmentBankingCalculators {
         // 7. Inflation Calculator (মূল্যস্ফীতি ক্যালকুলেটর)
         CalculatorDef(
             id = "inflation_calc",
-            category = CalculatorCategory.SIP_INVESTMENT,
+            category = CalculatorCategory.OTHERS,
             titleBn = "Inflation Calculator (মূল্যস্ফীতি ক্যালকুলেটর)",
             titleEn = "Inflation Calculator",
             formulaSummaryBn = "ভবিষ্যতের ব্যয় = বর্তমান ব্যয় × (১ + মূল্যস্ফীতি)^বছর",

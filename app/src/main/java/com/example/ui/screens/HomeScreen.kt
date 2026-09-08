@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,13 +25,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,36 +48,48 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.FavoritesManager
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
 import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.CategoryCard
-import com.example.ui.components.FinoraLogo
-import com.example.ui.components.FinoraWordmark
+import com.example.ui.components.CurrentInvestmentWidget
+import com.example.ui.screens.portfolio.PortfolioViewModel
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
+import com.example.ui.theme.GrowthGreenDark
+import com.example.ui.theme.GrowthGreenLight
 import com.example.ui.theme.PrimaryBlue
-import com.example.util.AppConfig
 import com.example.util.BengaliFormatter
 
 @Composable
 fun HomeScreen(
     onCategoryClick: (CalculatorCategory) -> Unit,
     onCalculatorClick: (CalculatorDef) -> Unit,
+    onPortfolioClick: () -> Unit,
+    useBengaliDigits: Boolean = true,
+    portfolioViewModel: PortfolioViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val categories = CalculatorCategory.values().toList()
+    val categories = remember { CalculatorCategory.values().toList() }
     val searchResults = remember(searchQuery) {
         if (searchQuery.isNotBlank()) CalculatorRepository.search(searchQuery) else emptyList()
+    }
+
+    val portfolioSummary by portfolioViewModel.summary.collectAsState()
+    val favoriteIds by FavoritesManager.favorites.collectAsState()
+    val favoriteCalculators = remember(favoriteIds) {
+        favoriteIds.mapNotNull { CalculatorRepository.getById(it) }
     }
 
     Column(
@@ -84,71 +97,19 @@ fun HomeScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Search & Greeting Bar
+        // Top Section: Portfolio Summary Widget (replaces old header banner) + Search Bar
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Hero card featuring the suggested Finora branding
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = FinoraNavy
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            FinoraWordmark(
-                                titleSize = 22.sp,
-                                showTagline = false
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = CircleShape,
-                                color = GrowthGreen.copy(alpha = 0.25f)
-                            ) {
-                                Text(
-                                    text = "বাংলাদেশ",
-                                    color = GrowthGreen,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = AppConfig.TAGLINE_EN,
-                            color = GrowthGreen,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.3.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "৩৫টি স্টক ও আর্থিক ক্যালকুলেটর",
-                            color = Color.White.copy(alpha = 0.8f),
-                            fontSize = 11.5.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-                    FinoraLogo(size = 52.dp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
+            // Part A1 & A2: Compact "Current Investment" summary card, tappable to open Portfolio screen
+            CurrentInvestmentWidget(
+                summary = portfolioSummary,
+                useBengaliDigits = useBengaliDigits,
+                onClick = onPortfolioClick
+            )
 
             // Search Bar
             OutlinedTextField(
@@ -158,7 +119,7 @@ fun HomeScreen(
                     Text(
                         text = "যেকোনো ক্যালকুলেটর খুঁজুন (যেমন: P/E, SIP, লাভ/ক্ষতি)",
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                     )
                 },
                 leadingIcon = {
@@ -173,7 +134,7 @@ fun HomeScreen(
                         IconButton(onClick = { searchQuery = "" }) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear",
+                                contentDescription = "Clear Search",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -181,33 +142,30 @@ fun HomeScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag("home_search_input"),
+                    .testTag("home_search_field"),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                shape = RoundedCornerShape(11.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedBorderColor = PrimaryBlue,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
 
-        // Content: Either Search Results or Category Grid
         if (searchQuery.isNotBlank()) {
-            // Search Results Mode
+            // Search Results View
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = "খোঁজার ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())}টি পাওয়া গেছে):",
+                    text = "অনুসন্ধানের ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())} টি)",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = PrimaryBlue,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -233,255 +191,34 @@ fun HomeScreen(
                         items(searchResults, key = { it.id }) { calc ->
                             CalculatorListItem(
                                 calculator = calc,
-                                onClick = { onCalculatorClick(calc) }
+                                onClick = { onCalculatorClick(calc) },
+                                isFavorite = favoriteIds.contains(calc.id),
+                                onToggleFavorite = { FavoritesManager.toggleFavorite(calc.id) }
                             )
                         }
                     }
                 }
             }
         } else {
-            // 2-Column Grid of Category Cards (10px gap between cards)
+            // 2-Column Grid of Category Cards & Sections
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp, top = 4.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp, top = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Featured Quick Access 1: SIP Wealth Accumulation Calculator
+                // Part A4 & Part D: Favorite Section (in space freed up by removing individual quick-access row)
                 item(span = { GridItemSpan(2) }) {
-                    val sipCalc = remember { CalculatorRepository.getById("sip_calc") }
-                    Card(
-                        onClick = {
-                            sipCalc?.let { onCalculatorClick(it) }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("featured_sip_card"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = GrowthGreen.copy(alpha = 0.14f),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.TrendingUp,
-                                        contentDescription = "SIP Calculator",
-                                        tint = GrowthGreen,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "SIP সম্পদ বৃদ্ধি ক্যালকুলেটর",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.5.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = GrowthGreen.copy(alpha = 0.15f)
-                                    ) {
-                                        Text(
-                                            text = "সম্পদ সঞ্চয়",
-                                            color = GrowthGreen,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "মাসিক বিনিয়োগ ও চক্রবৃদ্ধি মুনাফায় দীর্ঘমেয়াদী ভবিষ্যৎ তহবিল অনুমান",
-                                    fontSize = 11.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Open SIP Calculator",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
+                    FavoriteCalculatorsSection(
+                        favoriteCalculators = favoriteCalculators,
+                        onCalculatorClick = onCalculatorClick,
+                        onToggleFavorite = { calcId -> FavoritesManager.toggleFavorite(calcId) },
+                        useBengaliDigits = useBengaliDigits
+                    )
                 }
 
-                // Featured Quick Access 2: Loan EMI Calculator
-                item(span = { GridItemSpan(2) }) {
-                    val emiCalc = remember { CalculatorRepository.getById("loan_emi") }
-                    Card(
-                        onClick = {
-                            emiCalc?.let { onCalculatorClick(it) }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("featured_emi_card"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.AccountBalance,
-                                        contentDescription = "Loan EMI",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Loan EMI ক্যালকুলেটর",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.5.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = GrowthGreen.copy(alpha = 0.15f)
-                                    ) {
-                                        Text(
-                                            text = "জনপ্রিয়",
-                                            color = GrowthGreen,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "ঋণের পরিমাণ, সুদের হার ও মেয়াদ দিয়ে মাসিক কিস্তি হিসাব করুন",
-                                    fontSize = 11.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Open EMI Calculator",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Featured Quick Access 3: Inflation Calculator (Simple Compact Size)
-                item(span = { GridItemSpan(2) }) {
-                    val inflationCalc = remember { CalculatorRepository.getById("inflation_calc") }
-                    Card(
-                        onClick = {
-                            inflationCalc?.let { onCalculatorClick(it) }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("featured_inflation_card"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = Color(0xFFF59E0B).copy(alpha = 0.14f),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.PriceChange,
-                                        contentDescription = "Inflation Calculator",
-                                        tint = Color(0xFFD97706),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Inflation (মূল্যস্ফীতি) ক্যালকুলেটর",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.5.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = Color(0xFFF59E0B).copy(alpha = 0.18f)
-                                    ) {
-                                        Text(
-                                            text = "নতুন",
-                                            color = Color(0xFFD97706),
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "ভবিষ্যতের খরচ বৃদ্ধি এবং নগদ টাকার ক্রয়ক্ষমতা হ্রাস পরিমাপ",
-                                    fontSize = 11.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Open Inflation Calculator",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-
+                // Section Header: Categories
                 item(span = { GridItemSpan(2) }) {
                     Row(
                         modifier = Modifier
@@ -504,6 +241,7 @@ fun HomeScreen(
                     }
                 }
 
+                // The 5 category cards grid
                 items(categories, key = { it.id }) { category ->
                     CategoryCard(
                         category = category,
@@ -516,7 +254,7 @@ fun HomeScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 10.dp, bottom = 6.dp)
+                            .padding(top = 8.dp, bottom = 6.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surface)
                             .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -539,6 +277,205 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Favorite Calculators Section as specified in Part D:
+ * - Shows favorited calculators in a horizontal scrollable row for one-tap quick access
+ * - If no favorites yet, shows friendly hint: "প্রিয় ক্যালকুলেটর যোগ করতে যেকোনো ক্যালকুলেটরে স্টার চাপুন"
+ */
+@Composable
+private fun FavoriteCalculatorsSection(
+    favoriteCalculators: List<CalculatorDef>,
+    onCalculatorClick: (CalculatorDef) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+    useBengaliDigits: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("favorite_calculators_section"),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFB800),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "প্রিয় ক্যালকুলেটর (Favorites)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            if (favoriteCalculators.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFFFB800).copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = "${BengaliFormatter.toBengaliDigits(favoriteCalculators.size.toString())}টি প্রিয়",
+                        color = Color(0xFFB45309),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                    )
+                }
+            }
+        }
+
+        if (favoriteCalculators.isEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFFFB800).copy(alpha = 0.12f),
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.StarBorder,
+                                contentDescription = null,
+                                tint = Color(0xFFFFB800),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "প্রিয় ক্যালকুলেটর যোগ করতে যেকোনো ক্যালকুলেটরে স্টার চাপুন",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 17.sp
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
+            ) {
+                items(favoriteCalculators, key = { it.id }) { calc ->
+                    FavoriteCalculatorCard(
+                        calculator = calc,
+                        onClick = { onCalculatorClick(calc) },
+                        onUnfavorite = { onToggleFavorite(calc.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteCalculatorCard(
+    calculator: CalculatorDef,
+    onClick: () -> Unit,
+    onUnfavorite: () -> Unit
+) {
+    val isGrowth = calculator.category == CalculatorCategory.SIP_INVESTMENT ||
+            calculator.category == CalculatorCategory.STOCK_AVG_PL
+    val badgeBg = if (isGrowth) GrowthGreenLight else PrimaryBlue.copy(alpha = 0.08f)
+    val badgeIconTint = if (isGrowth) GrowthGreenDark else PrimaryBlue
+
+    Card(
+        modifier = Modifier
+            .width(148.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .testTag("favorite_card_${calculator.id}"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(badgeBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = calculator.category.icon,
+                        contentDescription = null,
+                        tint = badgeIconTint,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onUnfavorite,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Remove from favorites",
+                        tint = Color(0xFFFFB800),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = calculator.titleBn,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = FinoraNavy,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = calculator.category.titleBn,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

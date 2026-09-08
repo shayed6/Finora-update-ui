@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -186,6 +187,12 @@ fun AboutScreen(
                     icon = Icons.Default.Star,
                     title = "সম্পূর্ণ বাংলা ইন্টারফেস ও ৳ প্রতীক",
                     desc = "সহজে বোঝার মতো পরিচ্ছন্ন ফিনটেক ডিজাইন ও দেশীয় মুদ্রা প্রতীক।"
+                )
+
+                FeatureRow(
+                    icon = Icons.Default.Wifi,
+                    title = "ইন্টারনেট সংযোগ আবশ্যক",
+                    desc = "Finora চালানোর জন্য সক্রিয় ইন্টারনেট সংযোগ প্রয়োজন, তবে সমস্ত আর্থিক হিসাব ও ডেটা সম্পূর্ণ আপনার ডিভাইসেই অন-ডিভাইস প্রক্রিয়াকৃত হয়।"
                 )
             }
         }

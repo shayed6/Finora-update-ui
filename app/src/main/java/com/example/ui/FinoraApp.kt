@@ -16,6 +16,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.ui.components.AdMobBannerSlot
@@ -37,11 +39,15 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnStockScreen
 import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.portfolio.PortfolioScreen
 import com.example.util.AppConfig
+import com.example.util.NetworkMonitor
+import com.example.util.OfflineBlockingOverlay
 import kotlinx.coroutines.launch
 
 sealed class Screen {
     data object Home : Screen()
+    data object Portfolio : Screen()
     data class Category(val category: CalculatorCategory) : Screen()
     data class Calculator(
         val calculator: CalculatorDef,
@@ -57,6 +63,18 @@ sealed class Screen {
 fun FinoraApp(
     onShowSplash: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val networkMonitor = remember { NetworkMonitor.getInstance(context) }
+    val isOnline by networkMonitor.isOnline.collectAsState()
+
+    // Part C: Full-screen blocking overlay when offline, replacing entire UI
+    if (!isOnline) {
+        OfflineBlockingOverlay(
+            onRetry = { networkMonitor.checkConnectivity() }
+        )
+        return
+    }
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -85,6 +103,7 @@ fun FinoraApp(
                 screenBackStack.clear()
                 screenBackStack.add(Screen.Home)
             }
+            DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
             DrawerDestination.LEARN_STOCK -> navigateTo(Screen.LearnStock)
             DrawerDestination.SETTINGS -> navigateTo(Screen.Settings)
             DrawerDestination.ABOUT -> navigateTo(Screen.About)
@@ -104,6 +123,7 @@ fun FinoraApp(
     // Determine current Drawer destination
     val activeDrawerDestination = when (currentScreen) {
         is Screen.Home, is Screen.Category, is Screen.Calculator -> DrawerDestination.HOME
+        is Screen.Portfolio -> DrawerDestination.PORTFOLIO
         is Screen.LearnStock -> DrawerDestination.LEARN_STOCK
         is Screen.Settings -> DrawerDestination.SETTINGS
         is Screen.About -> DrawerDestination.ABOUT
@@ -130,6 +150,12 @@ fun FinoraApp(
                 title = AppConfig.APP_NAME
                 subtitle = null
                 canNavigateBack = false
+                showAdMobBanner = true
+            }
+            is Screen.Portfolio -> {
+                title = "আমার পোর্টফোলিও"
+                subtitle = "DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব"
+                canNavigateBack = true
                 showAdMobBanner = true
             }
             is Screen.Category -> {
@@ -214,7 +240,16 @@ fun FinoraApp(
                                 },
                                 onCalculatorClick = { calc ->
                                     navigateTo(Screen.Calculator(calc))
-                                }
+                                },
+                                onPortfolioClick = {
+                                    navigateTo(Screen.Portfolio)
+                                },
+                                useBengaliDigits = useBengaliDigits
+                            )
+                        }
+                        is Screen.Portfolio -> {
+                            PortfolioScreen(
+                                useBengaliDigits = useBengaliDigits
                             )
                         }
                         is Screen.Category -> {
