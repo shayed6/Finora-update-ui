@@ -2,8 +2,12 @@ package com.example
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.example.data.preferences.AppThemeMode
+import com.example.data.preferences.UserPreferencesRepository
 import com.example.model.CalculatorRepository
 import com.example.util.BengaliFormatter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +24,17 @@ class ExampleRobolectricTest {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
     assertEquals("Finora", appName)
+  }
+
+  @Test
+  fun `theme preferences repository default and persistence`() = runTest {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val repo = UserPreferencesRepository.getInstance(context)
+    repo.setThemeMode(AppThemeMode.DARK)
+    val mode = repo.themeMode.first()
+    assertEquals(AppThemeMode.DARK, mode)
+    repo.setThemeMode(AppThemeMode.SYSTEM)
+    assertEquals(AppThemeMode.SYSTEM, repo.themeMode.first())
   }
 
   @Test

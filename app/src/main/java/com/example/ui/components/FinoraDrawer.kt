@@ -32,9 +32,12 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.HorizontalDivider
@@ -71,6 +74,7 @@ import com.example.util.AppConfig
 enum class DrawerDestination {
     HOME,
     PORTFOLIO,
+    SAVINGS_GOALS,
     SETTINGS,
     ABOUT,
     PRIVACY_POLICY,
@@ -82,6 +86,8 @@ fun FinoraDrawerContent(
     currentDestination: DrawerDestination,
     onNavigate: (DrawerDestination) -> Unit,
     onCloseDrawer: () -> Unit,
+    isDarkTheme: Boolean = false,
+    onToggleDarkMode: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -204,6 +210,26 @@ fun FinoraDrawerContent(
                     .testTag("drawer_item_portfolio")
             )
 
+            // Savings Goals (সঞ্চয় ও আর্থিক লক্ষ্য)
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Savings, contentDescription = "Savings Goals Icon") },
+                label = {
+                    Text(
+                        text = "সঞ্চয় লক্ষ্য (Savings Goals)",
+                        fontWeight = if (currentDestination == DrawerDestination.SAVINGS_GOALS) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.SAVINGS_GOALS,
+                onClick = {
+                    onNavigate(DrawerDestination.SAVINGS_GOALS)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_savings_goals")
+            )
+
             // 2. Learn Stock (Expandable Section)
             val chevronRotation by animateFloatAsState(
                 targetValue = if (isLearnStockExpanded) 180f else 0f,
@@ -290,6 +316,31 @@ fun FinoraDrawerContent(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
+
+            // Quick Dark Mode Toggle
+            NavigationDrawerItem(
+                icon = {
+                    Icon(
+                        imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = "Theme Icon",
+                        tint = if (isDarkTheme) Color(0xFFF59E0B) else PrimaryBlue
+                    )
+                },
+                label = {
+                    Text(
+                        text = if (isDarkTheme) "লাইট মোড চালু করুন" else "ডার্ক মোড চালু করুন",
+                        fontWeight = FontWeight.Normal
+                    )
+                },
+                selected = false,
+                onClick = {
+                    onToggleDarkMode?.invoke()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_dark_mode")
+            )
 
             // 3. Settings
             NavigationDrawerItem(

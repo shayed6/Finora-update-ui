@@ -3,6 +3,7 @@ package com.example.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
@@ -27,6 +31,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -39,6 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.preferences.AppThemeMode
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
@@ -47,6 +53,10 @@ import com.example.util.AppConfig
 
 @Composable
 fun SettingsScreen(
+    themeMode: AppThemeMode,
+    isDarkTheme: Boolean,
+    onThemeModeChange: (AppThemeMode) -> Unit,
+    onToggleDarkMode: (Boolean) -> Unit,
     useBengaliDigits: Boolean,
     onToggleBengaliDigits: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -59,6 +69,130 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // System-wide Dark Mode Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("settings_theme_card"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Header row with switch
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = (if (isDarkTheme) Color(0xFF6366F1) else Color(0xFFF59E0B)).copy(alpha = 0.15f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = null,
+                                tint = if (isDarkTheme) Color(0xFF818CF8) else Color(0xFFF59E0B),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "ডার্ক মোড (Dark Mode)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (isDarkTheme) "ডার্ক মোড সক্রিয় রয়েছে" else "লাইট মোড সক্রিয় রয়েছে",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Switch(
+                        checked = isDarkTheme,
+                        onCheckedChange = { onToggleDarkMode(it) },
+                        modifier = Modifier.testTag("dark_mode_switch"),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = PrimaryBlue
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Theme Mode Selection Chips
+                Text(
+                    text = "থিম অপশন নির্বাচন করুন:",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppThemeMode.entries.forEach { mode ->
+                        val isSelected = themeMode == mode
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onThemeModeChange(mode) },
+                            label = {
+                                Text(
+                                    text = mode.titleBn,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            leadingIcon = {
+                                val icon = when (mode) {
+                                    AppThemeMode.SYSTEM -> Icons.Default.PhoneAndroid
+                                    AppThemeMode.LIGHT -> Icons.Default.LightMode
+                                    AppThemeMode.DARK -> Icons.Default.DarkMode
+                                }
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryBlue.copy(alpha = 0.15f),
+                                selectedLabelColor = PrimaryBlue,
+                                selectedLeadingIconColor = PrimaryBlue
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("theme_mode_chip_${mode.name.lowercase()}")
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "✓ আপনার থিম পছন্দ DataStore-এর মাধ্যমে ডিভাইসে স্থায়ীভাবে সংরক্ষিত থাকে।",
+                    fontSize = 11.sp,
+                    color = GrowthGreen,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
         // Number Format Preference Card
         Card(
             modifier = Modifier

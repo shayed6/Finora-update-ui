@@ -26,6 +26,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import com.example.data.preferences.AppThemeMode
+import com.example.data.preferences.UserPreferencesRepository
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.ui.components.AdMobBannerSlot
@@ -39,6 +47,7 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnStockScreen
 import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.goals.SavingsGoalsScreen
 import com.example.ui.screens.portfolio.PortfolioScreen
 import com.example.util.AppConfig
 import com.example.util.NetworkMonitor
@@ -48,6 +57,7 @@ import kotlinx.coroutines.launch
 sealed class Screen {
     data object Home : Screen()
     data object Portfolio : Screen()
+    data object SavingsGoals : Screen()
     data class Category(val category: CalculatorCategory) : Screen()
     data class Calculator(
         val calculator: CalculatorDef,
@@ -61,7 +71,10 @@ sealed class Screen {
 
 @Composable
 fun FinoraApp(
-    onShowSplash: () -> Unit = {}
+    onShowSplash: () -> Unit = {},
+    userPreferencesRepository: UserPreferencesRepository? = null,
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    isDarkTheme: Boolean = false
 ) {
     val context = LocalContext.current
     val networkMonitor = remember { NetworkMonitor.getInstance(context) }
@@ -81,7 +94,11 @@ fun FinoraApp(
     val screenBackStack = remember { mutableStateListOf<Screen>(Screen.Home) }
     val currentScreen = screenBackStack.lastOrNull() ?: Screen.Home
 
-    var useBengaliDigits by remember { mutableStateOf(true) }
+    val userPrefs = remember(userPreferencesRepository) {
+        userPreferencesRepository ?: UserPreferencesRepository.getInstance(context)
+    }
+    val currentThemeMode by userPrefs.themeMode.collectAsState(initial = themeMode)
+    val useBengaliDigits by userPrefs.useBengaliDigits.collectAsState(initial = true)
 
     fun navigateTo(screen: Screen) {
         if (currentScreen != screen) {
@@ -104,6 +121,7 @@ fun FinoraApp(
                 screenBackStack.add(Screen.Home)
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
+            DrawerDestination.SAVINGS_GOALS -> navigateTo(Screen.SavingsGoals)
             DrawerDestination.LEARN_STOCK -> navigateTo(Screen.LearnStock)
             DrawerDestination.SETTINGS -> navigateTo(Screen.Settings)
             DrawerDestination.ABOUT -> navigateTo(Screen.About)
@@ -124,6 +142,7 @@ fun FinoraApp(
     val activeDrawerDestination = when (currentScreen) {
         is Screen.Home, is Screen.Category, is Screen.Calculator -> DrawerDestination.HOME
         is Screen.Portfolio -> DrawerDestination.PORTFOLIO
+        is Screen.SavingsGoals -> DrawerDestination.SAVINGS_GOALS
         is Screen.LearnStock -> DrawerDestination.LEARN_STOCK
         is Screen.Settings -> DrawerDestination.SETTINGS
         is Screen.About -> DrawerDestination.ABOUT
@@ -136,7 +155,13 @@ fun FinoraApp(
             FinoraDrawerContent(
                 currentDestination = activeDrawerDestination,
                 onNavigate = { dest -> navigateFromDrawer(dest) },
-                onCloseDrawer = { scope.launch { drawerState.close() } }
+                onCloseDrawer = { scope.launch { drawerState.close() } },
+                isDarkTheme = isDarkTheme,
+                onToggleDarkMode = {
+                    scope.launch {
+                        userPrefs.toggleDarkMode(!isDarkTheme)
+                    }
+                }
             )
         }
     ) {
@@ -155,6 +180,12 @@ fun FinoraApp(
             is Screen.Portfolio -> {
                 title = "আমার পোর্টফোলিও"
                 subtitle = "DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব"
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.SavingsGoals -> {
+                title = "সঞ্চয় লক্ষ্য (Savings Goals)"
+                subtitle = "আর্থিক লক্ষ্য ও অগ্রগতির হিসাব"
                 canNavigateBack = true
                 showAdMobBanner = true
             }
@@ -210,6 +241,22 @@ fun FinoraApp(
                         } else {
                             scope.launch { drawerState.open() }
                         }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    userPrefs.toggleDarkMode(!isDarkTheme)
+                                }
+                            },
+                            modifier = Modifier.testTag("top_bar_theme_toggle")
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = if (isDarkTheme) "লাইট মোড" else "ডার্ক মোড",
+                                tint = Color.White
+                            )
+                        }
                     }
                 )
             },
@@ -252,6 +299,11 @@ fun FinoraApp(
                                 useBengaliDigits = useBengaliDigits
                             )
                         }
+                        is Screen.SavingsGoals -> {
+                            SavingsGoalsScreen(
+                                useBengaliDigits = useBengaliDigits
+                            )
+                        }
                         is Screen.Category -> {
                             CategoryDetailScreen(
                                 category = screen.category,
@@ -271,8 +323,18 @@ fun FinoraApp(
                         }
                         is Screen.Settings -> {
                             SettingsScreen(
+                                themeMode = currentThemeMode,
+                                isDarkTheme = isDarkTheme,
+                                onThemeModeChange = { mode ->
+                                    scope.launch { userPrefs.setThemeMode(mode) }
+                                },
+                                onToggleDarkMode = { enableDark ->
+                                    scope.launch { userPrefs.toggleDarkMode(enableDark) }
+                                },
                                 useBengaliDigits = useBengaliDigits,
-                                onToggleBengaliDigits = { useBengaliDigits = it }
+                                onToggleBengaliDigits = { enableBengali ->
+                                    scope.launch { userPrefs.setUseBengaliDigits(enableBengali) }
+                                }
                             )
                         }
                         is Screen.About -> {

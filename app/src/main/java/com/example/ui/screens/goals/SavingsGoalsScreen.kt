@@ -1,5 +1,10 @@
 package com.example.ui.screens.goals
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -8,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +33,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,6 +76,9 @@ import com.example.ui.theme.AlertRed
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SavingsGoalsScreen(
@@ -75,6 +86,7 @@ fun SavingsGoalsScreen(
     viewModel: SavingsGoalsViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val goals by viewModel.goals.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -108,18 +120,35 @@ fun SavingsGoalsScreen(
         ) {
             item {
                 Spacer(modifier = Modifier.height(6.dp))
-                Column {
-                    Text(
-                        text = "ব্যক্তিগত সঞ্চয় লক্ষ্য (Savings Goals)",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "নির্দিষ্ট লক্ষ্য নির্ধারণ করুন ও অগ্রগতির ভিজ্যুয়াল হিসাব রাখুন",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "ব্যক্তিগত সঞ্চয় লক্ষ্য (Savings Goals)",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "নির্দিষ্ট লক্ষ্য নির্ধারণ করুন ও অগ্রগতির ভিজ্যুয়াল হিসাব রাখুন",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { exportSavingsReport(context, goals, useBengaliDigits) },
+                        modifier = Modifier.testTag("export_report_icon_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Export Report",
+                            tint = PrimaryBlue
+                        )
+                    }
                 }
             }
 
@@ -238,6 +267,50 @@ fun SavingsGoalsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            thickness = 1.dp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "রিপোর্ট তৈরি ও শেয়ার",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Button(
+                                onClick = {
+                                    exportSavingsReport(context, goals, useBengaliDigits)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryBlue.copy(alpha = 0.12f),
+                                    contentColor = PrimaryBlue
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.testTag("export_goals_report_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Export Report",
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "রিপোর্ট এক্সপোর্ট করুন",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -743,4 +816,88 @@ private fun AddContributionDialog(
             }
         }
     )
+}
+
+/**
+ * Exports the tracked financial goals and savings data as a simple formatted text report.
+ * Launches the Android system share sheet and copies the report to the clipboard.
+ */
+fun exportSavingsReport(context: Context, goals: List<SavingsGoalEntity>, useBengaliDigits: Boolean) {
+    if (goals.isEmpty()) {
+        Toast.makeText(context, "কোনো সঞ্চয় লক্ষ্য যুক্ত করা নেই। প্রথমে একটি লক্ষ্য যোগ করুন।", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val totalTarget = goals.sumOf { it.targetAmount }
+    val totalSaved = goals.sumOf { it.currentAmount }
+    val remaining = (totalTarget - totalSaved).coerceAtLeast(0.0)
+    val overallPercent = if (totalTarget > 0) (totalSaved / totalTarget) * 100.0 else 0.0
+    val completedCount = goals.count { it.currentAmount >= it.targetAmount }
+    val activeCount = goals.size - completedCount
+
+    val dateStr = SimpleDateFormat("dd/MM/yyyy, hh:mm a", Locale.getDefault()).format(Date())
+
+    val report = buildString {
+        appendLine("==========================================")
+        appendLine("           FINORA FINANCIAL REPORT        ")
+        appendLine("   ব্যক্তিগত সঞ্চয় ও আর্থিক লক্ষ্য রিপোর্ট   ")
+        appendLine("==========================================")
+        appendLine("তারিখ ও সময়: $dateStr")
+        appendLine()
+        appendLine("■ সার্বিক সঞ্চয় পরিস্থিতি (Savings Overview)")
+        appendLine("------------------------------------------")
+        appendLine("• মোট লক্ষ্যমাত্রা (Target): ${BengaliFormatter.formatTaka(totalTarget, useBengaliDigits)}")
+        appendLine("• মোট সঞ্চিত অর্থ (Saved):  ${BengaliFormatter.formatTaka(totalSaved, useBengaliDigits)}")
+        appendLine("• বাকি সঞ্চয় (Remaining):   ${BengaliFormatter.formatTaka(remaining, useBengaliDigits)}")
+        appendLine("• সামগ্রিক অগ্রগতি (Progress): ${BengaliFormatter.formatPercent(overallPercent, useBengaliDigits)}")
+        appendLine("• মোট লক্ষ্য সংখ্যা:        ${BengaliFormatter.toBengaliDigits(goals.size.toString())}টি (${BengaliFormatter.toBengaliDigits(completedCount.toString())}টি সম্পন্ন, ${BengaliFormatter.toBengaliDigits(activeCount.toString())}টি চলমান)")
+        appendLine()
+        appendLine("■ লক্ষ্যসমূহের বিস্তারিত বিবরণ (Detailed Goals)")
+        appendLine("------------------------------------------")
+
+        goals.forEachIndexed { index, goal ->
+            val goalProgress = if (goal.targetAmount > 0) (goal.currentAmount / goal.targetAmount) * 100.0 else 0.0
+            val goalRemaining = (goal.targetAmount - goal.currentAmount).coerceAtLeast(0.0)
+            val isDone = goal.currentAmount >= goal.targetAmount
+            val status = if (isDone) "অর্জিত হয়েছে (Completed) 🎉" else "চলমান (In Progress)"
+
+            val num = BengaliFormatter.toBengaliDigits((index + 1).toString())
+            appendLine("$num. ${goal.title} [ক্যাটাগরি: ${goal.category}]")
+            appendLine("   - টার্গেট পরিমাণ:  ${BengaliFormatter.formatTaka(goal.targetAmount, useBengaliDigits)}")
+            appendLine("   - বর্তমান সঞ্চয়:   ${BengaliFormatter.formatTaka(goal.currentAmount, useBengaliDigits)} (${BengaliFormatter.formatPercent(goalProgress, useBengaliDigits)})")
+            if (!isDone) {
+                appendLine("   - অবশিষ্ট প্রয়োজন: ${BengaliFormatter.formatTaka(goalRemaining, useBengaliDigits)}")
+            }
+            appendLine("   - অর্জনের টার্গেট তারিখ: ${goal.targetDate}")
+            appendLine("   - অবস্থা: $status")
+            appendLine()
+        }
+
+        appendLine("==========================================")
+        appendLine("Finora — পার্সোনাল ফাইন্যান্স ও ইনভেস্টমেন্ট অ্যাপ")
+        appendLine("১০০% অন-ডিভাইস নিরাপদ আর্থিক হিসাব")
+        appendLine("==========================================")
+    }
+
+    try {
+        // Copy to system clipboard
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val clip = ClipData.newPlainText("Finora Savings Report", report)
+        clipboard?.setPrimaryClip(clip)
+
+        // Launch system share sheet
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, report)
+            putExtra(Intent.EXTRA_SUBJECT, "Finora সঞ্চয় লক্ষ্য রিপোর্ট - $dateStr")
+            type = "text/plain"
+        }
+        val shareIntent = Intent.createChooser(sendIntent, "সঞ্চয় লক্ষ্য রিপোর্ট শেয়ার করুন").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(shareIntent)
+        Toast.makeText(context, "রিপোর্ট তৈরি হয়েছে ও ক্লিপবোর্ডে কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "রিপোর্ট শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
+    }
 }

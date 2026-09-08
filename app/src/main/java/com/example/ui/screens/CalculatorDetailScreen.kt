@@ -1,5 +1,10 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -23,8 +28,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
@@ -50,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,6 +80,9 @@ import com.example.ui.theme.PrimaryBlueDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.TabularFigureStyle
 import com.example.util.BengaliFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun CalculatorDetailScreen(
@@ -81,6 +90,7 @@ fun CalculatorDetailScreen(
     useBengaliDigits: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val inputValues = remember(calculator.id) {
         mutableStateMapOf<String, String>().apply {
             calculator.inputs.forEach { input ->
@@ -207,32 +217,6 @@ fun CalculatorDetailScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
                 )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Formula Banner
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Functions,
-                        contentDescription = null,
-                        tint = PrimaryBlue,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "সূত্র: ${calculator.formulaSummaryBn}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
             }
         }
 
@@ -540,10 +524,110 @@ fun CalculatorDetailScreen(
                                 lineHeight = 18.sp
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = {
+                                exportCalculationReport(
+                                    context = context,
+                                    calculator = calculator,
+                                    inputValues = inputValues,
+                                    result = res
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("export_calculation_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (res.isWarning) AlertRed else PrimaryBlue,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "রিপোর্ট এক্সপোর্ট ও শেয়ার করুন",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+}
+
+/**
+ * Exports the calculated financial results as a formatted text report.
+ * Launches the Android system share sheet and copies the report to clipboard.
+ */
+fun exportCalculationReport(
+    context: Context,
+    calculator: CalculatorDef,
+    inputValues: Map<String, String>,
+    result: CalcResult
+) {
+    val dateStr = SimpleDateFormat("dd/MM/yyyy, hh:mm a", Locale.getDefault()).format(Date())
+
+    val report = buildString {
+        appendLine("==========================================")
+        appendLine("       FINORA CALCULATION REPORT          ")
+        appendLine("       ${calculator.titleBn} (${calculator.titleEn})")
+        appendLine("==========================================")
+        appendLine("তারিখ ও সময়: $dateStr")
+        appendLine()
+        appendLine("■ প্রদত্ত তথ্য (Inputs)")
+        appendLine("------------------------------------------")
+        calculator.inputs.forEach { inputDef ->
+            val entered = inputValues[inputDef.id]?.ifEmpty { inputDef.defaultValue } ?: inputDef.defaultValue
+            appendLine("• ${inputDef.labelBn}: $entered ${inputDef.unit}")
+        }
+        appendLine()
+        appendLine("■ গণনার ফলাফল (Results)")
+        appendLine("------------------------------------------")
+        appendLine("• ${result.primaryLabelBn}: ${result.primaryValueBn}")
+        if (result.subResults.isNotEmpty()) {
+            result.subResults.forEach { sub ->
+                appendLine("• ${sub.labelBn}: ${sub.valueBn}")
+            }
+        }
+        if (result.insightNoteBn.isNotEmpty()) {
+            appendLine()
+            appendLine("■ আর্থিক পরামর্শ/পয়েন্ট:")
+            appendLine(result.insightNoteBn)
+        }
+        appendLine()
+        appendLine("==========================================")
+        appendLine("Finora — পার্সোনাল ফাইন্যান্স ও ইনভেস্টমেন্ট")
+        appendLine("১০০% অন-ডিভাইস নিরাপদ হিসাব")
+        appendLine("==========================================")
+    }
+
+    try {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val clip = ClipData.newPlainText("${calculator.titleBn} Report", report)
+        clipboard?.setPrimaryClip(clip)
+
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, report)
+            putExtra(Intent.EXTRA_SUBJECT, "${calculator.titleBn} রিপোর্ট - $dateStr")
+            type = "text/plain"
+        }
+        val shareIntent = Intent.createChooser(sendIntent, "হিসাবের রিপোর্ট শেয়ার করুন").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(shareIntent)
+        Toast.makeText(context, "রিপোর্ট তৈরি ও কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "রিপোর্ট শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
+    }
 }
