@@ -39,6 +39,34 @@ object BengaliFormatter {
     }
 
     /**
+     * Safely parses any number string that may contain Bengali digits, English digits,
+     * commas (e.g. 50,000 or ৫০,০০০), spaces, currency symbols (৳), or decimals.
+     * Returns null if the input cannot be converted to a valid Double.
+     */
+    fun parseAmount(input: String?): Double? {
+        if (input.isNullOrBlank()) return null
+        val cleaned = normalizeToEnglishDigits(input)
+            .replace("৳", "")
+            .replace(",", "")
+            .replace(" ", "")
+            .trim()
+        return cleaned.toDoubleOrNull()
+    }
+
+    /**
+     * Safely parses an integer quantity from input containing Bengali or English digits,
+     * commas, or spaces. Returns null if invalid.
+     */
+    fun parseInt(input: String?): Int? {
+        if (input.isNullOrBlank()) return null
+        val cleaned = normalizeToEnglishDigits(input)
+            .replace(",", "")
+            .replace(" ", "")
+            .trim()
+        return cleaned.toIntOrNull()
+    }
+
+    /**
      * Formats a double value as currency with the Bengali Taka symbol (৳).
      * e.g., ৳ ১,২৫,০৫০.০০ or ৳ 1,25,050.00
      */

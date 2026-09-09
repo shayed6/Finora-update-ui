@@ -471,8 +471,7 @@ fun SipCalculatorView(
                         value = monthlyInputText,
                         onValueChange = { input ->
                             monthlyInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toDoubleOrNull()?.let { monthlyAmount = it.coerceIn(500.0, 500000.0) }
+                            BengaliFormatter.parseAmount(input)?.let { monthlyAmount = it.coerceIn(500.0, 500000.0) }
                         },
                         leadingIcon = {
                             Text(
@@ -573,8 +572,7 @@ fun SipCalculatorView(
                         value = rateInputText,
                         onValueChange = { input ->
                             rateInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toDoubleOrNull()?.let { annualReturnRate = it.coerceIn(1.0, 30.0) }
+                            BengaliFormatter.parseAmount(input)?.let { annualReturnRate = it.coerceIn(1.0, 30.0) }
                         },
                         trailingIcon = {
                             Text(
@@ -667,8 +665,7 @@ fun SipCalculatorView(
                         value = yearsInputText,
                         onValueChange = { input ->
                             yearsInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toIntOrNull()?.let { tenureYears = it.coerceIn(1, 35) }
+                            BengaliFormatter.parseInt(input)?.let { tenureYears = it.coerceIn(1, 35) }
                         },
                         trailingIcon = {
                             Text(

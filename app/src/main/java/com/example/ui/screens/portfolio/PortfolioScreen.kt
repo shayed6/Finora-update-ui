@@ -30,11 +30,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
+import com.example.util.PdfReportGenerator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -174,8 +176,8 @@ fun PortfolioScreen(
                                 modifier = Modifier.testTag("portfolio_export_button")
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Export Portfolio Report",
+                                    imageVector = Icons.Default.PictureAsPdf,
+                                    contentDescription = "Export Portfolio PDF Report",
                                     tint = PrimaryBlue
                                 )
                             }
@@ -746,9 +748,9 @@ private fun AddBuyTransactionDialog(
         }
     }
 
-    val isValid = stockName.isNotBlank() &&
-            (buyingPriceText.toDoubleOrNull() ?: 0.0) > 0.0 &&
-            (quantityText.toIntOrNull() ?: 0) > 0
+    val parsedPrice = BengaliFormatter.parseAmount(buyingPriceText) ?: 0.0
+    val parsedQty = BengaliFormatter.parseInt(quantityText) ?: 0
+    val isValid = stockName.isNotBlank() && parsedPrice > 0.0 && parsedQty > 0
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -886,9 +888,9 @@ private fun AddBuyTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val price = buyingPriceText.toDoubleOrNull() ?: 0.0
-                    val qty = quantityText.toIntOrNull() ?: 0
-                    val comm = commissionText.toDoubleOrNull() ?: 0.40
+                    val price = BengaliFormatter.parseAmount(buyingPriceText) ?: 0.0
+                    val qty = BengaliFormatter.parseInt(quantityText) ?: 0
+                    val comm = BengaliFormatter.parseAmount(commissionText) ?: 0.40
                     if (isValid) {
                         onSave(exchange, stockName, price, qty, comm)
                     }
@@ -1041,7 +1043,7 @@ private fun EditCurrentPriceDialog(
     onSave: (Double) -> Unit
 ) {
     var priceText by remember { mutableStateOf(holding.currentPrice.toString()) }
-    val newPrice = priceText.toDoubleOrNull() ?: 0.0
+    val newPrice = BengaliFormatter.parseAmount(priceText) ?: 0.0
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1092,8 +1094,7 @@ private fun EditCurrentPriceDialog(
 }
 
 /**
- * Exports the tracked stock portfolio data as a simple formatted text report.
- * Launches the Android system share sheet and copies the report to the clipboard.
+ * Exports the tracked stock portfolio data as a beautifully formatted PDF report with watermark.
  */
 fun exportPortfolioReport(
     context: Context,
@@ -1101,72 +1102,10 @@ fun exportPortfolioReport(
     summary: PortfolioSummary,
     useBengaliDigits: Boolean
 ) {
-    if (holdings.isEmpty()) {
-        Toast.makeText(context, "কোনো শেয়ার বিনিয়োগ পাওয়া যায়নি। প্রথমে শেয়ার যোগ করুন।", Toast.LENGTH_SHORT).show()
-        return
-    }
-
-    val dateStr = SimpleDateFormat("dd/MM/yyyy, hh:mm a", Locale.getDefault()).format(Date())
-
-    val report = buildString {
-        appendLine("==========================================")
-        appendLine("       FINORA PORTFOLIO REPORT            ")
-        appendLine("       শেয়ার পোর্টফোলিও রিপোর্ট         ")
-        appendLine("==========================================")
-        appendLine("তারিখ ও সময়: $dateStr")
-        appendLine()
-        appendLine("■ পোর্টফোলিও সারসংক্ষেপ (Portfolio Summary)")
-        appendLine("------------------------------------------")
-        appendLine("• মোট বিনিয়োগ (Invested):    ${BengaliFormatter.formatTaka(summary.totalInvested, useBengaliDigits)}")
-        appendLine("• বর্তমান বাজারমূল্য (Current): ${BengaliFormatter.formatTaka(summary.totalCurrentValue, useBengaliDigits)}")
-        val pnlPrefix = if (summary.unrealizedGainLoss >= 0.0) "+${BengaliFormatter.formatTaka(summary.unrealizedGainLoss, useBengaliDigits)}" else "-${BengaliFormatter.formatTaka(-summary.unrealizedGainLoss, useBengaliDigits)}"
-        appendLine("• নিট লাভ/লোকসান (P&L):      $pnlPrefix (${BengaliFormatter.formatPercent(summary.unrealizedGainLossPercent, useBengaliDigits)})")
-        appendLine("• মোট হোল্ডিং সংখ্যা:          ${BengaliFormatter.toBengaliDigits(holdings.size.toString())}টি কোম্পানি")
-        appendLine()
-        appendLine("■ শেয়ার হোল্ডিংস বিবরণী (Holdings Detail)")
-        appendLine("------------------------------------------")
-
-        holdings.forEachIndexed { index, holding ->
-            val num = BengaliFormatter.toBengaliDigits((index + 1).toString())
-            val invested = holding.quantity * holding.averagePrice
-            val currentVal = holding.quantity * holding.currentPrice
-            val gainLoss = currentVal - invested
-            val gainLossPct = if (invested > 0.0) (gainLoss / invested) * 100.0 else 0.0
-            val pnlSign = if (gainLoss >= 0.0) "+" else ""
-
-            appendLine("$num. ${holding.stockName} [${holding.exchange}]")
-            appendLine("   - শেয়ার সংখ্যা:  ${BengaliFormatter.toBengaliDigits(holding.quantity.toString())}টি")
-            appendLine("   - গড় ক্রয়দর:    ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}")
-            appendLine("   - বর্তমান দর:     ${BengaliFormatter.formatTaka(holding.currentPrice, useBengaliDigits)}")
-            appendLine("   - মোট বিনিয়োগ:  ${BengaliFormatter.formatTaka(invested, useBengaliDigits)}")
-            appendLine("   - বর্তমান মান:    ${BengaliFormatter.formatTaka(currentVal, useBengaliDigits)}")
-            appendLine("   - লাভ/লোকসান:    $pnlSign${BengaliFormatter.formatTaka(gainLoss, useBengaliDigits)} ($pnlSign${BengaliFormatter.formatPercent(gainLossPct, useBengaliDigits)})")
-            appendLine()
-        }
-
-        appendLine("==========================================")
-        appendLine("Finora — পার্সোনাল ফাইন্যান্স ও ইনভেস্টমেন্ট")
-        appendLine("১০০% অন-ডিভাইস নিরাপদ হিসাব")
-        appendLine("==========================================")
-    }
-
-    try {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        val clip = ClipData.newPlainText("Finora Portfolio Report", report)
-        clipboard?.setPrimaryClip(clip)
-
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, report)
-            putExtra(Intent.EXTRA_SUBJECT, "Finora পোর্টফোলিও রিপোর্ট - $dateStr")
-            type = "text/plain"
-        }
-        val shareIntent = Intent.createChooser(sendIntent, "পোর্টফোলিও রিপোর্ট শেয়ার করুন").apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(shareIntent)
-        Toast.makeText(context, "পোর্টফোলিও রিপোর্ট প্রস্তুত ও কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "রিপোর্ট শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
-    }
+    PdfReportGenerator.exportPortfolioPdf(
+        context = context,
+        holdings = holdings,
+        summary = summary,
+        useBengaliDigits = useBengaliDigits
+    )
 }

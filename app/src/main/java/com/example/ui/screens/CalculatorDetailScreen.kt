@@ -124,8 +124,7 @@ fun CalculatorDetailScreen(
                     numericMap[input.id] = 0.0
                 }
             } else {
-                val normalized = BengaliFormatter.normalizeToEnglishDigits(raw)
-                val parsed = normalized.toDoubleOrNull()
+                val parsed = BengaliFormatter.parseAmount(raw)
                 if (parsed == null) {
                     inputErrors[input.id] = "সঠিক সংখ্যা লিখুন (যেমন: ১২০ বা 120)"
                     hasError = true

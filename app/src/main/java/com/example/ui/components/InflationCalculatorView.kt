@@ -766,8 +766,7 @@ fun InflationCalculatorView(
                         value = amountInputText,
                         onValueChange = { input ->
                             amountInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toDoubleOrNull()?.let { currentAmount = it.coerceIn(500.0, 10000000.0) }
+                            BengaliFormatter.parseAmount(input)?.let { currentAmount = it.coerceIn(500.0, 10000000.0) }
                         },
                         leadingIcon = {
                             Text(
@@ -870,8 +869,7 @@ fun InflationCalculatorView(
                         value = inflationInputText,
                         onValueChange = { input ->
                             inflationInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toDoubleOrNull()?.let { inflationRate = it.coerceIn(1.0, 30.0) }
+                            BengaliFormatter.parseAmount(input)?.let { inflationRate = it.coerceIn(1.0, 30.0) }
                         },
                         trailingIcon = {
                             Text(
@@ -972,8 +970,7 @@ fun InflationCalculatorView(
                         value = yearsInputText,
                         onValueChange = { input ->
                             yearsInputText = input
-                            val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                            clean.toIntOrNull()?.let { tenureYears = it.coerceIn(1, 35) }
+                            BengaliFormatter.parseInt(input)?.let { tenureYears = it.coerceIn(1, 35) }
                         },
                         trailingIcon = {
                             Text(
@@ -1073,8 +1070,7 @@ fun InflationCalculatorView(
                             value = returnInputText,
                             onValueChange = { input ->
                                 returnInputText = input
-                                val clean = BengaliFormatter.normalizeToEnglishDigits(input)
-                                clean.toDoubleOrNull()?.let { investmentReturnRate = it.coerceIn(1.0, 35.0) }
+                                BengaliFormatter.parseAmount(input)?.let { investmentReturnRate = it.coerceIn(1.0, 35.0) }
                             },
                             trailingIcon = {
                                 Text(

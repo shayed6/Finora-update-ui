@@ -2,9 +2,13 @@ package com.example.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -274,8 +278,12 @@ fun FinoraApp(
                 AnimatedContent(
                     targetState = currentScreen,
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(durationMillis = 150)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = 150))
+                        (fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
+                                slideInHorizontally(animationSpec = tween(200, easing = FastOutSlowInEasing)) { (it * 0.05f).toInt() })
+                            .togetherWith(
+                                fadeOut(animationSpec = tween(150, easing = FastOutLinearInEasing)) +
+                                        slideOutHorizontally(animationSpec = tween(150, easing = FastOutLinearInEasing)) { -(it * 0.05f).toInt() }
+                            )
                     },
                     label = "ScreenTransition"
                 ) { screen ->

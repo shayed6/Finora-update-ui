@@ -82,4 +82,23 @@ class ExampleUnitTest {
     assertFalse(result?.isWarning ?: true)
     assertEquals("ভবিষ্যতে এই জিনিসের জন্য প্রয়োজন হবে", result?.primaryLabelBn)
   }
+
+  @Test
+  fun bengaliFormatter_parseAmount_handlesAllNumberFormats() {
+    assertEquals(50000.0, BengaliFormatter.parseAmount("50,000") ?: 0.0, 0.001)
+    assertEquals(50000.0, BengaliFormatter.parseAmount("৫০,০০০") ?: 0.0, 0.001)
+    assertEquals(50000.0, BengaliFormatter.parseAmount("৳ ৫০,০০০.০০") ?: 0.0, 0.001)
+    assertEquals(1234.56, BengaliFormatter.parseAmount("১২৩৪.৫৬") ?: 0.0, 0.001)
+    assertEquals(100000.0, BengaliFormatter.parseAmount("1,00,000") ?: 0.0, 0.001)
+    assertNull(BengaliFormatter.parseAmount(""))
+    assertNull(BengaliFormatter.parseAmount("abc"))
+  }
+
+  @Test
+  fun bengaliFormatter_parseInt_handlesBengaliAndEnglishDigits() {
+    assertEquals(15, BengaliFormatter.parseInt("15"))
+    assertEquals(15, BengaliFormatter.parseInt("১৫"))
+    assertEquals(100, BengaliFormatter.parseInt("১,০০"))
+    assertNull(BengaliFormatter.parseInt(""))
+  }
 }

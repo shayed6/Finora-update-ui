@@ -109,8 +109,8 @@ fun RetirementPlannerView(
 
     var selectedTab by remember { mutableStateOf(RetirementViewTab.PLANNER) }
 
-    val monthlyExpense = monthlyExpenseText.toDoubleOrNull() ?: 0.0
-    val existingSavings = existingSavingsText.toDoubleOrNull() ?: 0.0
+    val monthlyExpense = BengaliFormatter.parseAmount(monthlyExpenseText) ?: 0.0
+    val existingSavings = BengaliFormatter.parseAmount(existingSavingsText) ?: 0.0
 
     // Computations
     val yearsToRetire = remember(currentAge, retirementAge) {
@@ -364,7 +364,7 @@ fun RetirementPlannerView(
                             )
                             OutlinedTextField(
                                 value = monthlyExpenseText,
-                                onValueChange = { monthlyExpenseText = it.filter { char -> char.isDigit() } },
+                                onValueChange = { monthlyExpenseText = it },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .testTag("ret_monthly_expense_input"),
@@ -385,7 +385,7 @@ fun RetirementPlannerView(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 listOf(25000, 35000, 50000, 75000, 100000).forEach { amount ->
-                                    val isSelected = monthlyExpenseText == amount.toString()
+                                    val isSelected = (BengaliFormatter.parseAmount(monthlyExpenseText) ?: 0.0) == amount.toDouble()
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = if (isSelected) GrowthGreenLight else MaterialTheme.colorScheme.surfaceVariant,
@@ -394,7 +394,7 @@ fun RetirementPlannerView(
                                             if (isSelected) GrowthGreen else Color.Transparent
                                         ),
                                         modifier = Modifier.clickable {
-                                            monthlyExpenseText = amount.toString()
+                                            monthlyExpenseText = if (useBengaliDigits) BengaliFormatter.toBengaliDigits(amount.toString()) else amount.toString()
                                         }
                                     ) {
                                         Text(
@@ -419,7 +419,7 @@ fun RetirementPlannerView(
                             )
                             OutlinedTextField(
                                 value = existingSavingsText,
-                                onValueChange = { existingSavingsText = it.filter { char -> char.isDigit() } },
+                                onValueChange = { existingSavingsText = it },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .testTag("ret_existing_savings_input"),
