@@ -4,33 +4,32 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
+import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
 import com.example.data.repository.PortfolioRepository
-import com.example.util.NetworkUtils
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class PortfolioSummary(
     val totalInvested: Double = 0.0,
-    val totalCurrentValue: Double = 0.0,
-    val unrealizedGainLoss: Double = 0.0,
-    val unrealizedGainLossPercent: Double = 0.0,
+    val totalDividend: Double = 0.0,
     val holdingsCount: Int = 0
+)
+
+data class HoldingWithDividends(
+    val holding: HoldingEntity,
+    val totalDividend: Double = 0.0,
+    val returnPerShare: Double = 0.0,
+    val dividendCount: Int = 0
 )
 
 class PortfolioViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: PortfolioRepository
-    private val context = application.applicationContext
 
     init {
         val db = AppDatabase.getDatabase(application)
@@ -44,79 +43,51 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             initialValue = emptyList()
         )
 
-    val summary: StateFlow<PortfolioSummary> = holdings.map { list ->
-        val invested = list.sumOf { it.quantity * it.averagePrice }
-        val current = list.sumOf { it.quantity * it.currentPrice }
-        val gainLoss = current - invested
-        val percent = if (invested > 0.0) (gainLoss / invested) * 100.0 else 0.0
+    val allDividends: StateFlow<List<DividendEntity>> = repository.allDividends
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val holdingsWithDividends: StateFlow<List<HoldingWithDividends>> = combine(
+        repository.allHoldings,
+        repository.allDividends
+    ) { holdingsList, dividendsList ->
+        val dividendByHolding = dividendsList.groupBy { it.holdingId }
+        holdingsList.map { holding ->
+            val divs = dividendByHolding[holding.id].orEmpty()
+            val totalDiv = divs.sumOf { it.amount }
+            val returnPerShare = if (holding.quantity > 0) totalDiv / holding.quantity else 0.0
+            HoldingWithDividends(
+                holding = holding,
+                totalDividend = totalDiv,
+                returnPerShare = returnPerShare,
+                dividendCount = divs.size
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val summary: StateFlow<PortfolioSummary> = combine(
+        repository.allHoldings,
+        repository.allDividends
+    ) { holdingsList, dividendsList ->
+        val invested = holdingsList.sumOf { it.quantity * it.averagePrice }
+        val totalDiv = dividendsList.sumOf { it.amount }
         PortfolioSummary(
             totalInvested = invested,
-            totalCurrentValue = current,
-            unrealizedGainLoss = gainLoss,
-            unrealizedGainLossPercent = percent,
-            holdingsCount = list.size
+            totalDividend = totalDiv,
+            holdingsCount = holdingsList.size
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PortfolioSummary()
     )
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private val _lastRefreshTimestamp = MutableStateFlow<Long?>(null)
-    val lastRefreshTimestamp: StateFlow<Long?> = _lastRefreshTimestamp.asStateFlow()
-
-    private var autoRefreshJob: Job? = null
-
-    /**
-     * Start the 50-60 second periodic auto-refresh timer.
-     * Only runs while screen/widget is visible and network is active.
-     */
-    fun startAutoRefresh() {
-        if (autoRefreshJob != null && autoRefreshJob?.isActive == true) return
-
-        autoRefreshJob = viewModelScope.launch {
-            while (isActive) {
-                delay(55000L) // 55 seconds (within 50-60s requirement)
-                if (NetworkUtils.isInternetAvailable(context)) {
-                    refreshPricesInternal()
-                }
-            }
-        }
-    }
-
-    /**
-     * Stop auto-refresh timer when navigating away.
-     */
-    fun stopAutoRefresh() {
-        autoRefreshJob?.cancel()
-        autoRefreshJob = null
-    }
-
-    /**
-     * Manual refresh (pull-to-refresh or refresh button).
-     */
-    fun refreshPricesManually() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            refreshPricesInternal()
-            delay(400) // visual feedback
-            _isRefreshing.value = false
-        }
-    }
-
-    private suspend fun refreshPricesInternal() {
-        val currentList = holdings.value
-        for (holding in currentList) {
-            val remotePrice = repository.fetchCurrentPrice(holding.exchange, holding.stockName)
-            if (remotePrice != null && remotePrice > 0) {
-                repository.updateHoldingCurrentPrice(holding.id, remotePrice)
-            }
-        }
-        _lastRefreshTimestamp.value = System.currentTimeMillis()
-    }
 
     fun addBuyTransaction(
         exchange: String,
@@ -136,9 +107,9 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun updateHoldingCurrentPrice(holdingId: Long, newPrice: Double) {
+    fun addDividend(holdingId: Long, amount: Double, timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
-            repository.updateHoldingCurrentPrice(holdingId, newPrice)
+            repository.addDividend(holdingId, amount, timestamp)
         }
     }
 
@@ -152,8 +123,14 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         return repository.getTransactionsList(holdingId)
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        stopAutoRefresh()
+    suspend fun getDividendHistory(holdingId: Long): List<DividendEntity> {
+        return repository.getDividendsList(holdingId)
+    }
+
+    fun deleteDividend(dividendId: Long) {
+        viewModelScope.launch {
+            repository.deleteDividend(dividendId)
+        }
     }
 }
+

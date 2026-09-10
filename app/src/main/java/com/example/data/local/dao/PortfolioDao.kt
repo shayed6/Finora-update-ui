@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
@@ -33,9 +34,6 @@ interface PortfolioDao {
     @Query("DELETE FROM holdings WHERE id = :id")
     suspend fun deleteHoldingById(id: Long)
 
-    @Query("UPDATE holdings SET currentPrice = :newPrice, updatedAt = :updatedAt WHERE id = :id")
-    suspend fun updateCurrentPrice(id: Long, newPrice: Double, updatedAt: Long = System.currentTimeMillis())
-
     @Query("SELECT * FROM transactions WHERE holdingId = :holdingId ORDER BY dateTimestamp DESC")
     fun getTransactionsForHolding(holdingId: Long): Flow<List<TransactionEntity>>
 
@@ -47,4 +45,23 @@ interface PortfolioDao {
 
     @Query("DELETE FROM transactions WHERE holdingId = :holdingId")
     suspend fun deleteTransactionsForHolding(holdingId: Long)
+
+    // Dividends
+    @Query("SELECT * FROM dividends ORDER BY dateTimestamp DESC")
+    fun getAllDividends(): Flow<List<DividendEntity>>
+
+    @Query("SELECT * FROM dividends WHERE holdingId = :holdingId ORDER BY dateTimestamp DESC")
+    fun getDividendsForHolding(holdingId: Long): Flow<List<DividendEntity>>
+
+    @Query("SELECT * FROM dividends WHERE holdingId = :holdingId ORDER BY dateTimestamp DESC")
+    suspend fun getDividendsForHoldingList(holdingId: Long): List<DividendEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDividend(dividend: DividendEntity): Long
+
+    @Query("DELETE FROM dividends WHERE holdingId = :holdingId")
+    suspend fun deleteDividendsForHolding(holdingId: Long)
+
+    @Query("DELETE FROM dividends WHERE id = :id")
+    suspend fun deleteDividendById(id: Long)
 }

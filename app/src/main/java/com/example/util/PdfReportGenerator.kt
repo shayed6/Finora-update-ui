@@ -18,6 +18,7 @@ import androidx.core.content.FileProvider
 import com.example.R
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.SavingsGoalEntity
+import com.example.ui.screens.portfolio.HoldingWithDividends
 import com.example.ui.screens.portfolio.PortfolioSummary
 import java.io.File
 import java.io.FileOutputStream
@@ -173,7 +174,8 @@ object PdfReportGenerator {
         context: Context,
         holdings: List<HoldingEntity>,
         summary: PortfolioSummary,
-        useBengaliDigits: Boolean = true
+        useBengaliDigits: Boolean = true,
+        holdingsWithDividends: List<com.example.ui.screens.portfolio.HoldingWithDividends> = emptyList()
     ) {
         if (holdings.isEmpty()) {
             Toast.makeText(context, "কোনো শেয়ার বিনিয়োগ পাওয়া যায়নি। প্রথমে শেয়ার যোগ করুন।", Toast.LENGTH_SHORT).show()
@@ -182,6 +184,7 @@ object PdfReportGenerator {
 
         try {
             val pdfDocument = PdfDocument()
+            val divMap = holdingsWithDividends.associateBy { it.holding.id }
 
             // Available height for content
             val availableHeight = PAGE_HEIGHT - MARGIN * 2 - 200f
@@ -214,7 +217,7 @@ object PdfReportGenerator {
                 drawFinoraWatermark(canvas, logoBitmap)
 
                 // 3. Draw Header
-                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages, title = "শেয়ার পোর্টফোলিও রিপোর্ট", subTitle = "DSE ও CSE ইনভেস্টমেন্ট ও রিয়েল-টাইম পোর্টফোলিও বিবরণী")
+                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages, title = "শেয়ার পোর্টফোলিও ও ডিভিডেন্ড রিপোর্ট", subTitle = "DSE ও CSE ইনভেস্টমেন্ট ও ডিভিডেন্ড আয় বিবরণী")
 
                 // 4. Draw Portfolio Summary Overview only on page 1
                 if (pageIndex == 0) {
@@ -234,7 +237,7 @@ object PdfReportGenerator {
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }
-                canvas.drawText("■ শেয়ার হোল্ডিংস ও লাভ-ক্ষতির বিস্তারিত বিবরণ (Holdings List)", MARGIN, currentY, subheaderPaint)
+                canvas.drawText("■ শেয়ার হোল্ডিংস ও ডিভিডেন্ড বিবরণ (Holdings & Dividends)", MARGIN, currentY, subheaderPaint)
                 currentY += 14f
 
                 // Draw holdings for this page
@@ -250,7 +253,8 @@ object PdfReportGenerator {
                         startY = currentY,
                         holding = holding,
                         index = holdingIndex,
-                        useBengaliDigits = useBengaliDigits
+                        useBengaliDigits = useBengaliDigits,
+                        holdingWithDiv = divMap[holding.id]
                     )
                 }
 
@@ -477,55 +481,53 @@ object PdfReportGenerator {
             accentColor = Color.parseColor("#2563EB")
         )
 
-        // Card 2: Current Value
+        // Card 2: Total Dividend
         drawMetricCard(
             canvas = canvas,
             x = MARGIN + cardWidth + 12f,
             y = y,
             width = cardWidth,
             height = cardHeight,
-            label = "বর্তমান বাজারমূল্য",
-            value = BengaliFormatter.formatTaka(summary.totalCurrentValue, useBengaliDigits),
-            accentColor = Color.parseColor("#0F172A")
+            label = "ডিভিডেন্ড প্রাপ্ত",
+            value = BengaliFormatter.formatTaka(summary.totalDividend, useBengaliDigits),
+            accentColor = Color.parseColor("#16A34A")
         )
 
-        // Card 3: Unrealized Gain/Loss
-        val isProfit = summary.unrealizedGainLoss >= 0.0
-        val pnlPrefix = if (isProfit) "+" else ""
-        val pnlColor = if (isProfit) Color.parseColor("#16A34A") else Color.parseColor("#DC2626")
+        // Card 3: Total Holdings Count
         drawMetricCard(
             canvas = canvas,
             x = MARGIN + (cardWidth + 12f) * 2f,
             y = y,
             width = cardWidth,
             height = cardHeight,
-            label = "নিট লাভ / ক্ষতি",
-            value = "$pnlPrefix${BengaliFormatter.formatTaka(summary.unrealizedGainLoss, useBengaliDigits)}",
-            accentColor = pnlColor
+            label = "মোট স্টক সংখ্যা",
+            value = "${BengaliFormatter.toBengaliDigits(totalHoldings.toString())}টি",
+            accentColor = Color.parseColor("#8B5CF6")
         )
 
         y += cardHeight + 10f
 
-        // Return banner row
+        // Dividend banner row
         val barRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 26f)
         val barBgPaint = Paint().apply {
-            color = if (isProfit) Color.parseColor("#F0FDF4") else Color.parseColor("#FEF2F2")
+            color = Color.parseColor("#F0FDF4")
             style = Paint.Style.FILL
             isAntiAlias = true
         }
         canvas.drawRoundRect(barRect, 6f, 6f, barBgPaint)
 
         val statTextPaint = Paint().apply {
-            color = if (isProfit) Color.parseColor("#15803D") else Color.parseColor("#B91C1C")
+            color = Color.parseColor("#15803D")
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
         canvas.drawText("মোট কোম্পানি: ${BengaliFormatter.toBengaliDigits(totalHoldings.toString())}টি", MARGIN + 12f, y + 17f, statTextPaint)
 
-        val returnText = "পোর্টফোলিও রিটার্ন: $pnlPrefix${BengaliFormatter.formatPercent(summary.unrealizedGainLossPercent, useBengaliDigits)}"
+        val divYieldPct = if (summary.totalInvested > 0.0) (summary.totalDividend / summary.totalInvested) * 100.0 else 0.0
+        val returnText = "ডিভিডেন্ড রিটার্ন: ${BengaliFormatter.formatPercent(divYieldPct, useBengaliDigits)}"
         val returnPaint = Paint().apply {
-            color = if (isProfit) Color.parseColor("#15803D") else Color.parseColor("#B91C1C")
+            color = Color.parseColor("#15803D")
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.RIGHT
@@ -544,7 +546,8 @@ object PdfReportGenerator {
         startY: Float,
         holding: HoldingEntity,
         index: Int,
-        useBengaliDigits: Boolean
+        useBengaliDigits: Boolean,
+        holdingWithDiv: HoldingWithDividends? = null
     ): Float {
         val rowHeight = 64f
         val cardRect = RectF(MARGIN, startY, PAGE_WIDTH - MARGIN, startY + rowHeight)
@@ -601,27 +604,23 @@ object PdfReportGenerator {
         }
         canvas.drawText("শেয়ার: ${BengaliFormatter.toBengaliDigits(holding.quantity.toString())}টি   |   গড় ক্রয়দর: ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}", badgeX + badgeSize + 8f, startY + 36f, subPaint)
 
-        // Current Price & Total Current Value
         val invested = holding.quantity * holding.averagePrice
-        val currentVal = holding.quantity * holding.currentPrice
-        val gainLoss = currentVal - invested
-        val gainLossPct = if (invested > 0.0) (gainLoss / invested) * 100.0 else 0.0
-        val isProfit = gainLoss >= 0.0
-        val pnlPrefix = if (isProfit) "+" else ""
+        val totalDiv = holdingWithDiv?.totalDividend ?: 0.0
+        val returnPerShare = holdingWithDiv?.returnPerShare ?: 0.0
 
         val currentValPaint = Paint().apply {
             color = Color.parseColor("#334155")
             textSize = 9.5f
             isAntiAlias = true
         }
-        canvas.drawText("বর্তমান দর: ${BengaliFormatter.formatTaka(holding.currentPrice, useBengaliDigits)}   |   বর্তমান মান: ${BengaliFormatter.formatTaka(currentVal, useBengaliDigits)}", MARGIN + 10f, startY + 54f, currentValPaint)
+        canvas.drawText("মোট বিনিয়োগ: ${BengaliFormatter.formatTaka(invested, useBengaliDigits)}   |   প্রতি শেয়ারে রিটার্ন: ${BengaliFormatter.formatTaka(returnPerShare, useBengaliDigits)}", MARGIN + 10f, startY + 54f, currentValPaint)
 
-        // Profit/Loss Badge on right
-        val pnlTextColor = if (isProfit) Color.parseColor("#15803D") else Color.parseColor("#DC2626")
-        val pnlText = "$pnlPrefix${BengaliFormatter.formatTaka(gainLoss, useBengaliDigits)} ($pnlPrefix${BengaliFormatter.formatPercent(gainLossPct, useBengaliDigits)})"
+        // Total Dividend badge on right
+        val pnlTextColor = Color.parseColor("#15803D")
+        val pnlText = "ডিভিডেন্ড: ${BengaliFormatter.formatTaka(totalDiv, useBengaliDigits)}"
         val pnlTextPaint = Paint().apply {
             color = pnlTextColor
-            textSize = 9.5f
+            textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
@@ -634,7 +633,7 @@ object PdfReportGenerator {
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
-        canvas.drawText("বিনিয়োগ: ${BengaliFormatter.formatTaka(invested, useBengaliDigits)}", PAGE_WIDTH - MARGIN - 10f, startY + 40f, investPaint)
+        canvas.drawText("${BengaliFormatter.toBengaliDigits((holdingWithDiv?.dividendCount ?: 0).toString())} বার প্রাপ্ত", PAGE_WIDTH - MARGIN - 10f, startY + 40f, investPaint)
 
         return startY + rowHeight + 8f
     }

@@ -1,20 +1,27 @@
 package com.example.data.repository
 
 import com.example.data.local.dao.PortfolioDao
+import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
-import kotlin.math.roundToInt
 
 class PortfolioRepository(private val portfolioDao: PortfolioDao) {
 
     val allHoldings: Flow<List<HoldingEntity>> = portfolioDao.getAllHoldings()
+    val allDividends: Flow<List<DividendEntity>> = portfolioDao.getAllDividends()
 
     fun getTransactions(holdingId: Long): Flow<List<TransactionEntity>> =
         portfolioDao.getTransactionsForHolding(holdingId)
 
     suspend fun getTransactionsList(holdingId: Long): List<TransactionEntity> =
         portfolioDao.getTransactionsForHoldingList(holdingId)
+
+    fun getDividends(holdingId: Long): Flow<List<DividendEntity>> =
+        portfolioDao.getDividendsForHolding(holdingId)
+
+    suspend fun getDividendsList(holdingId: Long): List<DividendEntity> =
+        portfolioDao.getDividendsForHoldingList(holdingId)
 
     /**
      * Records a buy transaction and applies the auto-averaging logic:
@@ -51,8 +58,7 @@ class PortfolioRepository(private val portfolioDao: PortfolioDao) {
             val updatedHolding = existingHolding.copy(
                 quantity = newTotalQty,
                 averagePrice = newAvgPrice,
-                // Keep existing manually set currentPrice or set to new average if current was 0
-                currentPrice = if (existingHolding.currentPrice > 0) existingHolding.currentPrice else newAvgPrice,
+                currentPrice = newAvgPrice,
                 updatedAt = System.currentTimeMillis()
             )
             portfolioDao.updateHolding(updatedHolding)
@@ -63,7 +69,7 @@ class PortfolioRepository(private val portfolioDao: PortfolioDao) {
                 stockName = trimmedStock,
                 quantity = quantity,
                 averagePrice = effectivePrice,
-                currentPrice = effectivePrice, // Defaults to average buying price until updated
+                currentPrice = effectivePrice,
                 updatedAt = System.currentTimeMillis()
             )
             targetHoldingId = portfolioDao.insertHolding(newHolding)
@@ -84,31 +90,32 @@ class PortfolioRepository(private val portfolioDao: PortfolioDao) {
         portfolioDao.insertTransaction(transaction)
     }
 
-    suspend fun updateHoldingCurrentPrice(holdingId: Long, newCurrentPrice: Double) {
-        portfolioDao.updateCurrentPrice(holdingId, newCurrentPrice)
+    /**
+     * Adds a dividend entry to a holding.
+     */
+    suspend fun addDividend(holdingId: Long, amount: Double, timestamp: Long = System.currentTimeMillis()) {
+        val dividend = DividendEntity(
+            holdingId = holdingId,
+            amount = amount,
+            dateTimestamp = timestamp
+        )
+        portfolioDao.insertDividend(dividend)
     }
 
     suspend fun deleteHolding(holding: HoldingEntity) {
-        // Transactions will cascade delete or we explicitly delete
         portfolioDao.deleteTransactionsForHolding(holding.id)
+        portfolioDao.deleteDividendsForHolding(holding.id)
         portfolioDao.deleteHolding(holding)
     }
 
     suspend fun deleteHoldingById(holdingId: Long) {
         portfolioDao.deleteTransactionsForHolding(holdingId)
+        portfolioDao.deleteDividendsForHolding(holdingId)
         portfolioDao.deleteHoldingById(holdingId)
     }
 
-    /**
-     * Auto-Refresh / Price Fetcher placeholder:
-     * DSE/CSE currently does not have an official open public API.
-     * This method is ready to be plugged into a live quote scraper or API.
-     * If an external price is available, it returns the Double; otherwise null.
-     */
-    suspend fun fetchCurrentPrice(exchange: String, stockName: String): Double? {
-        // TODO: Wire up to a live external API or scraping service when available.
-        // Currently returns null to preserve user's manually entered or initial prices.
-        return null
+    suspend fun deleteDividend(dividendId: Long) {
+        portfolioDao.deleteDividendById(dividendId)
     }
 
     companion object {
@@ -121,3 +128,4 @@ class PortfolioRepository(private val portfolioDao: PortfolioDao) {
         )
     }
 }
+

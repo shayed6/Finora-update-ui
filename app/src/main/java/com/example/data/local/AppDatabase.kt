@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.data.local.dao.PortfolioDao
 import com.example.data.local.dao.SavingsGoalDao
+import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.SavingsGoalEntity
 import com.example.data.local.entity.TransactionEntity
@@ -14,9 +15,10 @@ import com.example.data.local.entity.TransactionEntity
     entities = [
         HoldingEntity::class,
         TransactionEntity::class,
+        DividendEntity::class,
         SavingsGoalEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

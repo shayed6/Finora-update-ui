@@ -180,44 +180,39 @@ fun CurrentInvestmentWidget(
                 ) {
                     Column {
                         Text(
-                            text = "বর্তমান বাজার মূল্য (Total Value)",
+                            text = "মোট বিনিয়োগ (Total Invested)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = BengaliFormatter.formatTaka(summary.totalCurrentValue, useBengaliDigits),
+                            text = BengaliFormatter.formatTaka(summary.totalInvested, useBengaliDigits),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
-                    val isProfit = summary.unrealizedGainLoss >= 0
-                    val gainLossColor = if (isProfit) GrowthGreen else AlertRed
-
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "লাভ / ক্ষতি (Gain/Loss)",
+                            text = "ডিভিডেন্ড প্রাপ্ত (Total Dividend)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (isProfit) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                                contentDescription = null,
-                                tint = gainLossColor,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            val prefix = if (isProfit) "+" else ""
-                            Text(
-                                text = "$prefix${BengaliFormatter.formatTaka(summary.unrealizedGainLoss, useBengaliDigits)} (${prefix}${BengaliFormatter.formatPercent(summary.unrealizedGainLossPercent, useBengaliDigits)})",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = gainLossColor
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = GrowthGreen.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = BengaliFormatter.formatTaka(summary.totalDividend, useBengaliDigits),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = GrowthGreen,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
