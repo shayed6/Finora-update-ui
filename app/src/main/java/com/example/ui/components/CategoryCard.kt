@@ -46,8 +46,6 @@ import androidx.compose.ui.unit.sp
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenDark
 import com.example.ui.theme.GrowthGreenLight
@@ -84,8 +82,8 @@ fun CategoryCard(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
-            width = 1.5.dp,
-            color = if (isPressed) PrimaryBlue else BorderSubtle
+            width = 1.dp,
+            color = if (isPressed) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -96,7 +94,7 @@ fun CategoryCard(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             val isGrowthCategory = category == CalculatorCategory.SIP_INVESTMENT || category == CalculatorCategory.STOCK_AVG_PL
-            val iconTint = if (isGrowthCategory) GrowthGreenDark else FinoraNavy
+            val iconTint = if (isGrowthCategory) GrowthGreenDark else PrimaryBlue
             val iconBadgeBg = if (isGrowthCategory) GrowthGreenLight else PrimaryBlue.copy(alpha = 0.10f)
 
             // Icon Badge in soft rounded square (growth = green tint, analysis/banking = soft blue tint)
@@ -144,7 +142,7 @@ fun CategoryCard(
                 text = category.titleBn,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = FinoraNavy,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 minLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -197,8 +195,8 @@ fun CalculatorListItem(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
-            width = 1.5.dp,
-            color = if (isPressed) PrimaryBlue else BorderSubtle
+            width = 1.dp,
+            color = if (isPressed) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -234,7 +232,7 @@ fun CalculatorListItem(
                     text = calculator.titleBn,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = FinoraNavy
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

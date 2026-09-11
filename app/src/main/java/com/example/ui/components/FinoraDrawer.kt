@@ -28,7 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -78,6 +80,8 @@ enum class DrawerDestination {
     SETTINGS,
     ABOUT,
     PRIVACY_POLICY,
+    CONTACT_US,
+    ORDER_APP,
     LEARN_STOCK
 }
 
@@ -441,6 +445,46 @@ fun FinoraDrawerContent(
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            // 7. Contact Us (যোগাযোগ করুন)
+            NavigationDrawerItem(
+                icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Contact Icon") },
+                label = {
+                    Text(
+                        text = "যোগাযোগ করুন",
+                        fontWeight = if (currentDestination == DrawerDestination.CONTACT_US) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.CONTACT_US,
+                onClick = {
+                    onNavigate(DrawerDestination.CONTACT_US)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_contact_us")
+            )
+
+            // 8. Place Order for Your App (আপনার অ্যাপ অর্ডার করুন)
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.AppShortcut, contentDescription = "Order App Icon") },
+                label = {
+                    Text(
+                        text = "আপনার অ্যাপ অর্ডার করুন",
+                        fontWeight = if (currentDestination == DrawerDestination.ORDER_APP) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.ORDER_APP,
+                onClick = {
+                    onNavigate(DrawerDestination.ORDER_APP)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_order_app")
             )
 
             // Footer info

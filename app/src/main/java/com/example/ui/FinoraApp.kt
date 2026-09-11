@@ -47,8 +47,10 @@ import com.example.ui.components.FinoraTopBar
 import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.CalculatorDetailScreen
 import com.example.ui.screens.CategoryDetailScreen
+import com.example.ui.screens.ContactUsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnStockScreen
+import com.example.ui.screens.OrderAppScreen
 import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.goals.SavingsGoalsScreen
@@ -71,6 +73,8 @@ sealed class Screen {
     data object Settings : Screen()
     data object About : Screen()
     data object PrivacyPolicy : Screen()
+    data object ContactUs : Screen()
+    data object OrderApp : Screen()
 }
 
 @Composable
@@ -130,6 +134,8 @@ fun FinoraApp(
             DrawerDestination.SETTINGS -> navigateTo(Screen.Settings)
             DrawerDestination.ABOUT -> navigateTo(Screen.About)
             DrawerDestination.PRIVACY_POLICY -> navigateTo(Screen.PrivacyPolicy)
+            DrawerDestination.CONTACT_US -> navigateTo(Screen.ContactUs)
+            DrawerDestination.ORDER_APP -> navigateTo(Screen.OrderApp)
         }
     }
 
@@ -151,6 +157,8 @@ fun FinoraApp(
         is Screen.Settings -> DrawerDestination.SETTINGS
         is Screen.About -> DrawerDestination.ABOUT
         is Screen.PrivacyPolicy -> DrawerDestination.PRIVACY_POLICY
+        is Screen.ContactUs -> DrawerDestination.CONTACT_US
+        is Screen.OrderApp -> DrawerDestination.ORDER_APP
     }
 
     ModalNavigationDrawer(
@@ -227,6 +235,18 @@ fun FinoraApp(
             is Screen.PrivacyPolicy -> {
                 title = "গোপনীয়তা নীতি"
                 subtitle = "১০০% অন-ডিভাইস হিসাব"
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.ContactUs -> {
+                title = "যোগাযোগ করুন"
+                subtitle = "Shayed Afride • GZ Holdings LTD"
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.OrderApp -> {
+                title = "আপনার অ্যাপ অর্ডার করুন"
+                subtitle = "কাস্টম অ্যাপ তৈরি ও ডেভেলপমেন্ট"
                 canNavigateBack = true
                 showAdMobBanner = true
             }
@@ -350,6 +370,12 @@ fun FinoraApp(
                         }
                         is Screen.PrivacyPolicy -> {
                             PrivacyPolicyScreen()
+                        }
+                        is Screen.ContactUs -> {
+                            ContactUsScreen()
+                        }
+                        is Screen.OrderApp -> {
+                            OrderAppScreen()
                         }
                     }
                 }

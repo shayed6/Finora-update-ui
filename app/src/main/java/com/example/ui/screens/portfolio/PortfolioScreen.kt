@@ -9,6 +9,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,7 +64,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -1072,13 +1073,14 @@ private fun TransactionAndDividendHistoryDialog(
                             )
                         }
                     } else {
-                        LazyColumn(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(260.dp),
+                                .height(260.dp)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(txList) { tx ->
+                            txList.forEach { tx ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1146,13 +1148,14 @@ private fun TransactionAndDividendHistoryDialog(
                             )
                         }
                     } else {
-                        LazyColumn(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(260.dp),
+                                .height(260.dp)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(divList) { div ->
+                            divList.forEach { div ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1166,7 +1169,7 @@ private fun TransactionAndDividendHistoryDialog(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = BengaliFormatter.formatTaka(div.amount, useBengaliDigits),
                                                 fontWeight = FontWeight.Bold,

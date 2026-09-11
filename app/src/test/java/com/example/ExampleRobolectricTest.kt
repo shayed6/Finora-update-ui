@@ -123,5 +123,12 @@ class ExampleRobolectricTest {
     val result = emiCalc!!.calculate(inputs, true)
     assertEquals(true, result.isWarning)
   }
+
+  @Test
+  fun `drawer destination contains contact us and order app`() {
+    val destinations = com.example.ui.components.DrawerDestination.values()
+    assertTrue(destinations.contains(com.example.ui.components.DrawerDestination.CONTACT_US))
+    assertTrue(destinations.contains(com.example.ui.components.DrawerDestination.ORDER_APP))
+  }
 }
 

@@ -37,8 +37,6 @@ import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
 import com.example.ui.components.CalculatorListItem
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreenDark
 import com.example.ui.theme.GrowthGreenLight
 import com.example.ui.theme.PrimaryBlue
@@ -67,7 +65,7 @@ fun CategoryDetailScreen(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            border = BorderStroke(1.5.dp, BorderSubtle),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
@@ -104,7 +102,7 @@ fun CategoryDetailScreen(
                         text = category.titleBn,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = FinoraNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = category.descriptionBn,

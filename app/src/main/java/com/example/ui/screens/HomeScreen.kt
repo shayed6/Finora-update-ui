@@ -63,8 +63,6 @@ import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.CategoryCard
 import com.example.ui.components.CurrentInvestmentWidget
 import com.example.ui.screens.portfolio.PortfolioViewModel
-import com.example.ui.theme.BorderSubtle
-import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenDark
 import com.example.ui.theme.GrowthGreenLight
@@ -461,7 +459,7 @@ private fun FavoriteCalculatorCard(
                 text = calculator.titleBn,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = FinoraNavy,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 lineHeight = 16.sp
