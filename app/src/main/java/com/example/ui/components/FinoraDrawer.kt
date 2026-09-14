@@ -319,32 +319,6 @@ fun FinoraDrawerContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Quick Dark Mode Toggle
-            NavigationDrawerItem(
-                icon = {
-                    Icon(
-                        imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                        contentDescription = "Theme Icon",
-                        tint = if (isDarkTheme) Color(0xFFF59E0B) else PrimaryBlue
-                    )
-                },
-                label = {
-                    Text(
-                        text = if (isDarkTheme) "লাইট মোড চালু করুন" else "ডার্ক মোড চালু করুন",
-                        fontWeight = FontWeight.Normal
-                    )
-                },
-                selected = false,
-                onClick = {
-                    onToggleDarkMode?.invoke()
-                },
-                colors = drawerItemColors,
-                modifier = Modifier
-                    .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_dark_mode")
-            )
 
             // 3. Settings
             NavigationDrawerItem(
@@ -499,7 +473,7 @@ fun FinoraDrawerContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "১০০% অফলাইন এবং অন-ডিভাইস হিসাব",
+                    text = "সব হিসাব আপনার ডিভাইসে হয় — কোনো আর্থিক তথ্য সংরক্ষিত বা প্রেরিত হয় না",
                     style = MaterialTheme.typography.labelSmall,
                     color = GrowthGreen,
                     fontWeight = FontWeight.Medium
