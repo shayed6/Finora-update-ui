@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.example.ads.AdManager
 import com.example.data.FavoritesManager
 import com.example.data.preferences.AppThemeMode
 import com.example.data.preferences.UserPreferencesRepository
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FavoritesManager.init(this)
+        AdManager.initialize(this)
         enableEdgeToEdge()
         setContent {
             val userPrefs = remember { UserPreferencesRepository.getInstance(applicationContext) }

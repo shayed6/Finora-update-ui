@@ -36,7 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "finora_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance
                 instance

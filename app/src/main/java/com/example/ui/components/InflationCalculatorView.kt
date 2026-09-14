@@ -22,13 +22,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -278,7 +278,7 @@ fun InflationCalculatorView(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = Icons.Default.TrendingUp,
+                                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                             contentDescription = null,
                                             tint = accentOrange,
                                             modifier = Modifier.size(16.dp)
@@ -429,7 +429,7 @@ fun InflationCalculatorView(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = Icons.Default.TrendingDown,
+                                            imageVector = Icons.AutoMirrored.Filled.TrendingDown,
                                             contentDescription = null,
                                             tint = warningColor,
                                             modifier = Modifier.size(16.dp)
@@ -581,7 +581,7 @@ fun InflationCalculatorView(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                                            imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                             contentDescription = null,
                                             tint = if (isPositive) GrowthGreen else warningColor,
                                             modifier = Modifier.size(16.dp)

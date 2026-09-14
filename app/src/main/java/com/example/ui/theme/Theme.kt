@@ -62,6 +62,7 @@ fun FinoraTheme(
         SideEffect {
             val window = (view.context as Activity).window
             // Use FinoraNavy for a seamless top bar in light mode, BackgroundDark in dark mode
+            @Suppress("DEPRECATION")
             window.statusBarColor = if (darkTheme) BackgroundDark.toArgb() else FinoraNavy.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }

@@ -22,12 +22,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -234,7 +234,7 @@ fun SipCalculatorView(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = Icons.Default.TrendingUp,
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = null,
                                     tint = GrowthGreen,
                                     modifier = Modifier.size(18.dp)

@@ -1,12 +1,18 @@
 package com.example.util
 
+import com.example.ads.AdConfig
+
 object AppConfig {
     /**
-     * AdMob Banner Ad Unit ID
-     * TODO: Replace with your actual AdMob Banner Unit ID from your Google AdMob account.
-     * The default below is the official Google test banner ID.
+     * AdMob Ad Unit IDs
+     * Centralized in com.example.ads.AdConfig
      */
-    const val ADMOB_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+    val ADMOB_BANNER_AD_UNIT_ID: String
+        get() = AdConfig.BANNER_AD_UNIT_ID
+    val ADMOB_INTERSTITIAL_AD_UNIT_ID: String
+        get() = AdConfig.INTERSTITIAL_AD_UNIT_ID
+    val ADMOB_REWARDED_AD_UNIT_ID: String
+        get() = AdConfig.REWARDED_AD_UNIT_ID
 
     /**
      * Learning Platform External Links

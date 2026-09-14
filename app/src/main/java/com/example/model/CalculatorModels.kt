@@ -1,11 +1,11 @@
 package com.example.model
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class CalculatorCategory(
@@ -29,7 +29,7 @@ enum class CalculatorCategory(
         titleBn = "স্টক এভারেজ ও লাভ/ক্ষতি",
         titleEn = "Stock Average & Profit/Loss",
         descriptionBn = "লাভ/ক্ষতি, নতুন এভারেজ, ব্রেক-ইভেন ও টার্গেট প্রাইস হিসাব",
-        icon = Icons.Default.TrendingUp,
+        icon = Icons.AutoMirrored.Filled.TrendingUp,
         count = 10
     ),
     SIP_INVESTMENT(
@@ -53,7 +53,7 @@ enum class CalculatorCategory(
         titleBn = "অন্যান্য ক্যালকুলেটর",
         titleEn = "Other Calculators",
         descriptionBn = "ভ্যাট, জিএসটি ও ব্যবসায়িক ট্যাক্স পরিমাপের সুবিধা",
-        icon = Icons.Default.ReceiptLong,
+        icon = Icons.AutoMirrored.Filled.ReceiptLong,
         count = 1
     )
 }

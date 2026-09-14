@@ -1,5 +1,8 @@
 package com.example.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -40,6 +43,7 @@ import com.example.data.preferences.AppThemeMode
 import com.example.data.preferences.UserPreferencesRepository
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
+import com.example.ads.AdManager
 import com.example.ui.components.AdMobBannerSlot
 import com.example.ui.components.DrawerDestination
 import com.example.ui.components.FinoraDrawerContent
@@ -108,6 +112,8 @@ fun FinoraApp(
     val currentThemeMode by userPrefs.themeMode.collectAsState(initial = themeMode)
     val useBengaliDigits by userPrefs.useBengaliDigits.collectAsState(initial = true)
 
+    var pendingCalculatorReturnToHome by remember { mutableStateOf(false) }
+
     fun navigateTo(screen: Screen) {
         if (currentScreen != screen) {
             screenBackStack.add(screen)
@@ -116,7 +122,26 @@ fun FinoraApp(
 
     fun popBack(): Boolean {
         if (screenBackStack.size > 1) {
-            screenBackStack.removeAt(screenBackStack.size - 1)
+            val leavingScreen = screenBackStack.removeAt(screenBackStack.size - 1)
+            val targetScreen = screenBackStack.last()
+
+            // Requirement 2: Only trigger interstitial when user navigates BACK from a calculator to Home
+            if (leavingScreen is Screen.Calculator && targetScreen is Screen.Home) {
+                pendingCalculatorReturnToHome = false
+                findActivity(context)?.let { activity ->
+                    AdManager.onNavigateBackFromCalculator(activity)
+                }
+            } else if (leavingScreen is Screen.Calculator && targetScreen is Screen.Category) {
+                // Navigated back from calculator to category; if user subsequently pops to Home, trigger
+                pendingCalculatorReturnToHome = true
+            } else if (leavingScreen is Screen.Category && targetScreen is Screen.Home && pendingCalculatorReturnToHome) {
+                pendingCalculatorReturnToHome = false
+                findActivity(context)?.let { activity ->
+                    AdManager.onNavigateBackFromCalculator(activity)
+                }
+            } else {
+                pendingCalculatorReturnToHome = false
+            }
             return true
         }
         return false
@@ -125,8 +150,14 @@ fun FinoraApp(
     fun navigateFromDrawer(destination: DrawerDestination) {
         when (destination) {
             DrawerDestination.HOME -> {
+                val wasOnCalculator = currentScreen is Screen.Calculator
                 screenBackStack.clear()
                 screenBackStack.add(Screen.Home)
+                if (wasOnCalculator) {
+                    findActivity(context)?.let { activity ->
+                        AdManager.onNavigateBackFromCalculator(activity)
+                    }
+                }
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
             DrawerDestination.SAVINGS_GOALS -> navigateTo(Screen.SavingsGoals)
@@ -189,66 +220,65 @@ fun FinoraApp(
                 canNavigateBack = false
                 showAdMobBanner = true
             }
-            is Screen.Portfolio -> {
-                title = "আমার পোর্টফোলিও"
-                subtitle = "DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব"
-                canNavigateBack = true
-                showAdMobBanner = true
-            }
-            is Screen.SavingsGoals -> {
-                title = "সঞ্চয় লক্ষ্য (Savings Goals)"
-                subtitle = "আর্থিক লক্ষ্য ও অগ্রগতির হিসাব"
-                canNavigateBack = true
-                showAdMobBanner = true
-            }
             is Screen.Category -> {
                 title = currentScreen.category.titleBn
                 subtitle = currentScreen.category.titleEn
                 canNavigateBack = true
                 showAdMobBanner = true
             }
+            is Screen.Portfolio -> {
+                title = "আমার পোর্টফোলিও"
+                subtitle = "DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব"
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.SavingsGoals -> {
+                title = "সঞ্চয় লক্ষ্য (Savings Goals)"
+                subtitle = "আর্থিক লক্ষ্য ও অগ্রগতির হিসাব"
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
             is Screen.Calculator -> {
                 title = currentScreen.calculator.titleBn
                 subtitle = currentScreen.calculator.category.titleBn
                 canNavigateBack = true
-                // Requirement: "visible across all screens except full-screen calculator input"
                 showAdMobBanner = false
             }
             is Screen.LearnStock -> {
                 title = "Learn Stock"
                 subtitle = "শীর্ষস্থানীয় শিক্ষামূলক প্ল্যাটফর্ম"
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
             is Screen.Settings -> {
                 title = "সেটিংস (Settings)"
                 subtitle = "পছন্দসমূহ ও কনফিগারেশন"
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
             is Screen.About -> {
                 title = "আমাদের সম্পর্কে (About)"
                 subtitle = AppConfig.APP_NAME
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
             is Screen.PrivacyPolicy -> {
                 title = "গোপনীয়তা নীতি"
                 subtitle = "১০০% অন-ডিভাইস হিসাব"
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
             is Screen.ContactUs -> {
                 title = "যোগাযোগ করুন"
                 subtitle = "Shayed Afride • GZ Holdings LTD"
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
             is Screen.OrderApp -> {
                 title = "আপনার অ্যাপ অর্ডার করুন"
                 subtitle = "কাস্টম অ্যাপ তৈরি ও ডেভেলপমেন্ট"
                 canNavigateBack = true
-                showAdMobBanner = true
+                showAdMobBanner = false
             }
         }
 
@@ -383,3 +413,15 @@ fun FinoraApp(
         }
     }
 }
+
+private fun findActivity(context: Context): Activity? {
+    var currentContext = context
+    while (currentContext is ContextWrapper) {
+        if (currentContext is Activity) {
+            return currentContext
+        }
+        currentContext = currentContext.baseContext
+    }
+    return null
+}
+

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Star
@@ -62,6 +63,7 @@ import com.example.model.CalculatorRepository
 import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.CategoryCard
 import com.example.ui.components.CurrentInvestmentWidget
+import com.example.ui.components.UnlockFavoriteSlotsDialog
 import com.example.ui.screens.portfolio.PortfolioViewModel
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenDark
@@ -86,6 +88,16 @@ fun HomeScreen(
 
     val portfolioSummary by portfolioViewModel.summary.collectAsState()
     val favoriteIds by FavoritesManager.favorites.collectAsState()
+    val maxSlots by FavoritesManager.maxSlots.collectAsState()
+    var showUnlockSlotsDialog by remember { mutableStateOf(false) }
+
+    val handleToggleFavorite: (String) -> Unit = { calcId ->
+        val success = FavoritesManager.toggleFavorite(calcId)
+        if (!success) {
+            showUnlockSlotsDialog = true
+        }
+    }
+
     val favoriteCalculators = remember(favoriteIds) {
         favoriteIds.mapNotNull { CalculatorRepository.getById(it) }
     }
@@ -191,7 +203,7 @@ fun HomeScreen(
                                 calculator = calc,
                                 onClick = { onCalculatorClick(calc) },
                                 isFavorite = favoriteIds.contains(calc.id),
-                                onToggleFavorite = { FavoritesManager.toggleFavorite(calc.id) }
+                                onToggleFavorite = { handleToggleFavorite(calc.id) }
                             )
                         }
                     }
@@ -210,8 +222,11 @@ fun HomeScreen(
                 item(span = { GridItemSpan(2) }) {
                     FavoriteCalculatorsSection(
                         favoriteCalculators = favoriteCalculators,
+                        currentSlots = favoriteCalculators.size,
+                        maxSlots = maxSlots,
                         onCalculatorClick = onCalculatorClick,
-                        onToggleFavorite = { calcId -> FavoritesManager.toggleFavorite(calcId) },
+                        onToggleFavorite = handleToggleFavorite,
+                        onUnlockSlotsClick = { showUnlockSlotsDialog = true },
                         useBengaliDigits = useBengaliDigits
                     )
                 }
@@ -277,18 +292,30 @@ fun HomeScreen(
             }
         }
     }
+
+    if (showUnlockSlotsDialog) {
+        UnlockFavoriteSlotsDialog(
+            currentSlots = favoriteCalculators.size,
+            maxSlots = maxSlots,
+            onDismiss = { showUnlockSlotsDialog = false }
+        )
+    }
 }
 
 /**
  * Favorite Calculators Section as specified in Part D:
  * - Shows favorited calculators in a horizontal scrollable row for one-tap quick access
+ * - Shows current slots / max slots with opt-in rewarded unlock button
  * - If no favorites yet, shows friendly hint: "প্রিয় ক্যালকুলেটর যোগ করতে যেকোনো ক্যালকুলেটরে স্টার চাপুন"
  */
 @Composable
 private fun FavoriteCalculatorsSection(
     favoriteCalculators: List<CalculatorDef>,
+    currentSlots: Int,
+    maxSlots: Int,
     onCalculatorClick: (CalculatorDef) -> Unit,
     onToggleFavorite: (String) -> Unit,
+    onUnlockSlotsClick: () -> Unit,
     useBengaliDigits: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -319,18 +346,51 @@ private fun FavoriteCalculatorsSection(
                 )
             }
 
-            if (favoriteCalculators.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = Color(0xFFFFB800).copy(alpha = 0.14f)
                 ) {
+                    val currentStr = if (useBengaliDigits) BengaliFormatter.toBengaliDigits(currentSlots.toString()) else currentSlots.toString()
+                    val maxStr = if (useBengaliDigits) BengaliFormatter.toBengaliDigits(maxSlots.toString()) else maxSlots.toString()
                     Text(
-                        text = "${BengaliFormatter.toBengaliDigits(favoriteCalculators.size.toString())}টি প্রিয়",
+                        text = "$currentStr/$maxStr স্লট",
                         color = Color(0xFFB45309),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                     )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = PrimaryBlue.copy(alpha = 0.1f),
+                    border = BorderStroke(0.8.dp, PrimaryBlue.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onUnlockSlotsClick)
+                        .testTag("btn_opt_in_unlock_slots")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CardGiftcard,
+                            contentDescription = null,
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "+৩ স্লট",
+                            color = PrimaryBlue,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

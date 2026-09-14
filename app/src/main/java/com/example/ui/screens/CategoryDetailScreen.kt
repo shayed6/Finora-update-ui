@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +40,7 @@ import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
 import com.example.ui.components.CalculatorListItem
+import com.example.ui.components.UnlockFavoriteSlotsDialog
 import com.example.ui.theme.GrowthGreenDark
 import com.example.ui.theme.GrowthGreenLight
 import com.example.ui.theme.PrimaryBlue
@@ -50,6 +54,15 @@ fun CategoryDetailScreen(
 ) {
     val calculators = CalculatorRepository.getByCategory(category)
     val favoriteIds by FavoritesManager.favorites.collectAsState()
+    val maxSlots by FavoritesManager.maxSlots.collectAsState()
+    var showUnlockSlotsDialog by remember { mutableStateOf(false) }
+
+    val handleToggleFavorite: (String) -> Unit = { calcId ->
+        val success = FavoritesManager.toggleFavorite(calcId)
+        if (!success) {
+            showUnlockSlotsDialog = true
+        }
+    }
 
     Column(
         modifier = modifier
@@ -140,9 +153,17 @@ fun CategoryDetailScreen(
                     calculator = calc,
                     onClick = { onCalculatorClick(calc) },
                     isFavorite = favoriteIds.contains(calc.id),
-                    onToggleFavorite = { FavoritesManager.toggleFavorite(calc.id) }
+                    onToggleFavorite = { handleToggleFavorite(calc.id) }
                 )
             }
         }
+    }
+
+    if (showUnlockSlotsDialog) {
+        UnlockFavoriteSlotsDialog(
+            currentSlots = favoriteIds.size,
+            maxSlots = maxSlots,
+            onDismiss = { showUnlockSlotsDialog = false }
+        )
     }
 }

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
@@ -192,7 +191,7 @@ fun ContactUsScreen(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.Chat,
+                                imageVector = Icons.AutoMirrored.Filled.Chat,
                                 contentDescription = null,
                                 tint = GrowthGreen,
                                 modifier = Modifier.size(18.dp)

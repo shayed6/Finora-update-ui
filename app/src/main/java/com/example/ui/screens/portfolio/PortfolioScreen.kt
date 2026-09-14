@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -36,8 +37,6 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import com.example.util.PdfReportGenerator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -55,6 +54,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -84,6 +84,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ads.AdManager
 import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
@@ -115,6 +116,17 @@ fun PortfolioScreen(
     var selectedHoldingForHistory by remember { mutableStateOf<HoldingEntity?>(null) }
     var holdingForDividend by remember { mutableStateOf<HoldingEntity?>(null) }
     var holdingToDelete by remember { mutableStateOf<HoldingEntity?>(null) }
+
+    // Requirement: Do NOT show any ad format inside the Portfolio buy/sell transaction flow
+    val isInsideTxFlow = showAddDialog || holdingForDividend != null
+    androidx.compose.runtime.LaunchedEffect(isInsideTxFlow) {
+        AdManager.setInsideTransactionFlow(isInsideTxFlow)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AdManager.setInsideTransactionFlow(false)
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -469,7 +481,7 @@ private fun PortfolioSummaryCard(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.TrendingUp,
+                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                             contentDescription = null,
                             tint = GrowthGreen,
                             modifier = Modifier.size(18.dp)
@@ -791,7 +803,7 @@ private fun AddBuyTransactionDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTickerDropdownExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(),
+                            .menuAnchor(MenuAnchorType.PrimaryEditable),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryBlue,

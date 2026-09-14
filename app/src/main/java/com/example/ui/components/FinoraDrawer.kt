@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Home
@@ -36,7 +37,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Savings
@@ -255,7 +255,7 @@ fun FinoraDrawerContent(
                         .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MenuBook,
+                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
                         contentDescription = "Learn Stock Icon",
                         tint = PrimaryBlue,
                         modifier = Modifier.size(24.dp)
