@@ -39,6 +39,9 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.stringResource
+import com.example.R
+import com.example.data.preferences.AppLanguage
 import com.example.data.preferences.AppThemeMode
 import com.example.data.preferences.UserPreferencesRepository
 import com.example.model.CalculatorCategory
@@ -86,7 +89,8 @@ fun FinoraApp(
     onShowSplash: () -> Unit = {},
     userPreferencesRepository: UserPreferencesRepository? = null,
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    appLanguage: AppLanguage = AppLanguage.BENGALI
 ) {
     val context = LocalContext.current
     val networkMonitor = remember { NetworkMonitor.getInstance(context) }
@@ -213,6 +217,8 @@ fun FinoraApp(
         val canNavigateBack: Boolean
         val showAdMobBanner: Boolean
 
+        val isEnglish = appLanguage == AppLanguage.ENGLISH
+
         when (currentScreen) {
             is Screen.Home -> {
                 title = AppConfig.APP_NAME
@@ -221,62 +227,62 @@ fun FinoraApp(
                 showAdMobBanner = true
             }
             is Screen.Category -> {
-                title = currentScreen.category.titleBn
-                subtitle = currentScreen.category.titleEn
+                title = if (isEnglish) currentScreen.category.titleEn else currentScreen.category.titleBn
+                subtitle = if (isEnglish) currentScreen.category.titleBn else currentScreen.category.titleEn
                 canNavigateBack = true
                 showAdMobBanner = true
             }
             is Screen.Portfolio -> {
-                title = "আমার পোর্টফোলিও"
-                subtitle = "DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব"
+                title = stringResource(R.string.title_portfolio)
+                subtitle = stringResource(R.string.subtitle_portfolio)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.SavingsGoals -> {
-                title = "সঞ্চয় লক্ষ্য (Savings Goals)"
-                subtitle = "আর্থিক লক্ষ্য ও অগ্রগতির হিসাব"
+                title = stringResource(R.string.title_savings_goals)
+                subtitle = stringResource(R.string.subtitle_savings_goals)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.Calculator -> {
-                title = currentScreen.calculator.titleBn
-                subtitle = currentScreen.calculator.category.titleBn
+                title = if (isEnglish) currentScreen.calculator.titleEn else currentScreen.calculator.titleBn
+                subtitle = if (isEnglish) currentScreen.calculator.category.titleEn else currentScreen.calculator.category.titleBn
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.LearnStock -> {
-                title = "Learn Stock"
-                subtitle = "শীর্ষস্থানীয় শিক্ষামূলক প্ল্যাটফর্ম"
+                title = stringResource(R.string.title_learn_stock)
+                subtitle = stringResource(R.string.subtitle_learn_stock)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.Settings -> {
-                title = "সেটিংস (Settings)"
-                subtitle = "পছন্দসমূহ ও কনফিগারেশন"
+                title = stringResource(R.string.title_settings)
+                subtitle = stringResource(R.string.subtitle_settings)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.About -> {
-                title = "আমাদের সম্পর্কে (About)"
+                title = stringResource(R.string.title_about)
                 subtitle = AppConfig.APP_NAME
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.PrivacyPolicy -> {
-                title = "গোপনীয়তা নীতি"
-                subtitle = "১০০% অন-ডিভাইস হিসাব"
+                title = stringResource(R.string.title_privacy_policy)
+                subtitle = stringResource(R.string.subtitle_privacy_policy)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.ContactUs -> {
-                title = "যোগাযোগ করুন"
-                subtitle = "Shayed Afride • GZ Holdings LTD"
+                title = stringResource(R.string.title_contact_us)
+                subtitle = stringResource(R.string.subtitle_contact_us)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
             is Screen.OrderApp -> {
-                title = "আপনার অ্যাপ অর্ডার করুন"
-                subtitle = "কাস্টম অ্যাপ তৈরি ও ডেভেলপমেন্ট"
+                title = stringResource(R.string.title_order_app)
+                subtitle = stringResource(R.string.subtitle_order_app)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
@@ -373,7 +379,8 @@ fun FinoraApp(
                         is Screen.Calculator -> {
                             CalculatorDetailScreen(
                                 calculator = screen.calculator,
-                                useBengaliDigits = useBengaliDigits
+                                useBengaliDigits = useBengaliDigits,
+                                appLanguage = appLanguage
                             )
                         }
                         is Screen.LearnStock -> {
@@ -392,6 +399,10 @@ fun FinoraApp(
                                 useBengaliDigits = useBengaliDigits,
                                 onToggleBengaliDigits = { enableBengali ->
                                     scope.launch { userPrefs.setUseBengaliDigits(enableBengali) }
+                                },
+                                appLanguage = appLanguage,
+                                onLanguageChange = { newLang ->
+                                    scope.launch { userPrefs.setAppLanguage(newLang) }
                                 }
                             )
                         }

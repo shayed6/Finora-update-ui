@@ -5,17 +5,25 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room Database rules
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
+-keep class com.example.data.local.entity.** { *; }
+-keep class com.example.data.local.dao.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Moshi rules
+-keepclassmembers class * {
+    @com.squareup.moshi.* <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# AdMob & Google Play Services Ads
+-keep class com.google.android.gms.ads.** { *; }
+-keep interface com.google.android.gms.ads.** { *; }
+-keep class com.google.android.ump.** { *; }
+
+# Strip verbose and debug logging in release builds
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+}

@@ -6,6 +6,14 @@ import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
+// NOTE FOR FUTURE (Cloud Sync / Firebase):
+// When cloud sync is wired into this repository (e.g. Firebase Firestore sync),
+// Firestore Security Rules restricting each user strictly to their own 'portfolios/{uid}'
+// data MUST be deployed before going live to prevent unauthorized cross-user reads/writes:
+// match /portfolios/{uid}/{document=**} {
+//   allow read, write: if request.auth != null && request.auth.uid == uid;
+// }
+
 class PortfolioRepository(private val portfolioDao: PortfolioDao) {
 
     val allHoldings: Flow<List<HoldingEntity>> = portfolioDao.getAllHoldings()

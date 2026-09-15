@@ -36,9 +36,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.FavoritesManager
+import com.example.data.preferences.AppLanguage
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
+import com.example.ui.LocalAppLanguage
 import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.UnlockFavoriteSlotsDialog
 import com.example.ui.theme.GrowthGreenDark
@@ -110,15 +112,16 @@ fun CategoryDetailScreen(
 
                 Spacer(modifier = Modifier.width(14.dp))
 
+                val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = category.titleBn,
+                        text = if (isEnglish) category.titleEn else category.titleBn,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = category.descriptionBn,
+                        text = if (isEnglish) category.titleBn else category.descriptionBn,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
@@ -132,7 +135,7 @@ fun CategoryDetailScreen(
                     color = countBadgeBg
                 ) {
                     Text(
-                        text = "${BengaliFormatter.toBengaliDigits(calculators.size.toString())} টি",
+                        text = if (isEnglish) "${calculators.size}" else "${BengaliFormatter.toBengaliDigits(calculators.size.toString())} টি",
                         color = countBadgeTextColor,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,

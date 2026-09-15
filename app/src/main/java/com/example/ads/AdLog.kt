@@ -56,7 +56,9 @@ object AdLog {
             eventType = eventType,
             message = message
         )
-        Log.d(TAG, "[${format.name}] ${eventType.name}: $message")
+        if (com.example.BuildConfig.DEBUG) {
+            Log.d(TAG, "[${format.name}] ${eventType.name}: $message")
+        }
 
         val currentList = _logs.value.toMutableList()
         currentList.add(0, entry)

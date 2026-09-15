@@ -43,10 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -54,7 +51,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -723,17 +719,6 @@ private fun AddBuyTransactionDialog(
     var buyingPriceText by remember { mutableStateOf("") }
     var quantityText by remember { mutableStateOf("") }
     var commissionText by remember { mutableStateOf("0.40") }
-    var isTickerDropdownExpanded by remember { mutableStateOf(false) }
-
-    val filteredTickers = remember(stockName) {
-        if (stockName.isBlank()) {
-            PortfolioRepository.COMMON_TICKERS.take(8)
-        } else {
-            PortfolioRepository.COMMON_TICKERS.filter {
-                it.contains(stockName.trim(), ignoreCase = true)
-            }.take(8)
-        }
-    }
 
     val parsedPrice = BengaliFormatter.parseAmount(buyingPriceText) ?: 0.0
     val parsedQty = BengaliFormatter.parseInt(quantityText) ?: 0
@@ -788,46 +773,18 @@ private fun AddBuyTransactionDialog(
                     }
                 }
 
-                // Stock Name with Autocomplete dropdown + free text
-                ExposedDropdownMenuBox(
-                    expanded = isTickerDropdownExpanded,
-                    onExpandedChange = { isTickerDropdownExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = stockName,
-                        onValueChange = {
-                            stockName = it
-                            isTickerDropdownExpanded = true
-                        },
-                        label = { Text("স্টক নাম / কোড (যেমন: GP, CITYBANK)") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTickerDropdownExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryEditable),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
+                // Stock Name (plain text input)
+                OutlinedTextField(
+                    value = stockName,
+                    onValueChange = { stockName = it },
+                    label = { Text("স্টক নাম / কোড (যেমন: GP, CITYBANK)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
-
-                    if (filteredTickers.isNotEmpty()) {
-                        ExposedDropdownMenu(
-                            expanded = isTickerDropdownExpanded,
-                            onDismissRequest = { isTickerDropdownExpanded = false }
-                        ) {
-                            filteredTickers.forEach { ticker ->
-                                DropdownMenuItem(
-                                    text = { Text(ticker) },
-                                    onClick = {
-                                        stockName = ticker
-                                        isTickerDropdownExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+                )
 
                 // Buying Price
                 OutlinedTextField(

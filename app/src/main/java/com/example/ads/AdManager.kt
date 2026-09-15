@@ -3,6 +3,7 @@ package com.example.ads
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import com.example.BuildConfig
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -302,13 +303,13 @@ object AdManager {
      */
     fun onNavigateBackFromCalculator(activity: Activity) {
         if (isInsideTransactionFlow) {
-            Log.d(TAG, "Suppressed interstitial: Inside portfolio transaction flow")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Inside portfolio transaction flow")
             return
         }
 
         // 1. Session cap: at most 3 times per session
         if (_sessionInterstitialCount.value >= AdConfig.MAX_INTERSTITIALS_PER_SESSION) {
-            Log.d(TAG, "Suppressed interstitial: Session cap of 3 reached (${_sessionInterstitialCount.value}/3)")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Session cap of 3 reached (${_sessionInterstitialCount.value}/3)")
             return
         }
 
@@ -322,13 +323,13 @@ object AdManager {
 
         // 2. Never show in first 90 seconds of session
         if (sessionDuration < AdConfig.INITIAL_SESSION_DELAY_MS) {
-            Log.d(TAG, "Suppressed interstitial: Session duration ${sessionDuration / 1000}s < 90s")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Session duration ${sessionDuration / 1000}s < 90s")
             return
         }
 
         // 3. Minimum 3-minute gap (180,000 ms) between two interstitials
         if (timeSinceLastInterstitial < AdConfig.MIN_INTERSTITIAL_INTERVAL_MS) {
-            Log.d(TAG, "Suppressed interstitial: Interval ${timeSinceLastInterstitial / 1000}s < 180s (3 min)")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Interval ${timeSinceLastInterstitial / 1000}s < 180s (3 min)")
             return
         }
 
@@ -337,7 +338,7 @@ object AdManager {
             _sessionInterstitialCount.value += 1
             ad.show(activity)
         } else {
-            Log.d(TAG, "Interstitial ad not preloaded yet; preloading silently in background")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Interstitial ad not preloaded yet; preloading silently in background")
             preloadInterstitial(activity.applicationContext)
         }
     }
@@ -485,10 +486,12 @@ object AdManager {
      */
     fun setInsideTransactionFlow(isInside: Boolean) {
         isInsideTransactionFlow = isInside
-        if (isInside) {
-            Log.d(TAG, "AdManager: Entered transaction flow. Ads locked.")
-        } else {
-            Log.d(TAG, "AdManager: Exited transaction flow. Ads unlocked.")
+        if (BuildConfig.DEBUG) {
+            if (isInside) {
+                Log.d(TAG, "AdManager: Entered transaction flow. Ads locked.")
+            } else {
+                Log.d(TAG, "AdManager: Exited transaction flow. Ads unlocked.")
+            }
         }
     }
 

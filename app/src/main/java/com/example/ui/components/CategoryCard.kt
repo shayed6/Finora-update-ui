@@ -43,9 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.preferences.AppLanguage
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
+import com.example.ui.LocalAppLanguage
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.GrowthGreenDark
 import com.example.ui.theme.GrowthGreenLight
@@ -120,13 +122,14 @@ fun CategoryCard(
 
                 // Count Pill (muted, small)
                 val actualCount = remember(category) { CalculatorRepository.getByCategory(category).size }
+                val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Text(
-                        text = "${BengaliFormatter.toBengaliDigits(actualCount.toString())} টি",
+                        text = if (isEnglish) "$actualCount" else "${BengaliFormatter.toBengaliDigits(actualCount.toString())} টি",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
@@ -137,9 +140,10 @@ fun CategoryCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Bengali Name (Medium weight)
+            val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
+            // Primary Name (Medium weight)
             Text(
-                text = category.titleBn,
+                text = if (isEnglish) category.titleEn else category.titleBn,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -151,9 +155,9 @@ fun CategoryCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Subtitle / English reference (muted, small)
+            // Subtitle / Alternate reference (muted, small)
             Text(
-                text = category.titleEn,
+                text = if (isEnglish) category.titleBn else category.titleEn,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -227,16 +231,17 @@ fun CalculatorListItem(
 
             Spacer(modifier = Modifier.width(14.dp))
 
+            val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = calculator.titleBn,
+                    text = if (isEnglish) calculator.titleEn else calculator.titleBn,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = calculator.formulaSummaryBn,
+                    text = if (isEnglish) calculator.titleBn else calculator.formulaSummaryBn,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -254,9 +259,14 @@ fun CalculatorListItem(
                         .size(36.dp)
                         .testTag("calc_favorite_${calculator.id}")
                 ) {
+                    val favDesc = if (isFavorite) {
+                        if (isEnglish) "Remove from favorites" else "পছন্দের তালিকা থেকে সরান"
+                    } else {
+                        if (isEnglish) "Add to favorites" else "পছন্দের তালিকায় যোগ করুন"
+                    }
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        contentDescription = if (isFavorite) "পছন্দের তালিকা থেকে সরান" else "পছন্দের তালিকায় যোগ করুন",
+                        contentDescription = favDesc,
                         tint = if (isFavorite) Color(0xFFFFB800) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(22.dp)
                     )

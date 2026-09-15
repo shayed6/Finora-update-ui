@@ -68,10 +68,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ads.AdConfig
 import com.example.ads.AdLog
 import com.example.ads.AdManager
 import com.example.data.FavoritesManager
+import com.example.data.preferences.AppLanguage
 import com.example.data.preferences.AppThemeMode
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.BorderSubtle
@@ -89,6 +92,8 @@ fun SettingsScreen(
     onToggleDarkMode: (Boolean) -> Unit,
     useBengaliDigits: Boolean,
     onToggleBengaliDigits: (Boolean) -> Unit,
+    appLanguage: AppLanguage = AppLanguage.BENGALI,
+    onLanguageChange: (AppLanguage) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -99,6 +104,123 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Language Selection Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("settings_language_card"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = PrimaryBlue.copy(alpha = 0.12f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_section_language),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_language_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val isBn = appLanguage == AppLanguage.BENGALI
+                    FilterChip(
+                        selected = isBn,
+                        onClick = { onLanguageChange(AppLanguage.BENGALI) },
+                        label = {
+                            Text(
+                                text = "বাংলা (Bengali)",
+                                fontWeight = if (isBn) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        leadingIcon = {
+                            if (isBn) {
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.15f),
+                            selectedLabelColor = PrimaryBlue
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("language_chip_bengali")
+                    )
+
+                    val isEn = appLanguage == AppLanguage.ENGLISH
+                    FilterChip(
+                        selected = isEn,
+                        onClick = { onLanguageChange(AppLanguage.ENGLISH) },
+                        label = {
+                            Text(
+                                text = "English",
+                                fontWeight = if (isEn) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        leadingIcon = {
+                            if (isEn) {
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.15f),
+                            selectedLabelColor = PrimaryBlue
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("language_chip_english")
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_theme_saved_hint),
+                    fontSize = 11.sp,
+                    color = GrowthGreen,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
         // System-wide Dark Mode Card
         Card(
             modifier = Modifier

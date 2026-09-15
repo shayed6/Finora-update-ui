@@ -1,0 +1,133 @@
+<resources>
+    <string name="app_name">Finora</string>
+    <string name="app_tagline">Smart Investments &amp; Financial Calculators</string>
+
+    <!-- Drawer Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_portfolio">Portfolio</string>
+    <string name="nav_savings_goals">Savings Goals</string>
+    <string name="nav_learn_stock">Learn Stock</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">About Us</string>
+    <string name="nav_privacy_policy">Privacy Policy</string>
+    <string name="nav_contact_us">Contact Us</string>
+    <string name="nav_order_app">Order Your App</string>
+    <string name="nav_rate_us">Rate Us</string>
+    <string name="drawer_section_main">Main Menu</string>
+    <string name="drawer_section_more">More Services</string>
+
+    <!-- Screen Titles & Subtitles -->
+    <string name="title_home">Finora</string>
+    <string name="title_portfolio">My Portfolio</string>
+    <string name="subtitle_portfolio">On-device tracking for DSE &amp; CSE shares</string>
+    <string name="title_savings_goals">Savings Goals</string>
+    <string name="subtitle_savings_goals">Track financial milestones &amp; progress</string>
+    <string name="title_settings">Settings</string>
+    <string name="subtitle_settings">Preferences &amp; Configuration</string>
+    <string name="title_about">About Us</string>
+    <string name="subtitle_about">Finora • Finance &amp; Stock Calculators</string>
+    <string name="title_privacy_policy">Privacy Policy</string>
+    <string name="subtitle_privacy_policy">100% On-Device Calculations</string>
+    <string name="title_contact_us">Contact Us</string>
+    <string name="subtitle_contact_us">Shayed Afride • GZ Holdings LTD</string>
+    <string name="title_order_app">Order Your App</string>
+    <string name="subtitle_order_app">Custom App Development &amp; Design</string>
+    <string name="title_learn_stock">Learn Stock</string>
+    <string name="subtitle_learn_stock">Top Financial Educational Platforms</string>
+
+    <!-- Home Screen -->
+    <string name="home_search_placeholder">Search calculators (e.g., P/E, SIP, EMI)...</string>
+    <string name="home_favorites_title">Favorite Calculators</string>
+    <string name="home_favorites_badge">Slots: %1$s/%2$s</string>
+    <string name="home_favorites_empty">No favorite calculators added yet. Tap the star (★) icon on any calculator to pin it here for quick access.</string>
+    <string name="home_favorites_unlock_slots">Watch ad to unlock +3 favorite slots</string>
+    <string name="home_categories_title">Calculator Categories</string>
+    <string name="home_category_count">%1$s Calculators</string>
+    <string name="home_on_device_privacy_title">100% Private &amp; Offline Capable</string>
+    <string name="home_on_device_privacy_desc">None of your portfolio or calculation data is sent to external servers. All information remains safely stored on your device.</string>
+
+    <!-- Portfolio Widget on Home -->
+    <string name="portfolio_widget_title">Portfolio Snapshot</string>
+    <string name="portfolio_widget_empty">No holdings added yet. Tap to add your first stock.</string>
+    <string name="portfolio_widget_total_invested">Total Invested</string>
+    <string name="portfolio_widget_current_value">Current Value</string>
+    <string name="portfolio_widget_profit_loss">Total Profit/Loss</string>
+    <string name="portfolio_widget_add_stock">Add Stock</string>
+
+    <!-- Portfolio Screen -->
+    <string name="portfolio_empty_title">Your Portfolio is Empty</string>
+    <string name="portfolio_empty_desc">Tap \'+ Add Holding\' below to record your first purchase. Adding multiple buys for the same stock will automatically calculate your weighted average price (Auto-Averaging).</string>
+    <string name="portfolio_summary_total_invested">Total Invested</string>
+    <string name="portfolio_summary_current_value">Current Value</string>
+    <string name="portfolio_summary_net_pl">Net Profit / Loss</string>
+    <string name="portfolio_summary_total_dividends">Total Dividends</string>
+    <string name="portfolio_add_holding_title">Add Stock Purchase</string>
+    <string name="portfolio_field_exchange">Stock Exchange</string>
+    <string name="portfolio_field_stock_name">Stock Name / Ticker (e.g. GP, CITYBANK)</string>
+    <string name="portfolio_field_buying_price">Buying Price Per Share (৳)</string>
+    <string name="portfolio_field_quantity">Share Quantity</string>
+    <string name="portfolio_field_commission">Brokerage Commission (%) [Default 0.40%]</string>
+    <string name="portfolio_card_shares">shares</string>
+    <string name="portfolio_card_avg_price">Avg Buying Price</string>
+    <string name="portfolio_card_total_cost">Total Purchase Cost</string>
+    <string name="portfolio_card_dividends">Dividends Received</string>
+    <string name="portfolio_card_return_per_share">Return Per Share</string>
+    <string name="portfolio_btn_add_dividend">Add Dividend</string>
+    <string name="portfolio_add_dividend_title">Add Dividend (%1$s)</string>
+    <string name="portfolio_field_dividend_amount">Total Dividend Amount (৳)</string>
+    <string name="portfolio_field_dividend_year">Year / Fiscal Period (e.g. 2023-24)</string>
+    <string name="portfolio_delete_title">Delete Holding?</string>
+    <string name="portfolio_delete_desc">All purchase transactions and dividend history for this stock will be permanently erased. This action cannot be undone.</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_section_language">Language (ভাষা)</string>
+    <string name="settings_language_desc">Choose your preferred display language</string>
+    <string name="settings_lang_bengali">বাংলা (Bengali)</string>
+    <string name="settings_lang_english">English</string>
+    <string name="settings_section_theme">Dark Mode</string>
+    <string name="settings_theme_active_dark">Dark Mode is active</string>
+    <string name="settings_theme_active_light">Light Mode is active</string>
+    <string name="settings_theme_options">Select Theme Option:</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_light">Light Mode</string>
+    <string name="settings_theme_dark">Dark Mode</string>
+    <string name="settings_theme_saved_hint">✓ Your preferences are saved permanently on this device.</string>
+    <string name="settings_section_digits">Number Display Format</string>
+    <string name="settings_digits_desc">View calculation numbers in Bengali or English digits</string>
+    <string name="settings_digits_bn">Bengali Digits (১২৩৪৫)</string>
+    <string name="settings_digits_en">English Digits (12345)</string>
+    <string name="settings_section_brokerage">Default Brokerage Commission</string>
+    <string name="settings_brokerage_subtitle">0.40% commission standard across most Bangladesh brokerages</string>
+    <string name="settings_brokerage_desc">Stock transaction calculators default to 0.40% commission automatically. You can adjust this for any transaction as needed.</string>
+    <string name="settings_section_admob">Lightweight AdMob &amp; Privacy</string>
+    <string name="settings_admob_subtitle">User-friendly ad placements &amp; optional rewarded perks</string>
+    <string name="settings_reward_title">Unlock Favorite Slots (Rewarded Perk)</string>
+    <string name="settings_reward_desc">Current slot limit: %1$s. Watch a short video ad to unlock +3 favorite calculator slots. Completely optional and never launched automatically.</string>
+    <string name="settings_reward_btn">Watch Ad to Unlock (+3)</string>
+    <string name="settings_gdpr_title">Ad Consent &amp; Privacy Controls</string>
+    <string name="settings_gdpr_status_active">Consent Status: Active (Personalized ads permitted)</string>
+    <string name="settings_gdpr_status_limited">Consent Status: Non-personalized or Pending</string>
+    <string name="settings_gdpr_btn">Review / Change Privacy Consent</string>
+
+    <!-- General Buttons & Actions -->
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_calculate">Calculate</string>
+    <string name="btn_reset">Reset</string>
+    <string name="btn_share_report">Share Report</string>
+    <string name="btn_copy">Copy</string>
+    <string name="btn_retry">Check Connection Again</string>
+    <string name="btn_close">Close</string>
+
+    <!-- Offline Blocking Overlay -->
+    <string name="offline_title">Internet Connection Required</string>
+    <string name="offline_desc">Finora requires an active internet connection to verify AdMob and user consent policies. Please connect via Wi-Fi or mobile data.</string>
+
+    <!-- Calculator Detail Screen Common -->
+    <string name="calc_input_title">Enter Required Information</string>
+    <string name="calc_formula_label">Formula:</string>
+    <string name="calc_error_required">Please enter %1$s</string>
+    <string name="calc_error_invalid_number">Please enter a valid number (e.g. 120 or ১২০)</string>
+    <string name="calc_copied_toast">Calculation report copied to clipboard</string>
+</resources>

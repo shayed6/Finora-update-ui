@@ -15,4 +15,9 @@
 .cxx
 local.properties
 .env
-debug.keystore
+.env.*
+!.env.example
+debug.keystore*
+*.jks
+*.keystore
+google-services.json

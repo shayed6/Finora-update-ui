@@ -59,10 +59,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
+import com.example.data.preferences.AppLanguage
 import com.example.model.CalcResult
 import com.example.model.CalculatorDef
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -90,6 +93,7 @@ import java.util.Locale
 fun CalculatorDetailScreen(
     calculator: CalculatorDef,
     useBengaliDigits: Boolean = true,
+    appLanguage: AppLanguage = AppLanguage.BENGALI,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -195,15 +199,16 @@ fun CalculatorDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
+                    val isEnglish = appLanguage == AppLanguage.ENGLISH
                     Column {
                         Text(
-                            text = calculator.titleBn,
+                            text = if (isEnglish) calculator.titleEn else calculator.titleBn,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = calculator.titleEn,
+                            text = if (isEnglish) calculator.titleBn else calculator.titleEn,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -244,7 +249,7 @@ fun CalculatorDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = "প্রয়োজনীয় তথ্য ইনপুট দিন",
+                    text = stringResource(R.string.calc_input_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -358,13 +363,13 @@ fun CalculatorDetailScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "রিসেট",
+                            contentDescription = stringResource(R.string.btn_reset),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "রিসেট",
+                            text = stringResource(R.string.btn_reset),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
@@ -385,12 +390,12 @@ fun CalculatorDetailScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Calculate,
-                            contentDescription = "হিসাব করুন",
+                            contentDescription = stringResource(R.string.btn_calculate),
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "হিসাব করুন",
+                            text = stringResource(R.string.btn_calculate),
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
@@ -548,12 +553,12 @@ fun CalculatorDetailScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "Share",
+                                contentDescription = stringResource(R.string.btn_share_report),
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "রিপোর্ট এক্সপোর্ট ও শেয়ার করুন",
+                                text = stringResource(R.string.btn_share_report),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.5.sp
                             )

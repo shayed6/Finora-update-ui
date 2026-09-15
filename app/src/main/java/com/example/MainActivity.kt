@@ -13,6 +13,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import android.content.res.Configuration
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.preferences.AppLanguage
+import com.example.ui.LocalAppLanguage
+import java.util.Locale
 import com.example.ads.AdManager
 import com.example.data.FavoritesManager
 import com.example.data.preferences.AppThemeMode
@@ -30,31 +37,60 @@ class MainActivity : ComponentActivity() {
         setContent {
             val userPrefs = remember { UserPreferencesRepository.getInstance(applicationContext) }
             val themeMode by userPrefs.themeMode.collectAsState(initial = AppThemeMode.SYSTEM)
+            val appLanguage by userPrefs.appLanguage.collectAsState(initial = AppLanguage.BENGALI)
 
-            val isSystemDark = isSystemInDarkTheme()
-            val isDarkTheme = when (themeMode) {
-                AppThemeMode.SYSTEM -> isSystemDark
-                AppThemeMode.DARK -> true
-                AppThemeMode.LIGHT -> false
+            val currentLocale = remember(appLanguage) {
+                if (appLanguage == AppLanguage.ENGLISH) Locale.ENGLISH else Locale("bn", "BD")
+            }
+            Locale.setDefault(currentLocale)
+
+            val currentConfig = LocalConfiguration.current
+            val localizedConfig = remember(appLanguage, currentConfig) {
+                Configuration(currentConfig).apply {
+                    setLocale(currentLocale)
+                    setLayoutDirection(currentLocale)
+                }
+            }
+            val baseContext = LocalContext.current
+            val localizedContext = remember(appLanguage, baseContext) {
+                val config = Configuration(baseContext.resources.configuration).apply {
+                    setLocale(currentLocale)
+                    setLayoutDirection(currentLocale)
+                }
+                baseContext.createConfigurationContext(config)
             }
 
-            FinoraTheme(darkTheme = isDarkTheme) {
-                var showSplash by rememberSaveable { mutableStateOf(true) }
+            CompositionLocalProvider(
+                LocalConfiguration provides localizedConfig,
+                LocalContext provides localizedContext,
+                LocalAppLanguage provides appLanguage
+            ) {
+                val isSystemDark = isSystemInDarkTheme()
+                val isDarkTheme = when (themeMode) {
+                    AppThemeMode.SYSTEM -> isSystemDark
+                    AppThemeMode.DARK -> true
+                    AppThemeMode.LIGHT -> false
+                }
 
-                Crossfade(
-                    targetState = showSplash,
-                    animationSpec = tween(durationMillis = 400),
-                    label = "FinoraSplashTransition"
-                ) { isSplash ->
-                    if (isSplash) {
-                        FinoraSplashScreen(onFinish = { showSplash = false })
-                    } else {
-                        FinoraApp(
-                            onShowSplash = { showSplash = true },
-                            userPreferencesRepository = userPrefs,
-                            themeMode = themeMode,
-                            isDarkTheme = isDarkTheme
-                        )
+                FinoraTheme(darkTheme = isDarkTheme) {
+                    var showSplash by rememberSaveable { mutableStateOf(true) }
+
+                    Crossfade(
+                        targetState = showSplash,
+                        animationSpec = tween(durationMillis = 400),
+                        label = "FinoraSplashTransition"
+                    ) { isSplash ->
+                        if (isSplash) {
+                            FinoraSplashScreen(onFinish = { showSplash = false })
+                        } else {
+                            FinoraApp(
+                                onShowSplash = { showSplash = true },
+                                userPreferencesRepository = userPrefs,
+                                themeMode = themeMode,
+                                isDarkTheme = isDarkTheme,
+                                appLanguage = appLanguage
+                            )
+                        }
                     }
                 }
             }

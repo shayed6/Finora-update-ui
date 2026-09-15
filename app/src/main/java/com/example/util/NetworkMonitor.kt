@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.PrimaryBlue
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -169,7 +171,7 @@ fun OfflineBlockingOverlay(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না",
+                    text = stringResource(R.string.offline_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -179,7 +181,7 @@ fun OfflineBlockingOverlay(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Finora ব্যবহার করতে ইন্টারনেট সংযোগ প্রয়োজন। অনুগ্রহ করে আপনার মোবাইল ডেটা অথবা ওয়াই-ফাই চালু আছে কিনা পরীক্ষা করুন।",
+                    text = stringResource(R.string.offline_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -204,7 +206,7 @@ fun OfflineBlockingOverlay(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "আবার চেষ্টা করুন",
+                        text = stringResource(R.string.btn_retry),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )

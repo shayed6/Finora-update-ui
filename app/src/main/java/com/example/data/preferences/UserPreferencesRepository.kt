@@ -21,11 +21,17 @@ enum class AppThemeMode(val titleBn: String, val subtitleBn: String) {
     DARK("ডার্ক মোড", "চোখের জন্য আরামদায়ক ডার্ক থিম")
 }
 
+enum class AppLanguage(val code: String, val titleBn: String, val titleEn: String) {
+    BENGALI("bn", "বাংলা (Bengali)", "Bengali"),
+    ENGLISH("en", "English", "English")
+}
+
 class UserPreferencesRepository private constructor(private val context: Context) {
 
     companion object {
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val USE_BENGALI_DIGITS_KEY = booleanPreferencesKey("use_bengali_digits")
+        private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
 
         @Volatile
         private var INSTANCE: UserPreferencesRepository? = null
@@ -81,6 +87,29 @@ class UserPreferencesRepository private constructor(private val context: Context
     suspend fun setUseBengaliDigits(useBengali: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[USE_BENGALI_DIGITS_KEY] = useBengali
+        }
+    }
+
+    val appLanguage: Flow<AppLanguage> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            val langName = preferences[APP_LANGUAGE_KEY] ?: AppLanguage.BENGALI.name
+            try {
+                AppLanguage.valueOf(langName)
+            } catch (e: IllegalArgumentException) {
+                AppLanguage.BENGALI
+            }
+        }
+
+    suspend fun setAppLanguage(language: AppLanguage) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_LANGUAGE_KEY] = language.name
         }
     }
 }

@@ -57,9 +57,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.FavoritesManager
+import com.example.data.preferences.AppLanguage
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.CalculatorRepository
+import com.example.ui.LocalAppLanguage
 import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.CategoryCard
 import com.example.ui.components.CurrentInvestmentWidget
@@ -101,6 +103,7 @@ fun HomeScreen(
     val favoriteCalculators = remember(favoriteIds) {
         favoriteIds.mapNotNull { CalculatorRepository.getById(it) }
     }
+    val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
 
     Column(
         modifier = modifier
@@ -127,7 +130,7 @@ fun HomeScreen(
                 onValueChange = { searchQuery = it },
                 placeholder = {
                     Text(
-                        text = "যেকোনো ক্যালকুলেটর খুঁজুন (যেমন: P/E, SIP, লাভ/ক্ষতি)",
+                        text = if (isEnglish) "Search calculators (e.g. P/E, SIP, EMI)..." else "যেকোনো ক্যালকুলেটর খুঁজুন (যেমন: P/E, SIP, লাভ/ক্ষতি)",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                     )
@@ -172,7 +175,7 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = "অনুসন্ধানের ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())} টি)",
+                    text = if (isEnglish) "Search Results (${searchResults.size})" else "অনুসন্ধানের ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())} টি)",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryBlue,
@@ -187,7 +190,7 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "কোনো ক্যালকুলেটর খুঁজে পাওয়া যায়নি।\nবানান বা ইংরেজিতে অনুসন্ধান করে দেখুন।",
+                            text = if (isEnglish) "No calculators found.\nTry searching with alternative keywords." else "কোনো ক্যালকুলেটর খুঁজে পাওয়া যায়নি।\nবানান বা ইংরেজিতে অনুসন্ধান করে দেখুন।",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -241,13 +244,13 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "ক্যালকুলেটর বিভাগসমূহ",
+                            text = if (isEnglish) "Calculator Categories" else "ক্যালকুলেটর বিভাগসমূহ",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "মোট ৫টি ক্যাটাগরি",
+                            text = if (isEnglish) "5 Categories" else "মোট ৫টি ক্যাটাগরি",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -281,7 +284,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "সব হিসাব সম্পূর্ণ আপনার ডিভাইসে ঘটে। কোনো আর্থিক তথ্য সংরক্ষিত বা প্রেরিত হয় না।",
+                            text = if (isEnglish) "All calculations run locally on your device. No financial data is sent to external servers." else "সব হিসাব সম্পূর্ণ আপনার ডিভাইসে ঘটে। কোনো আর্থিক তথ্য সংরক্ষিত বা প্রেরিত হয় না।",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
@@ -319,6 +322,7 @@ private fun FavoriteCalculatorsSection(
     useBengaliDigits: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -339,7 +343,7 @@ private fun FavoriteCalculatorsSection(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "প্রিয় ক্যালকুলেটর (Favorites)",
+                    text = if (isEnglish) "Favorite Calculators" else "প্রিয় ক্যালকুলেটর (Favorites)",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -354,7 +358,7 @@ private fun FavoriteCalculatorsSection(
                     val currentStr = if (useBengaliDigits) BengaliFormatter.toBengaliDigits(currentSlots.toString()) else currentSlots.toString()
                     val maxStr = if (useBengaliDigits) BengaliFormatter.toBengaliDigits(maxSlots.toString()) else maxSlots.toString()
                     Text(
-                        text = "$currentStr/$maxStr স্লট",
+                        text = if (isEnglish) "$currentStr/$maxStr Slots" else "$currentStr/$maxStr স্লট",
                         color = Color(0xFFB45309),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -385,7 +389,7 @@ private fun FavoriteCalculatorsSection(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "+৩ স্লট",
+                            text = if (isEnglish) "+3 Slots" else "+৩ স্লট",
                             color = PrimaryBlue,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -428,7 +432,7 @@ private fun FavoriteCalculatorsSection(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Text(
-                        text = "প্রিয় ক্যালকুলেটর যোগ করতে যেকোনো ক্যালকুলেটরে স্টার চাপুন",
+                        text = if (isEnglish) "Tap the star on any calculator to add it to favorites" else "প্রিয় ক্যালকুলেটর যোগ করতে যেকোনো ক্যালকুলেটরে স্টার চাপুন",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 17.sp
@@ -514,9 +518,10 @@ private fun FavoriteCalculatorCard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+            val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
 
             Text(
-                text = calculator.titleBn,
+                text = if (isEnglish) calculator.titleEn else calculator.titleBn,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -528,7 +533,7 @@ private fun FavoriteCalculatorCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = calculator.category.titleBn,
+                text = if (isEnglish) calculator.category.titleEn else calculator.category.titleBn,
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

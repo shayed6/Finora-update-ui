@@ -35,6 +35,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.preferences.AppLanguage
+import com.example.ui.LocalAppLanguage
 import com.example.ui.screens.portfolio.PortfolioSummary
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.FinoraNavy
@@ -49,6 +51,7 @@ fun CurrentInvestmentWidget(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isEnglish = LocalAppLanguage.current == AppLanguage.ENGLISH
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -89,14 +92,14 @@ fun CurrentInvestmentWidget(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "পোর্টফোলিও ট্র্যাকার (Portfolio)",
+                        text = if (isEnglish) "Portfolio Tracker" else "পোর্টফোলিও ট্র্যাকার (Portfolio)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "এখনো কোনো বিনিয়োগ যোগ করা হয়নি — পোর্টফোলিওতে যোগ করুন",
+                        text = if (isEnglish) "No investments added yet — tap to add stock" else "এখনো কোনো বিনিয়োগ যোগ করা হয়নি — পোর্টফোলিওতে যোগ করুন",
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
@@ -148,7 +151,7 @@ fun CurrentInvestmentWidget(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Current Investment (পোর্টফোলিও)",
+                            text = if (isEnglish) "Portfolio Summary" else "Current Investment (পোর্টফোলিও)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.5.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -157,7 +160,7 @@ fun CurrentInvestmentWidget(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${BengaliFormatter.formatNumber(summary.holdingsCount.toDouble(), 0, useBengaliDigits)}টি স্টক",
+                            text = if (isEnglish) "${summary.holdingsCount} Stocks" else "${BengaliFormatter.formatNumber(summary.holdingsCount.toDouble(), 0, useBengaliDigits)}টি স্টক",
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -180,7 +183,7 @@ fun CurrentInvestmentWidget(
                 ) {
                     Column {
                         Text(
-                            text = "মোট বিনিয়োগ (Total Invested)",
+                            text = if (isEnglish) "Total Invested" else "মোট বিনিয়োগ (Total Invested)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -195,7 +198,7 @@ fun CurrentInvestmentWidget(
 
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "ডিভিডেন্ড প্রাপ্ত (Total Dividend)",
+                            text = if (isEnglish) "Total Dividend" else "ডিভিডেন্ড প্রাপ্ত (Total Dividend)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

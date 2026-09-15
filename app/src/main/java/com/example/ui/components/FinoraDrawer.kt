@@ -65,6 +65,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.FinoraNavy
 import com.example.ui.theme.GrowthGreen
@@ -179,7 +181,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.Home, contentDescription = "Home Icon") },
                 label = {
                     Text(
-                        text = "হোম (Home)",
+                        text = stringResource(R.string.nav_home),
                         fontWeight = if (currentDestination == DrawerDestination.HOME) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -199,7 +201,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.PieChart, contentDescription = "Portfolio Icon") },
                 label = {
                     Text(
-                        text = "পোর্টফোলিও (Portfolio)",
+                        text = stringResource(R.string.nav_portfolio),
                         fontWeight = if (currentDestination == DrawerDestination.PORTFOLIO) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -219,7 +221,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.Savings, contentDescription = "Savings Goals Icon") },
                 label = {
                     Text(
-                        text = "সঞ্চয় লক্ষ্য (Savings Goals)",
+                        text = stringResource(R.string.nav_savings_goals),
                         fontWeight = if (currentDestination == DrawerDestination.SAVINGS_GOALS) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -263,13 +265,13 @@ fun FinoraDrawerContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Learn Stock (শেয়ার বাজার শিখুন)",
+                            text = stringResource(R.string.nav_learn_stock),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "শীর্ষস্থানীয় শিক্ষামূলক প্ল্যাটফর্ম",
+                            text = stringResource(R.string.subtitle_learn_stock),
                             style = MaterialTheme.typography.labelSmall,
                             color = PrimaryBlue,
                             fontSize = 11.sp
@@ -325,7 +327,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.Settings, contentDescription = "Settings Icon") },
                 label = {
                     Text(
-                        text = "সেটিংস (Settings)",
+                        text = stringResource(R.string.nav_settings),
                         fontWeight = if (currentDestination == DrawerDestination.SETTINGS) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -345,7 +347,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.Info, contentDescription = "About Icon") },
                 label = {
                     Text(
-                        text = "আমাদের সম্পর্কে (About)",
+                        text = stringResource(R.string.nav_about),
                         fontWeight = if (currentDestination == DrawerDestination.ABOUT) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -374,7 +376,7 @@ fun FinoraDrawerContent(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "রেটিং দিন (Rate Us)", modifier = Modifier.weight(1f))
+                        Text(text = stringResource(R.string.nav_rate_us), modifier = Modifier.weight(1f))
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
@@ -399,7 +401,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.PrivacyTip, contentDescription = "Privacy Icon") },
                 label = {
                     Text(
-                        text = "গোপনীয়তা নীতি (Privacy Policy)",
+                        text = stringResource(R.string.nav_privacy_policy),
                         fontWeight = if (currentDestination == DrawerDestination.PRIVACY_POLICY) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -426,7 +428,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Contact Icon") },
                 label = {
                     Text(
-                        text = "যোগাযোগ করুন",
+                        text = stringResource(R.string.nav_contact_us),
                         fontWeight = if (currentDestination == DrawerDestination.CONTACT_US) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -446,7 +448,7 @@ fun FinoraDrawerContent(
                 icon = { Icon(Icons.Default.AppShortcut, contentDescription = "Order App Icon") },
                 label = {
                     Text(
-                        text = "আপনার অ্যাপ অর্ডার করুন",
+                        text = stringResource(R.string.nav_order_app),
                         fontWeight = if (currentDestination == DrawerDestination.ORDER_APP) FontWeight.Bold else FontWeight.Normal
                     )
                 },
