@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Business
@@ -55,8 +56,10 @@ import com.example.ui.theme.AlertRed
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 
-private const val WHATSAPP_PHONE_INTERNATIONAL = "8801630965636"
-private const val WHATSAPP_DISPLAY_PHONE = "01630965636"
+private const val TELEGRAM_URL = "https://t.me/gz_holdings"
+private const val TELEGRAM_DEEP_LINK = "tg://resolve?domain=gz_holdings"
+private const val TELEGRAM_HANDLE = "@gz_holdings"
+private val TelegramBlue = Color(0xFF229ED9)
 
 @Composable
 fun ContactUsScreen(
@@ -64,19 +67,21 @@ fun ContactUsScreen(
 ) {
     val context = LocalContext.current
 
-    fun openWhatsApp(message: String? = null) {
+    fun openTelegram() {
         try {
-            val url = if (message.isNullOrEmpty()) {
-                "https://wa.me/$WHATSAPP_PHONE_INTERNATIONAL"
-            } else {
-                "https://wa.me/$WHATSAPP_PHONE_INTERNATIONAL?text=${Uri.encode(message)}"
-            }
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            val tgIntent = Intent(Intent.ACTION_VIEW, Uri.parse(TELEGRAM_DEEP_LINK)).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
+            context.startActivity(tgIntent)
         } catch (e: Exception) {
-            Toast.makeText(context, "WhatsApp ওপেন করা যায়নি", Toast.LENGTH_SHORT).show()
+            try {
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(TELEGRAM_URL)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(webIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(context, "Telegram ওপেন করা যায়নি", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -107,13 +112,13 @@ fun ContactUsScreen(
                 Surface(
                     modifier = Modifier.size(52.dp),
                     shape = CircleShape,
-                    color = GrowthGreen.copy(alpha = 0.12f)
+                    color = TelegramBlue.copy(alpha = 0.12f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Chat,
                             contentDescription = "Contact Icon",
-                            tint = GrowthGreen,
+                            tint = TelegramBlue,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -175,25 +180,26 @@ fun ContactUsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                // WhatsApp number row (tappable)
+                // Telegram row (tappable)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { openWhatsApp() }
+                        .clickable { openTelegram() }
+                        .testTag("contact_telegram_row")
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = GrowthGreen.copy(alpha = 0.12f)
+                        color = TelegramBlue.copy(alpha = 0.12f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Chat,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = null,
-                                tint = GrowthGreen,
+                                tint = TelegramBlue,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -201,21 +207,21 @@ fun ContactUsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "WhatsApp (সরাসরি চ্যাট করতে ট্যাপ করুন)",
+                            text = "Telegram (সরাসরি চ্যাট করতে ট্যাপ করুন)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = WHATSAPP_DISPLAY_PHONE,
+                            text = TELEGRAM_HANDLE,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = GrowthGreen
+                            color = TelegramBlue
                         )
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = "Open WhatsApp",
-                        tint = GrowthGreen,
+                        contentDescription = "Open Telegram",
+                        tint = TelegramBlue,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -243,7 +249,7 @@ fun ContactUsScreen(
             }
         }
 
-        // Action Buttons Card: Feedback & Bug Report via WhatsApp
+        // Action Buttons Card: Feedback & Bug Report via Telegram
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -266,20 +272,20 @@ fun ContactUsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "সরাসরি WhatsApp-এর মাধ্যমে আপনার মূল্যবান মতামত অথবা অ্যাপের যেকোনো ত্রুটি জানান।",
+                    text = "সরাসরি Telegram-এর মাধ্যমে আপনার মূল্যবান মতামত অথবা অ্যাপের যেকোনো ত্রুটি জানান।",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Feedback Button
                 Button(
-                    onClick = { openWhatsApp("Finora Feedback: ") },
+                    onClick = { openTelegram() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("contact_feedback_button"),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GrowthGreen,
+                        containerColor = TelegramBlue,
                         contentColor = Color.White
                     )
                 ) {
@@ -297,7 +303,7 @@ fun ContactUsScreen(
 
                 // Bug Report Button
                 OutlinedButton(
-                    onClick = { openWhatsApp("Finora Bug Report: ") },
+                    onClick = { openTelegram() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("contact_bug_button"),

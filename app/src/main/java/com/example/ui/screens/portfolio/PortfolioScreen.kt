@@ -1042,14 +1042,13 @@ private fun TransactionAndDividendHistoryDialog(
                             )
                         }
                     } else {
-                        Column(
+                        LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(260.dp)
-                                .verticalScroll(rememberScrollState()),
+                                .height(260.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            txList.forEach { tx ->
+                            items(txList, key = { it.id }) { tx ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1117,14 +1116,13 @@ private fun TransactionAndDividendHistoryDialog(
                             )
                         }
                     } else {
-                        Column(
+                        LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(260.dp)
-                                .verticalScroll(rememberScrollState()),
+                                .height(260.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            divList.forEach { div ->
+                            items(divList, key = { it.id }) { div ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),

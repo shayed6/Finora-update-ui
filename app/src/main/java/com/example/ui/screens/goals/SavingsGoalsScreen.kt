@@ -89,9 +89,11 @@ fun SavingsGoalsScreen(
     var goalForContribution by remember { mutableStateOf<SavingsGoalEntity?>(null) }
     var goalToDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
 
-    val totalTarget = goals.sumOf { it.targetAmount }
-    val totalSaved = goals.sumOf { it.currentAmount }
-    val overallProgress = if (totalTarget > 0) (totalSaved / totalTarget).toFloat().coerceIn(0f, 1f) else 0f
+    val totalTarget = remember(goals) { goals.sumOf { it.targetAmount } }
+    val totalSaved = remember(goals) { goals.sumOf { it.currentAmount } }
+    val overallProgress = remember(totalTarget, totalSaved) {
+        if (totalTarget > 0) (totalSaved / totalTarget).toFloat().coerceIn(0f, 1f) else 0f
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

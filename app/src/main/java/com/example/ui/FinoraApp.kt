@@ -334,12 +334,8 @@ fun FinoraApp(
                 AnimatedContent(
                     targetState = currentScreen,
                     transitionSpec = {
-                        (fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
-                                slideInHorizontally(animationSpec = tween(200, easing = FastOutSlowInEasing)) { (it * 0.05f).toInt() })
-                            .togetherWith(
-                                fadeOut(animationSpec = tween(150, easing = FastOutLinearInEasing)) +
-                                        slideOutHorizontally(animationSpec = tween(150, easing = FastOutLinearInEasing)) { -(it * 0.05f).toInt() }
-                            )
+                        fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing))
+                            .togetherWith(fadeOut(animationSpec = tween(120, easing = FastOutLinearInEasing)))
                     },
                     label = "ScreenTransition"
                 ) { screen ->

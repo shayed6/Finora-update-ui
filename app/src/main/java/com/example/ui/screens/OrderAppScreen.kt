@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
@@ -50,7 +51,9 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 
-private const val WHATSAPP_PHONE_INTERNATIONAL = "8801630965636"
+private const val TELEGRAM_URL = "https://t.me/gz_holdings"
+private const val TELEGRAM_DEEP_LINK = "tg://resolve?domain=gz_holdings"
+private val TelegramBlue = Color(0xFF229ED9)
 
 @Composable
 fun OrderAppScreen(
@@ -58,16 +61,21 @@ fun OrderAppScreen(
 ) {
     val context = LocalContext.current
 
-    fun openOrderWhatsApp() {
+    fun openOrderTelegram() {
         try {
-            val message = "Hi, I'm interested in ordering a custom app. "
-            val url = "https://wa.me/$WHATSAPP_PHONE_INTERNATIONAL?text=${Uri.encode(message)}"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            val tgIntent = Intent(Intent.ACTION_VIEW, Uri.parse(TELEGRAM_DEEP_LINK)).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
+            context.startActivity(tgIntent)
         } catch (e: Exception) {
-            Toast.makeText(context, "WhatsApp ওপেন করা যায়নি", Toast.LENGTH_SHORT).show()
+            try {
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(TELEGRAM_URL)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(webIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(context, "Telegram ওপেন করা যায়নি", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -180,7 +188,7 @@ fun OrderAppScreen(
             }
         }
 
-        // Order CTA Card with WhatsApp Button
+        // Order CTA Card with Telegram Button
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -203,30 +211,30 @@ fun OrderAppScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "নিচের বাটনে ট্যাপ করে আপনার অ্যাপের আইডিয়া বা প্রয়োজনীয়তা লিখে পাঠান। আমরা দ্রুত আপনার সাথে আলোচনা করব।",
+                    text = "নিচের বাটনে ট্যাপ করে Telegram-এ সরাসরি যোগাযোগ করুন। আমরা দ্রুত আপনার সাথে আলোচনা করব।",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Button(
-                    onClick = { openOrderWhatsApp() },
+                    onClick = { openOrderTelegram() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("order_app_whatsapp_button"),
+                        .testTag("order_app_telegram_button"),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GrowthGreen,
+                        containerColor = TelegramBlue,
                         contentColor = Color.White
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Chat,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "WhatsApp-এ অর্ডার দিন",
+                        text = "Telegram-এ অর্ডার দিন",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp
                     )

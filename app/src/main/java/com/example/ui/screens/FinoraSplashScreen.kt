@@ -40,21 +40,21 @@ fun FinoraSplashScreen(
     val scaleAnim = remember { Animatable(0.96f) }
 
     LaunchedEffect(Unit) {
-        // Animate entrance
+        // Snappy entrance animation
         alphaAnim.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
         )
         scaleAnim.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
         )
 
-        // Hold for user to enjoy the artwork, then transition
-        delay(2200L)
+        // Snappy hold time before entering Home screen
+        delay(750L)
         alphaAnim.animateTo(
             targetValue = 0f,
-            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
         )
         onFinish()
     }

@@ -32,7 +32,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,24 +62,11 @@ fun CategoryCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "category_scale"
-    )
-
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .scale(scale)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
+            .clickable(onClick = onClick)
             .testTag("category_card_${category.id}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -85,7 +74,7 @@ fun CategoryCard(
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = if (isPressed) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
+            color = MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -175,24 +164,13 @@ fun CalculatorListItem(
     isFavorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "calc_item_scale"
-    )
+    var optimisticFavorite by remember(isFavorite) { mutableStateOf(isFavorite) }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .scale(scale)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
+            .clickable(onClick = onClick)
             .testTag("calc_item_${calculator.id}"),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
@@ -200,7 +178,7 @@ fun CalculatorListItem(
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = if (isPressed) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
+            color = MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -254,20 +232,24 @@ fun CalculatorListItem(
 
             if (onToggleFavorite != null) {
                 IconButton(
-                    onClick = onToggleFavorite,
+                    onClick = {
+                        optimisticFavorite = !optimisticFavorite
+                        onToggleFavorite()
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .testTag("calc_favorite_${calculator.id}")
                 ) {
-                    val favDesc = if (isFavorite) {
+                    val isFav = optimisticFavorite
+                    val favDesc = if (isFav) {
                         if (isEnglish) "Remove from favorites" else "পছন্দের তালিকা থেকে সরান"
                     } else {
                         if (isEnglish) "Add to favorites" else "পছন্দের তালিকায় যোগ করুন"
                     }
                     Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        imageVector = if (isFav) Icons.Filled.Star else Icons.Outlined.StarBorder,
                         contentDescription = favDesc,
-                        tint = if (isFavorite) Color(0xFFFFB800) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        tint = if (isFav) Color(0xFFFFB800) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(22.dp)
                     )
                 }

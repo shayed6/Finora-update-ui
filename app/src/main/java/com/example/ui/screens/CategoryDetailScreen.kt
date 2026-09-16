@@ -54,15 +54,17 @@ fun CategoryDetailScreen(
     onCalculatorClick: (CalculatorDef) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val calculators = CalculatorRepository.getByCategory(category)
+    val calculators = remember(category) { CalculatorRepository.getByCategory(category) }
     val favoriteIds by FavoritesManager.favorites.collectAsState()
     val maxSlots by FavoritesManager.maxSlots.collectAsState()
     var showUnlockSlotsDialog by remember { mutableStateOf(false) }
 
-    val handleToggleFavorite: (String) -> Unit = { calcId ->
-        val success = FavoritesManager.toggleFavorite(calcId)
-        if (!success) {
-            showUnlockSlotsDialog = true
+    val handleToggleFavorite: (String) -> Unit = remember {
+        { calcId ->
+            val success = FavoritesManager.toggleFavorite(calcId)
+            if (!success) {
+                showUnlockSlotsDialog = true
+            }
         }
     }
 
