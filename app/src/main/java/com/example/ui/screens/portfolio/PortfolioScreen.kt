@@ -37,12 +37,15 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TableChart
+import com.example.util.CsvReportGenerator
 import com.example.util.PdfReportGenerator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -106,6 +109,8 @@ fun PortfolioScreen(
     val holdings by viewModel.holdings.collectAsState()
     val holdingsWithDividends by viewModel.holdingsWithDividends.collectAsState()
     val summary by viewModel.summary.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val syncStatusMessage by viewModel.syncStatusMessage.collectAsState()
     val scope = rememberCoroutineScope()
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -118,9 +123,14 @@ fun PortfolioScreen(
     androidx.compose.runtime.LaunchedEffect(isInsideTxFlow) {
         AdManager.setInsideTransactionFlow(isInsideTxFlow)
     }
+
+    // Schedule: Refresh live_prices every 50-60 seconds while Portfolio screen is active/foreground.
+    // Do NOT run background scrape when app or screen is closed.
     DisposableEffect(Unit) {
+        viewModel.startLivePricePolling()
         onDispose {
             AdManager.setInsideTransactionFlow(false)
+            viewModel.stopLivePricePolling()
         }
     }
 
@@ -147,7 +157,7 @@ fun PortfolioScreen(
         ) {
             item {
                 Spacer(modifier = Modifier.height(6.dp))
-                // Header Bar with Title & PDF Export Button
+                // Header Bar with Title, Manual Refresh Button & PDF Export Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -161,23 +171,57 @@ fun PortfolioScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "DSE ও CSE শেয়ার ও ডিভিডেন্ড আয় ট্র্যাকিং",
+                            text = if (isRefreshing) "বাজার থেকে লাইভ দর সংগ্রহ করা হচ্ছে..." else "DSE ও CSE লাইভ দর ও ডিভিডেন্ড আয় ট্র্যাকিং",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isRefreshing) PrimaryBlue else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    IconButton(
-                        onClick = {
-                            exportPortfolioReport(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
-                        },
-                        modifier = Modifier.testTag("portfolio_export_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PictureAsPdf,
-                            contentDescription = "Export Portfolio PDF Report",
-                            tint = PrimaryBlue
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { viewModel.manualRefreshLivePrices() },
+                            modifier = Modifier.testTag("portfolio_refresh_button")
+                        ) {
+                            if (isRefreshing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = PrimaryBlue
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh Live Prices",
+                                    tint = PrimaryBlue
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = {
+                                exportPortfolioCsv(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
+                            },
+                            modifier = Modifier.testTag("portfolio_export_csv_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.TableChart,
+                                contentDescription = "Export Portfolio CSV",
+                                tint = PrimaryBlue
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                exportPortfolioReport(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
+                            },
+                            modifier = Modifier.testTag("portfolio_export_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = "Export Portfolio PDF Report",
+                                tint = PrimaryBlue
+                            )
+                        }
                     }
                 }
             }
@@ -418,37 +462,88 @@ private fun PortfolioSummaryCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Main Metrics: Total Invested & Total Dividend
+            // Main Metrics: Total Invested & Current Portfolio Value
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
-                        text = "মোট বিনিয়োগ (Total Invested)",
-                        fontSize = 11.5.sp,
+                        text = "মোট ক্রয়মূল্য (Total Invested)",
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = BengaliFormatter.formatTaka(summary.totalInvested, useBengaliDigits),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "মোট ডিভিডেন্ড (Total Dividend)",
-                        fontSize = 11.5.sp,
+                        text = "বর্তমান বাজারমূল্য (Current Value)",
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (summary.hasAnyLivePrice) BengaliFormatter.formatTaka(summary.currentTotalValue, useBengaliDigits) else "—",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = PrimaryBlue
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Secondary Metrics: Unrealized Gain/Loss & Total Dividend
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "অবাস্তবায়িত লাভ/ক্ষতি (Unrealized G/L)",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    if (summary.hasAnyLivePrice) {
+                        val isGain = summary.totalUnrealizedGainLoss >= 0
+                        val color = if (isGain) GrowthGreen else AlertRed
+                        val sign = if (isGain) "+" else ""
+                        val glPct = if (summary.totalInvested > 0) (summary.totalUnrealizedGainLoss / summary.totalInvested) * 100.0 else 0.0
+                        Text(
+                            text = "$sign${BengaliFormatter.formatTaka(summary.totalUnrealizedGainLoss, useBengaliDigits)} ($sign${BengaliFormatter.formatPercent(glPct, useBengaliDigits)})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.5.sp,
+                            color = color
+                        )
+                    } else {
+                        Text(
+                            text = "—",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "মোট ডিভিডেন্ড আয় (Dividends)",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = BengaliFormatter.formatTaka(summary.totalDividend, useBengaliDigits),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
+                        fontSize = 15.sp,
                         color = GrowthGreen
                     )
                 }
@@ -471,7 +566,7 @@ private fun PortfolioSummaryCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -504,7 +599,9 @@ private fun PortfolioSummaryCard(
 }
 
 /**
- * Holding Item Card showing investment details, dividend earnings, and return per share.
+ * Holding Item Card showing investment details, live price, unrealized G/L, dividend earnings, and return per share.
+ * Layout strictly follows:
+ * Exchange - Stock name - Quantity - Total Price (avg price/share shown smaller below) - Current Price - Unrealized G/L - Dividend Received - Per-Share Dividend Return
  */
 @Composable
 private fun HoldingItemCard(
@@ -533,13 +630,16 @@ private fun HoldingItemCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Row 1: Exchange badge (DSE/CSE) + Stock Name + Quantity + Actions
+            // Row 1: Exchange badge (DSE/CSE) + Stock Name + Quantity + Outdated indicator + Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = if (holding.exchange.uppercase() == "DSE") PrimaryBlue else Color(0xFF8B5CF6)
@@ -569,6 +669,23 @@ private fun HoldingItemCard(
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (holdingWithDiv.isPriceOutdated) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color(0xFFFFF3CD),
+                            border = BorderStroke(0.5.dp, Color(0xFFFFC107))
+                        ) {
+                            Text(
+                                text = "পুরোনো",
+                                fontSize = 9.5.sp,
+                                color = Color(0xFF856404),
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -610,90 +727,177 @@ private fun HoldingItemCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Row 2: Total Investment & Total Dividend
+            // Row 2: Total Price (avg price/share shown smaller below) - Current Price - Unrealized G/L
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.Top
             ) {
-                Column {
+                // Total Price + avg price below
+                Column(modifier = Modifier.weight(1.1f)) {
                     Text(
-                        text = "মোট বিনিয়োগ (Total Investment)",
+                        text = "মোট ক্রয়মূল্য",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = BengaliFormatter.formatTaka(totalPrice, useBengaliDigits),
-                        fontSize = 18.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "গড় ক্রয়দর: ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}/শেয়ার",
-                        fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "ডিভিডেন্ড আয়",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = BengaliFormatter.formatTaka(holdingWithDiv.totalDividend, useBengaliDigits),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GrowthGreen
-                    )
-                    Text(
-                        text = "${BengaliFormatter.toBengaliDigits(holdingWithDiv.dividendCount.toString())} বার প্রাপ্ত",
+                        text = "গড়: ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}",
                         fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                // Current Price
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "বর্তমান দর",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    val cp = holdingWithDiv.currentPrice
+                    if (cp != null && cp > 0.0) {
+                        Text(
+                            text = BengaliFormatter.formatTaka(cp, useBengaliDigits),
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                        val changePct = holdingWithDiv.livePrice?.changePercent
+                        if (changePct != null && changePct != 0.0) {
+                            val sign = if (changePct > 0) "+" else ""
+                            Text(
+                                text = "$sign${BengaliFormatter.formatPercent(changePct, useBengaliDigits)}",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (changePct > 0) GrowthGreen else AlertRed
+                            )
+                        } else {
+                            Text(
+                                text = "০.০০%",
+                                fontSize = 10.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "—",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "পাওয়া যায়নি",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Unrealized G/L
+                Column(
+                    modifier = Modifier.weight(1.2f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "অবাস্তবায়িত লাভ/ক্ষতি",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    val ugl = holdingWithDiv.unrealizedGainLoss
+                    val uglPct = holdingWithDiv.unrealizedGainLossPercent
+                    if (ugl != null) {
+                        val isGain = ugl >= 0
+                        val color = if (isGain) GrowthGreen else AlertRed
+                        val sign = if (isGain) "+" else ""
+                        Text(
+                            text = "$sign${BengaliFormatter.formatTaka(ugl, useBengaliDigits)}",
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
+                        Text(
+                            text = "($sign${BengaliFormatter.formatPercent(uglPct ?: 0.0, useBengaliDigits)})",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = color
+                        )
+                    } else {
+                        Text(
+                            text = "—",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "—",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Row 3: Return per Share Banner
-            Surface(
+            // Row 3: Dividend Received (ডিভিডেন্ড প্রাপ্ত) & Per-Share Dividend Return (শেয়ার প্রতি রিটার্ন)
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text(
+                        text = "ডিভিডেন্ড প্রাপ্ত:",
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${BengaliFormatter.formatTaka(holdingWithDiv.totalDividend, useBengaliDigits)} (${BengaliFormatter.toBengaliDigits(holdingWithDiv.dividendCount.toString())} বার)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = GrowthGreen
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "প্রতি শেয়ারে রিটার্ন:",
-                            fontSize = 11.5.sp,
+                            text = "শেয়ার প্রতি রিটার্ন:",
+                            fontSize = 10.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "${BengaliFormatter.formatTaka(holdingWithDiv.returnPerShare, useBengaliDigits)}/শেয়ার",
-                            fontSize = 12.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = GrowthGreen
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     TextButton(
                         onClick = onAddDividend,
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 0.dp)
                     ) {
                         Text(
-                            text = "+ ডিভিডেন্ড যোগ",
+                            text = "+ ডিভিডেন্ড",
                             fontSize = 11.sp,
                             color = PrimaryBlue,
                             fontWeight = FontWeight.SemiBold
@@ -1199,3 +1403,23 @@ fun exportPortfolioReport(
         holdingsWithDividends = holdingsWithDividends
     )
 }
+
+/**
+ * Exports the current portfolio status and unrealized gain/loss data to a local CSV file.
+ */
+fun exportPortfolioCsv(
+    context: Context,
+    holdings: List<HoldingEntity>,
+    summary: PortfolioSummary,
+    useBengaliDigits: Boolean,
+    holdingsWithDividends: List<HoldingWithDividends> = emptyList()
+) {
+    CsvReportGenerator.exportPortfolioCsv(
+        context = context,
+        holdings = holdings,
+        summary = summary,
+        useBengaliDigits = useBengaliDigits,
+        holdingsWithDividends = holdingsWithDividends
+    )
+}
+

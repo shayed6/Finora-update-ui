@@ -1,10 +1,13 @@
 package com.example.data.repository
 
+import com.example.data.local.dao.LivePriceDao
 import com.example.data.local.dao.PortfolioDao
 import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
+import com.example.data.local.entity.LivePriceEntity
 import com.example.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 // NOTE FOR FUTURE (Cloud Sync / Firebase):
 // When cloud sync is wired into this repository (e.g. Firebase Firestore sync),
@@ -14,10 +17,27 @@ import kotlinx.coroutines.flow.Flow
 //   allow read, write: if request.auth != null && request.auth.uid == uid;
 // }
 
-class PortfolioRepository(private val portfolioDao: PortfolioDao) {
+class PortfolioRepository(
+    private val portfolioDao: PortfolioDao,
+    private val livePriceDao: LivePriceDao? = null
+) {
 
     val allHoldings: Flow<List<HoldingEntity>> = portfolioDao.getAllHoldings()
     val allDividends: Flow<List<DividendEntity>> = portfolioDao.getAllDividends()
+    val allLivePrices: Flow<List<LivePriceEntity>> = livePriceDao?.getAllLivePrices() ?: flowOf(emptyList())
+
+    fun getLivePrice(exchange: String, symbol: String): Flow<LivePriceEntity?> =
+        livePriceDao?.getLivePrice(exchange, symbol) ?: flowOf(null)
+
+    suspend fun getLivePriceSync(exchange: String, symbol: String): LivePriceEntity? =
+        livePriceDao?.getLivePriceSync(exchange, symbol)
+
+    suspend fun saveLivePrices(prices: List<LivePriceEntity>) {
+        livePriceDao?.insertOrUpdatePrices(prices)
+    }
+
+    fun getLatestPriceTimestamp(): Flow<Long?> =
+        livePriceDao?.getLatestTimestampFlow() ?: flowOf(null)
 
     fun getTransactions(holdingId: Long): Flow<List<TransactionEntity>> =
         portfolioDao.getTransactionsForHolding(holdingId)

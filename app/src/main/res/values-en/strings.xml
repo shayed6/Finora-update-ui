@@ -97,8 +97,8 @@
     <string name="settings_digits_bn">Bengali Digits (১২৩৪৫)</string>
     <string name="settings_digits_en">English Digits (12345)</string>
     <string name="settings_section_brokerage">Default Brokerage Commission</string>
-    <string name="settings_brokerage_subtitle">0.40% commission standard across most Bangladesh brokerages</string>
-    <string name="settings_brokerage_desc">Stock transaction calculators default to 0.40% commission automatically. You can adjust this for any transaction as needed.</string>
+    <string name="settings_brokerage_subtitle" formatted="false">0.40% commission standard across most Bangladesh brokerages</string>
+    <string name="settings_brokerage_desc" formatted="false">Stock transaction calculators default to 0.40% commission automatically. You can adjust this for any transaction as needed.</string>
     <string name="settings_section_admob">Lightweight AdMob &amp; Privacy</string>
     <string name="settings_admob_subtitle">User-friendly ad placements &amp; optional rewarded perks</string>
     <string name="settings_reward_title">Unlock Favorite Slots (Rewarded Perk)</string>

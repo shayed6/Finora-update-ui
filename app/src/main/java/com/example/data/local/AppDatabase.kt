@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.data.local.dao.LivePriceDao
 import com.example.data.local.dao.PortfolioDao
 import com.example.data.local.dao.SavingsGoalDao
 import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
+import com.example.data.local.entity.LivePriceEntity
 import com.example.data.local.entity.SavingsGoalEntity
 import com.example.data.local.entity.TransactionEntity
 
@@ -16,14 +18,16 @@ import com.example.data.local.entity.TransactionEntity
         HoldingEntity::class,
         TransactionEntity::class,
         DividendEntity::class,
-        SavingsGoalEntity::class
+        SavingsGoalEntity::class,
+        LivePriceEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun portfolioDao(): PortfolioDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun livePriceDao(): LivePriceDao
 
     companion object {
         @Volatile
