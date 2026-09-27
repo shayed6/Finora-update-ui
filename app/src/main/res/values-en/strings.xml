@@ -53,6 +53,8 @@
     <string name="portfolio_widget_current_value">Current Value</string>
     <string name="portfolio_widget_profit_loss">Total Profit/Loss</string>
     <string name="portfolio_widget_add_stock">Add Stock</string>
+    <string name="widget_portfolio_label">Finora Portfolio</string>
+    <string name="widget_portfolio_description">Compact home screen snapshot of your stock portfolio value and unrealized profit/loss.</string>
 
     <!-- Portfolio Screen -->
     <string name="portfolio_empty_title">Your Portfolio is Empty</string>

@@ -1,8 +1,10 @@
 package com.example.ui.screens.portfolio
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -179,7 +181,12 @@ fun PortfolioScreen(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
-                            onClick = { viewModel.manualRefreshLivePrices() },
+                            onClick = {
+                                val act = findActivity(context)
+                                AdManager.onManualRefreshRequested(act) {
+                                    viewModel.manualRefreshLivePrices()
+                                }
+                            },
                             modifier = Modifier.testTag("portfolio_refresh_button")
                         ) {
                             if (isRefreshing) {
@@ -1422,4 +1429,14 @@ fun exportPortfolioCsv(
         holdingsWithDividends = holdingsWithDividends
     )
 }
+
+private fun findActivity(context: Context): Activity? {
+    var current = context
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
+}
+
 

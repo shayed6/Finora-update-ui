@@ -179,8 +179,8 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
     )
 
     /**
-     * Starts refreshing live prices every 50-60 seconds while the Portfolio screen is active/foreground.
-     * Caches aggressively (45s) and applies jitter.
+     * Starts refreshing live prices every 60 seconds (fixed interval) while the Portfolio screen is active/foreground.
+     * Caches with 55-second threshold and applies 1-3 second jitter.
      */
     fun startLivePricePolling() {
         if (isForegroundActive) return
@@ -192,8 +192,8 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             refreshPricesInternal(forceRefresh = false)
 
             while (isForegroundActive) {
-                // Poll every 55 seconds (between 50-60s)
-                delay(55_000L)
+                // Fixed 60 seconds interval
+                delay(60_000L)
                 if (isForegroundActive) {
                     refreshPricesInternal(forceRefresh = false)
                 }

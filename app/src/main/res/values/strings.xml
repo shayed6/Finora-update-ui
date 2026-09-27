@@ -53,6 +53,8 @@
     <string name="portfolio_widget_current_value">বর্তমান মূল্য</string>
     <string name="portfolio_widget_profit_loss">মোট লাভ/ক্ষতি</string>
     <string name="portfolio_widget_add_stock">স্টক যোগ করুন</string>
+    <string name="widget_portfolio_label">Finora পোর্টফোলিও</string>
+    <string name="widget_portfolio_description">হোম স্ক্রিনে DSE ও CSE পোর্টফোলিও সম্পদ মূল্য ও অবাস্তবায়িত লাভ/ক্ষতির অন-ডিভাইস স্ন্যাপশট</string>
 
     <!-- Portfolio Screen -->
     <string name="portfolio_empty_title">আপনার পোর্টফোলিও ফাঁকা</string>

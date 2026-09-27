@@ -29,7 +29,7 @@ class MarketPriceScraper {
         private const val DSE_FALLBACK_URL = "https://dsebd.org/latest_share_price_all.php"
         private const val CSE_URL = "https://www.cse.com.bd/market/current_price"
 
-        private const val CACHE_DURATION_MS = 45_000L // 45 seconds aggressive caching
+        private const val CACHE_DURATION_MS = 55_000L // 55 seconds cache reuse threshold
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
 

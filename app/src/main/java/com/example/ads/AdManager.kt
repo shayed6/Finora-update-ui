@@ -496,4 +496,90 @@ object AdManager {
     }
 
     fun isInsideTransactionFlow(): Boolean = isInsideTransactionFlow
+
+    // ==========================================
+    // REFRESH-GATE REWARDED VIDEO AD
+    // ==========================================
+    private const val REFRESH_GATE_WINDOW_MS = 5 * 60 * 1000L // 5 minutes rolling window
+    private const val MAX_FREE_MANUAL_REFRESHES = 3 // Up to 3 free manual refreshes in 5 min
+
+    private val manualRefreshTimestamps = mutableListOf<Long>()
+
+    /**
+     * Requirement 3: Refresh-Gate Rewarded Video Ad.
+     * Tracks manual refresh button taps with timestamps in a rolling 5-minute window.
+     * If the user manually refreshes more than 3 times within 5 minutes, shows a rewarded video ad
+     * before allowing the next manual refresh to proceed.
+     * After ad completes (or skipped/failed), allows the refresh and resets the counter while keeping
+     * the rolling window active. Automatic 60-second background refresh is NOT affected.
+     */
+    @Synchronized
+    fun onManualRefreshRequested(activity: Activity?, onProceedWithRefresh: () -> Unit) {
+        val now = System.currentTimeMillis()
+        // Prune timestamps older than 5 minutes
+        manualRefreshTimestamps.removeAll { now - it > REFRESH_GATE_WINDOW_MS }
+
+        if (manualRefreshTimestamps.size < MAX_FREE_MANUAL_REFRESHES) {
+            // Free manual refresh allowed (< 4th tap)
+            manualRefreshTimestamps.add(now)
+            AdLog.log(
+                AdLog.AdFormat.REWARDED,
+                AdLog.EventType.CLICK,
+                "Manual refresh allowed (${manualRefreshTimestamps.size}/$MAX_FREE_MANUAL_REFRESHES in 5 min window)"
+            )
+            onProceedWithRefresh()
+        } else {
+            // User exceeded 3 manual refreshes in 5 minutes -> Gate with Rewarded Video Ad
+            AdLog.log(
+                AdLog.AdFormat.REWARDED,
+                AdLog.EventType.IMPRESSION,
+                "Manual refresh gate triggered (4th+ tap in 5 min). Presenting rewarded ad."
+            )
+
+            if (activity != null) {
+                showRewardedAd(
+                    activity = activity,
+                    onUserEarnedReward = {
+                        // User watched ad -> reset counter and proceed
+                        synchronized(this) {
+                            manualRefreshTimestamps.clear()
+                            manualRefreshTimestamps.add(System.currentTimeMillis())
+                        }
+                        onProceedWithRefresh()
+                    },
+                    onDismissedOrFailed = {
+                        // If user skipped or ad failed to load, do not block refresh
+                        synchronized(this) {
+                            manualRefreshTimestamps.clear()
+                            manualRefreshTimestamps.add(System.currentTimeMillis())
+                        }
+                        onProceedWithRefresh()
+                    }
+                )
+            } else {
+                // If activity is null, allow refresh and log failure silently
+                manualRefreshTimestamps.clear()
+                manualRefreshTimestamps.add(System.currentTimeMillis())
+                onProceedWithRefresh()
+            }
+        }
+    }
+
+    /**
+     * Returns count of manual refreshes recorded in the active 5-minute rolling window (for testing/debug).
+     */
+    @Synchronized
+    fun getManualRefreshCountInWindow(): Int {
+        val now = System.currentTimeMillis()
+        manualRefreshTimestamps.removeAll { now - it > REFRESH_GATE_WINDOW_MS }
+        return manualRefreshTimestamps.size
+    }
+
+    /**
+     * Resets the manual refresh gate timestamps (for tests).
+     */
+    @Synchronized
+    fun resetManualRefreshGate() {
+        manualRefreshTimestamps.clear()
+    }
 }

@@ -16,6 +16,9 @@ interface PortfolioDao {
     @Query("SELECT * FROM holdings ORDER BY id DESC")
     fun getAllHoldings(): Flow<List<HoldingEntity>>
 
+    @Query("SELECT * FROM holdings ORDER BY id DESC")
+    suspend fun getAllHoldingsList(): List<HoldingEntity>
+
     @Query("SELECT * FROM holdings WHERE UPPER(exchange) = UPPER(:exchange) AND UPPER(stockName) = UPPER(:stockName) LIMIT 1")
     suspend fun getHoldingByExchangeAndStock(exchange: String, stockName: String): HoldingEntity?
 

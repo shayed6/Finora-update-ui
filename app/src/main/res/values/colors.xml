@@ -7,4 +7,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="finora_navy">#0F172A</color>
+    <color name="finora_card_bg">#1E293B</color>
+    <color name="finora_border">#334155</color>
+    <color name="finora_blue">#2563EB</color>
+    <color name="finora_green">#16A34A</color>
+    <color name="finora_red">#DC2626</color>
+    <color name="finora_text_primary">#F8FAFC</color>
+    <color name="finora_text_secondary">#94A3B8</color>
 </resources>
