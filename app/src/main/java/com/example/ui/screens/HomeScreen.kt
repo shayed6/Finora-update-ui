@@ -65,6 +65,7 @@ import com.example.ui.LocalAppLanguage
 import com.example.ui.components.CalculatorListItem
 import com.example.ui.components.CategoryCard
 import com.example.ui.components.CurrentInvestmentWidget
+import com.example.ui.components.FCoinCanvasIllustration
 import com.example.ui.components.UnlockFavoriteSlotsDialog
 import com.example.ui.screens.portfolio.PortfolioViewModel
 import com.example.ui.theme.GrowthGreen
@@ -78,6 +79,7 @@ fun HomeScreen(
     onCategoryClick: (CalculatorCategory) -> Unit,
     onCalculatorClick: (CalculatorDef) -> Unit,
     onPortfolioClick: () -> Unit,
+    onFCoinClick: () -> Unit = {},
     useBengaliDigits: Boolean = true,
     portfolioViewModel: PortfolioViewModel = viewModel(),
     modifier: Modifier = Modifier
@@ -265,6 +267,66 @@ fun HomeScreen(
                         category = category,
                         onClick = { onCategoryClick(category) }
                     )
+                }
+
+                // F-Coin Coming Soon Spotlight Banner Card
+                item(span = { GridItemSpan(2) }) {
+                    Card(
+                        onClick = onFCoinClick,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        border = BorderStroke(1.dp, Color(0xFFFFB800).copy(alpha = 0.35f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .testTag("home_fcoin_spotlight_card")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FCoinCanvasIllustration(
+                                size = 46.dp,
+                                animated = true
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Finora F-Coin",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Color(0xFFFFB800).copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = "শীঘ্রই আসছে",
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFD67800),
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (isEnglish) "Earn loyalty tokens by calculating & learning. Tap to explore upcoming perks →" else "হিসাব ও শেখায় রিওয়ার্ড টোকেন অর্জন করুন। কী সুবিধা আসছে জানতে ট্যাপ করুন →",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // On-device privacy indicator footer item in grid

@@ -249,6 +249,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             if (prices.isNotEmpty()) {
                 repository.saveLivePrices(prices)
                 _syncStatusMessage.value = "লাইভ দর হালনাগাদ সফল (${prices.size}টি শেয়ার)"
+                com.example.widget.PortfolioWidgetProvider.updateAllWidgets(getApplication())
             } else {
                 _syncStatusMessage.value = "লাইভ দর সংগ্রহ সম্পন্ন"
             }
@@ -275,18 +276,21 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 quantity = quantity,
                 commissionPercent = commissionPercent
             )
+            com.example.widget.PortfolioWidgetProvider.updateAllWidgets(getApplication())
         }
     }
 
     fun addDividend(holdingId: Long, amount: Double, timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             repository.addDividend(holdingId, amount, timestamp)
+            com.example.widget.PortfolioWidgetProvider.updateAllWidgets(getApplication())
         }
     }
 
     fun deleteHolding(holding: HoldingEntity) {
         viewModelScope.launch {
             repository.deleteHolding(holding)
+            com.example.widget.PortfolioWidgetProvider.updateAllWidgets(getApplication())
         }
     }
 

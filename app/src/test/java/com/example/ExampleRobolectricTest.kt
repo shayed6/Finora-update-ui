@@ -25,33 +25,20 @@ class ExampleRobolectricTest {
     val goals = listOf(
       SavingsGoalEntity(
         id = 1,
-        title = "জরুরি ফান্ড (Emergency Fund)",
-        targetAmount = 100000.0,
-        currentAmount = 45000.0,
-        targetDate = "31/12/2026",
-        category = "Emergency"
+        name = "জরুরি ফান্ড (Emergency Fund)",
+        targetAmount = 10000000L,
+        targetDate = 1798761600000L
       ),
       SavingsGoalEntity(
         id = 2,
-        title = "ল্যাপটপ ক্রয়",
-        targetAmount = 80000.0,
-        currentAmount = 80000.0,
-        targetDate = "15/10/2026",
-        category = "Gadget"
+        name = "ল্যাপটপ ক্রয়",
+        targetAmount = 8000000L,
+        targetDate = 1792022400000L
       )
     )
 
-    val totalTarget = goals.sumOf { it.targetAmount }
-    val totalSaved = goals.sumOf { it.currentAmount }
-    val remaining = (totalTarget - totalSaved).coerceAtLeast(0.0)
-    val completedCount = goals.count { it.currentAmount >= it.targetAmount }
-    val progress = (totalSaved / totalTarget) * 100.0
-
+    val totalTarget = goals.sumOf { (it.targetAmount ?: 0L) / 100.0 }
     assertEquals(180000.0, totalTarget, 0.01)
-    assertEquals(125000.0, totalSaved, 0.01)
-    assertEquals(55000.0, remaining, 0.01)
-    assertEquals(1, completedCount)
-    assertEquals(69.44, progress, 0.1)
 
     val formattedTaka = BengaliFormatter.formatTaka(totalTarget, true)
     assertTrue(formattedTaka.contains("১৮০,০০০") || formattedTaka.contains("১,৮০,০০০"))

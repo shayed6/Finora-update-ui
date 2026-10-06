@@ -42,12 +42,13 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <View
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="6dp"
         android:layout_marginBottom="6dp"
-        android:background="@color/finora_border" />
+        android:background="@color/finora_border"
+        android:importantForAccessibility="no" />
 
     <!-- Metric Row 1: Holdings Count & Total Value -->
     <LinearLayout

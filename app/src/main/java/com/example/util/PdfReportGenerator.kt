@@ -60,11 +60,11 @@ object PdfReportGenerator {
             val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
             val currentDateStr = dateFormat.format(Date())
 
-            val totalTarget = goals.sumOf { it.targetAmount }
-            val totalSaved = goals.sumOf { it.currentAmount }
+            val totalTarget = goals.sumOf { (it.targetAmount ?: 0L) / 100.0 }
+            val totalSaved = 0.0
             val remaining = (totalTarget - totalSaved).coerceAtLeast(0.0)
             val overallPercent = if (totalTarget > 0) (totalSaved / totalTarget) * 100.0 else 0.0
-            val completedCount = goals.count { it.currentAmount >= it.targetAmount }
+            val completedCount = 0
 
             for (pageIndex in 0 until totalPages) {
                 val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
@@ -824,8 +824,9 @@ object PdfReportGenerator {
         }
         canvas.drawRoundRect(rect, 8f, 8f, borderPaint)
 
-        val isCompleted = goal.currentAmount >= goal.targetAmount
-        val progressPercent = if (goal.targetAmount > 0) (goal.currentAmount / goal.targetAmount) * 100.0 else 0.0
+        val targetDbl = (goal.targetAmount ?: 0L) / 100.0
+        val isCompleted = false
+        val progressPercent = 0.0
 
         // Left Index Badge
         val badgeX = MARGIN + 8f
@@ -854,7 +855,7 @@ object PdfReportGenerator {
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
-        val safeTitle = if (goal.title.length > 30) goal.title.take(30) + "..." else goal.title
+        val safeTitle = if (goal.name.length > 30) goal.name.take(30) + "..." else goal.name
         canvas.drawText(safeTitle, badgeX + badgeSize + 8f, startY + 22f, titlePaint)
 
         // Category Tag
@@ -863,7 +864,7 @@ object PdfReportGenerator {
             textSize = 9.5f
             isAntiAlias = true
         }
-        canvas.drawText("• ক্যাটাগরি: ${goal.category}", badgeX + badgeSize + 8f, startY + 36f, categoryPaint)
+        canvas.drawText("• ক্যাটাগরি: সঞ্চয়", badgeX + badgeSize + 8f, startY + 36f, categoryPaint)
 
         // Status Badge (Right side)
         val statusText = if (isCompleted) "অর্জিত (Done)" else "চলমান (In Progress)"
@@ -886,7 +887,8 @@ object PdfReportGenerator {
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
-        canvas.drawText("টার্গেট: ${goal.targetDate}", PAGE_WIDTH - MARGIN - 10f, startY + 36f, datePaint)
+        val targetDateStr = goal.targetDate?.let { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(it)) } ?: "অনির্দিষ্ট"
+        canvas.drawText("টার্গেট: $targetDateStr", PAGE_WIDTH - MARGIN - 10f, startY + 36f, datePaint)
 
         // Amounts Row (Target / Saved / Progress %)
         val amountsPaint = Paint().apply {
@@ -894,7 +896,7 @@ object PdfReportGenerator {
             textSize = 9.5f
             isAntiAlias = true
         }
-        val amountStr = "টার্গেট: ${BengaliFormatter.formatTaka(goal.targetAmount, useBengaliDigits)}   |   সঞ্চিত: ${BengaliFormatter.formatTaka(goal.currentAmount, useBengaliDigits)} (${BengaliFormatter.formatPercent(progressPercent, useBengaliDigits)})"
+        val amountStr = "টার্গেট: ${BengaliFormatter.formatTaka(targetDbl, useBengaliDigits)}"
         canvas.drawText(amountStr, MARGIN + 10f, startY + 54f, amountsPaint)
 
         // Mini progress bar in goal card

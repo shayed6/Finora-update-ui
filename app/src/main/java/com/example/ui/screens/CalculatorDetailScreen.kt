@@ -231,6 +231,8 @@ fun CalculatorDetailScreen(
             com.example.ui.components.SipCalculatorView(useBengaliDigits = useBengaliDigits)
         } else if (calculator.id == "inflation_calc") {
             com.example.ui.components.InflationCalculatorView(useBengaliDigits = useBengaliDigits)
+        } else if (calculator.id == "loan_emi") {
+            com.example.ui.components.LoanEmiCalculatorView(useBengaliDigits = useBengaliDigits)
         } else {
             // Form Fields Card
             Card(

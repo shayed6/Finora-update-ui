@@ -5,6 +5,7 @@
     <!-- Drawer Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_portfolio">Portfolio</string>
+    <string name="nav_ledger">Credit Ledger</string>
     <string name="nav_savings_goals">Savings Goals</string>
     <string name="nav_learn_stock">Learn Stock</string>
     <string name="nav_settings">Settings</string>
@@ -20,6 +21,8 @@
     <string name="title_home">Finora</string>
     <string name="title_portfolio">My Portfolio</string>
     <string name="subtitle_portfolio">On-device tracking for DSE &amp; CSE shares</string>
+    <string name="title_ledger">Credit Ledger</string>
+    <string name="subtitle_ledger">Personal &amp; business debit-credit tracker</string>
     <string name="title_savings_goals">Savings Goals</string>
     <string name="subtitle_savings_goals">Track financial milestones &amp; progress</string>
     <string name="title_settings">Settings</string>
@@ -68,7 +71,7 @@
     <string name="portfolio_field_stock_name">Stock Name / Ticker (e.g. GP, CITYBANK)</string>
     <string name="portfolio_field_buying_price">Buying Price Per Share (৳)</string>
     <string name="portfolio_field_quantity">Share Quantity</string>
-    <string name="portfolio_field_commission">Brokerage Commission (%) [Default 0.40%]</string>
+    <string name="portfolio_field_commission" formatted="false">Brokerage Commission (%) [Default 0.40%]</string>
     <string name="portfolio_card_shares">shares</string>
     <string name="portfolio_card_avg_price">Avg Buying Price</string>
     <string name="portfolio_card_total_cost">Total Purchase Cost</string>

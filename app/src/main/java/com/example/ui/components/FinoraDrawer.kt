@@ -39,9 +39,11 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -78,7 +80,10 @@ import com.example.util.AppConfig
 enum class DrawerDestination {
     HOME,
     PORTFOLIO,
+    LEDGER,
+    INCOME_EXPENSE,
     SAVINGS_GOALS,
+    FCOIN,
     SETTINGS,
     ABOUT,
     PRIVACY_POLICY,
@@ -216,12 +221,52 @@ fun FinoraDrawerContent(
                     .testTag("drawer_item_portfolio")
             )
 
-            // Savings Goals (সঞ্চয় ও আর্থিক লক্ষ্য)
+            // Bakir Khata (বাকির খাতা - Notebook icon) right after Portfolio
             NavigationDrawerItem(
-                icon = { Icon(Icons.Default.Savings, contentDescription = "Savings Goals Icon") },
+                icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "বাকির খাতা Icon") },
                 label = {
                     Text(
-                        text = stringResource(R.string.nav_savings_goals),
+                        text = stringResource(R.string.nav_ledger),
+                        fontWeight = if (currentDestination == DrawerDestination.LEDGER) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.LEDGER,
+                onClick = {
+                    onNavigate(DrawerDestination.LEDGER)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_ledger")
+            )
+
+            // আয়-ব্যয় (Income & Expense) right after বাকির খাতা
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "আয়-ব্যয় Icon") },
+                label = {
+                    Text(
+                        text = stringResource(R.string.nav_income_expense),
+                        fontWeight = if (currentDestination == DrawerDestination.INCOME_EXPENSE) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.INCOME_EXPENSE,
+                onClick = {
+                    onNavigate(DrawerDestination.INCOME_EXPENSE)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_income_expense")
+            )
+
+            // সঞ্চয় ও বিনিয়োগ (Savings & Investment) right after আয়-ব্যয়
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Savings, contentDescription = "সঞ্চয় ও বিনিয়োগ Icon") },
+                label = {
+                    Text(
+                        text = stringResource(R.string.nav_savings_investment),
                         fontWeight = if (currentDestination == DrawerDestination.SAVINGS_GOALS) FontWeight.Bold else FontWeight.Normal
                     )
                 },
@@ -233,7 +278,52 @@ fun FinoraDrawerContent(
                 colors = drawerItemColors,
                 modifier = Modifier
                     .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_savings_goals")
+                    .testTag("drawer_item_savings_investment")
+            )
+
+            // F-Coin Rewards (শীঘ্রই আসছে)
+            NavigationDrawerItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Stars,
+                        contentDescription = "F-Coin Icon",
+                        tint = Color(0xFFFFB800)
+                    )
+                },
+                label = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.nav_fcoin),
+                            fontWeight = if (currentDestination == DrawerDestination.FCOIN) FontWeight.Bold else FontWeight.Normal,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color(0xFFFFB800).copy(alpha = 0.15f))
+                                .padding(horizontal = 5.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "NEW",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD67800)
+                            )
+                        }
+                    }
+                },
+                selected = currentDestination == DrawerDestination.FCOIN,
+                onClick = {
+                    onNavigate(DrawerDestination.FCOIN)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_fcoin")
             )
 
             // 2. Learn Stock (Expandable Section)

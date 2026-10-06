@@ -537,23 +537,26 @@ object AdManager {
             )
 
             if (activity != null) {
+                val hasProceeded = java.util.concurrent.atomic.AtomicBoolean(false)
+                val safeProceed = {
+                    if (hasProceeded.compareAndSet(false, true)) {
+                        synchronized(this) {
+                            manualRefreshTimestamps.clear()
+                            manualRefreshTimestamps.add(System.currentTimeMillis())
+                        }
+                        onProceedWithRefresh()
+                    }
+                }
+
                 showRewardedAd(
                     activity = activity,
                     onUserEarnedReward = {
                         // User watched ad -> reset counter and proceed
-                        synchronized(this) {
-                            manualRefreshTimestamps.clear()
-                            manualRefreshTimestamps.add(System.currentTimeMillis())
-                        }
-                        onProceedWithRefresh()
+                        safeProceed()
                     },
                     onDismissedOrFailed = {
                         // If user skipped or ad failed to load, do not block refresh
-                        synchronized(this) {
-                            manualRefreshTimestamps.clear()
-                            manualRefreshTimestamps.add(System.currentTimeMillis())
-                        }
-                        onProceedWithRefresh()
+                        safeProceed()
                     }
                 )
             } else {

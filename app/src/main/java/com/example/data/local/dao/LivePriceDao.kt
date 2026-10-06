@@ -12,6 +12,9 @@ interface LivePriceDao {
     @Query("SELECT * FROM live_prices")
     fun getAllLivePrices(): Flow<List<LivePriceEntity>>
 
+    @Query("SELECT * FROM live_prices")
+    suspend fun getAllLivePricesList(): List<LivePriceEntity>
+
     @Query("SELECT * FROM live_prices WHERE UPPER(exchange) = UPPER(:exchange) AND UPPER(symbol) = UPPER(:symbol) LIMIT 1")
     fun getLivePrice(exchange: String, symbol: String): Flow<LivePriceEntity?>
 

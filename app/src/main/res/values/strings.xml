@@ -5,7 +5,11 @@
     <!-- Drawer Navigation -->
     <string name="nav_home">হোম</string>
     <string name="nav_portfolio">পোর্টফোলিও</string>
+    <string name="nav_ledger">বাকির খাতা</string>
+    <string name="nav_income_expense">আয়-ব্যয়</string>
+    <string name="nav_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
     <string name="nav_savings_goals">সঞ্চয় লক্ষ্য</string>
+    <string name="nav_fcoin">F-Coin (শীঘ্রই আসছে)</string>
     <string name="nav_learn_stock">শেয়ার বাজার শিখুন</string>
     <string name="nav_settings">সেটিংস</string>
     <string name="nav_about">আমাদের সম্পর্কে</string>
@@ -20,8 +24,16 @@
     <string name="title_home">Finora</string>
     <string name="title_portfolio">আমার পোর্টফোলিও</string>
     <string name="subtitle_portfolio">DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব</string>
+    <string name="title_ledger">বাকির খাতা</string>
+    <string name="subtitle_ledger">ব্যক্তিগত ও ব্যবসায়িক বাকি-বকেয়ার সহজ হিসাব</string>
+    <string name="title_income_expense">আয়-ব্যয়</string>
+    <string name="subtitle_income_expense">দৈনিক ও মাসিক আয়-ব্যয়ের সহজ খাতা</string>
+    <string name="title_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
+    <string name="subtitle_savings_investment">লক্ষ্যভিত্তিক সঞ্চয় ও বিনিয়োগের হিসাব</string>
     <string name="title_savings_goals">সঞ্চয় লক্ষ্য (Savings Goals)</string>
     <string name="subtitle_savings_goals">আর্থিক লক্ষ্য ও অগ্রগতির হিসাব</string>
+    <string name="title_fcoin">Finora F-Coin</string>
+    <string name="subtitle_fcoin">লয়্যালটি ও রিওয়ার্ড • শীঘ্রই আসছে</string>
     <string name="title_settings">সেটিংস (Settings)</string>
     <string name="subtitle_settings">পছন্দসমূহ ও কনফিগারেশন</string>
     <string name="title_about">আমাদের সম্পর্কে (About)</string>
@@ -68,7 +80,7 @@
     <string name="portfolio_field_stock_name">স্টক নাম / কোড (যেমন: GP, CITYBANK)</string>
     <string name="portfolio_field_buying_price">ক্রয় মূল্য প্রতি শেয়ার (৳)</string>
     <string name="portfolio_field_quantity">শেয়ার সংখ্যা (Quantity)</string>
-    <string name="portfolio_field_commission">ব্রোকারেজ কমিশন (%) [ডিফল্ট ০.৪০%]</string>
+    <string name="portfolio_field_commission" formatted="false">ব্রোকারেজ কমিশন (%) [ডিফল্ট ০.৪০%]</string>
     <string name="portfolio_card_shares">শেয়ার</string>
     <string name="portfolio_card_avg_price">গড় ক্রয়মূল্য</string>
     <string name="portfolio_card_total_cost">মোট ক্রয় খরচ</string>

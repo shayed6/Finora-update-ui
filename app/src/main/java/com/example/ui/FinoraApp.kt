@@ -55,12 +55,21 @@ import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.CalculatorDetailScreen
 import com.example.ui.screens.CategoryDetailScreen
 import com.example.ui.screens.ContactUsScreen
+import com.example.ui.screens.FCoinScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnStockScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.OrderAppScreen
 import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.SettingsScreen
-import com.example.ui.screens.goals.SavingsGoalsScreen
+import com.example.ui.screens.goals.SavingsGoalDetailScreen
+import com.example.ui.screens.goals.SavingsGoalsViewModel
+import com.example.ui.screens.goals.SavingsInvestmentScreen
+import com.example.ui.screens.incomeexpense.IncomeExpenseScreen
+import com.example.ui.screens.incomeexpense.IncomeExpenseViewModel
+import com.example.ui.screens.ledger.LedgerListScreen
+import com.example.ui.screens.ledger.LedgerPersonDetailScreen
+import com.example.ui.screens.ledger.LedgerViewModel
 import com.example.ui.screens.portfolio.PortfolioScreen
 import com.example.util.AppConfig
 import com.example.util.NetworkMonitor
@@ -70,7 +79,12 @@ import kotlinx.coroutines.launch
 sealed class Screen {
     data object Home : Screen()
     data object Portfolio : Screen()
+    data object LedgerList : Screen()
+    data class LedgerPersonDetail(val partyId: Long) : Screen()
+    data object IncomeExpense : Screen()
     data object SavingsGoals : Screen()
+    data class SavingsGoalDetail(val goalId: Long) : Screen()
+    data object FCoin : Screen()
     data class Category(val category: CalculatorCategory) : Screen()
     data class Calculator(
         val calculator: CalculatorDef,
@@ -90,7 +104,9 @@ fun FinoraApp(
     userPreferencesRepository: UserPreferencesRepository? = null,
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     isDarkTheme: Boolean = false,
-    appLanguage: AppLanguage = AppLanguage.BENGALI
+    appLanguage: AppLanguage = AppLanguage.BENGALI,
+    initialScreen: Screen = Screen.Home,
+    openPortfolioTimestamp: Long = 0L
 ) {
     val context = LocalContext.current
     val networkMonitor = remember { NetworkMonitor.getInstance(context) }
@@ -107,8 +123,16 @@ fun FinoraApp(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    val screenBackStack = remember { mutableStateListOf<Screen>(Screen.Home) }
+    val screenBackStack = remember { mutableStateListOf<Screen>(initialScreen) }
     val currentScreen = screenBackStack.lastOrNull() ?: Screen.Home
+
+    androidx.compose.runtime.LaunchedEffect(openPortfolioTimestamp) {
+        if (openPortfolioTimestamp > 0L) {
+            if (screenBackStack.lastOrNull() !is Screen.Portfolio) {
+                screenBackStack.add(Screen.Portfolio)
+            }
+        }
+    }
 
     val userPrefs = remember(userPreferencesRepository) {
         userPreferencesRepository ?: UserPreferencesRepository.getInstance(context)
@@ -164,7 +188,10 @@ fun FinoraApp(
                 }
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
+            DrawerDestination.LEDGER -> navigateTo(Screen.LedgerList)
+            DrawerDestination.INCOME_EXPENSE -> navigateTo(Screen.IncomeExpense)
             DrawerDestination.SAVINGS_GOALS -> navigateTo(Screen.SavingsGoals)
+            DrawerDestination.FCOIN -> navigateTo(Screen.FCoin)
             DrawerDestination.LEARN_STOCK -> navigateTo(Screen.LearnStock)
             DrawerDestination.SETTINGS -> navigateTo(Screen.Settings)
             DrawerDestination.ABOUT -> navigateTo(Screen.About)
@@ -187,7 +214,10 @@ fun FinoraApp(
     val activeDrawerDestination = when (currentScreen) {
         is Screen.Home, is Screen.Category, is Screen.Calculator -> DrawerDestination.HOME
         is Screen.Portfolio -> DrawerDestination.PORTFOLIO
-        is Screen.SavingsGoals -> DrawerDestination.SAVINGS_GOALS
+        is Screen.LedgerList, is Screen.LedgerPersonDetail -> DrawerDestination.LEDGER
+        is Screen.IncomeExpense -> DrawerDestination.INCOME_EXPENSE
+        is Screen.SavingsGoals, is Screen.SavingsGoalDetail -> DrawerDestination.SAVINGS_GOALS
+        is Screen.FCoin -> DrawerDestination.FCOIN
         is Screen.LearnStock -> DrawerDestination.LEARN_STOCK
         is Screen.Settings -> DrawerDestination.SETTINGS
         is Screen.About -> DrawerDestination.ABOUT
@@ -238,9 +268,39 @@ fun FinoraApp(
                 canNavigateBack = true
                 showAdMobBanner = false
             }
+            is Screen.LedgerList -> {
+                title = stringResource(R.string.title_ledger)
+                subtitle = stringResource(R.string.subtitle_ledger)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.LedgerPersonDetail -> {
+                title = stringResource(R.string.title_ledger)
+                subtitle = null
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.IncomeExpense -> {
+                title = stringResource(R.string.title_income_expense)
+                subtitle = stringResource(R.string.subtitle_income_expense)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
             is Screen.SavingsGoals -> {
-                title = stringResource(R.string.title_savings_goals)
-                subtitle = stringResource(R.string.subtitle_savings_goals)
+                title = stringResource(R.string.title_savings_investment)
+                subtitle = stringResource(R.string.subtitle_savings_investment)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.SavingsGoalDetail -> {
+                title = stringResource(R.string.title_savings_investment)
+                subtitle = null
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.FCoin -> {
+                title = "F-Coin"
+                subtitle = null
                 canNavigateBack = true
                 showAdMobBanner = false
             }
@@ -351,6 +411,9 @@ fun FinoraApp(
                                 onPortfolioClick = {
                                     navigateTo(Screen.Portfolio)
                                 },
+                                onFCoinClick = {
+                                    navigateTo(Screen.FCoin)
+                                },
                                 useBengaliDigits = useBengaliDigits
                             )
                         }
@@ -359,9 +422,54 @@ fun FinoraApp(
                                 useBengaliDigits = useBengaliDigits
                             )
                         }
+                        is Screen.LedgerList -> {
+                            val ledgerViewModel: LedgerViewModel = viewModel()
+                            LedgerListScreen(
+                                viewModel = ledgerViewModel,
+                                useBengaliDigits = useBengaliDigits,
+                                onPersonClick = { partyId ->
+                                    navigateTo(Screen.LedgerPersonDetail(partyId))
+                                }
+                            )
+                        }
+                        is Screen.LedgerPersonDetail -> {
+                            val ledgerViewModel: LedgerViewModel = viewModel()
+                            LedgerPersonDetailScreen(
+                                partyId = screen.partyId,
+                                viewModel = ledgerViewModel,
+                                useBengaliDigits = useBengaliDigits,
+                                onNavigateBack = { popBack() }
+                            )
+                        }
+                        is Screen.IncomeExpense -> {
+                            val incomeExpenseViewModel: IncomeExpenseViewModel = viewModel()
+                            IncomeExpenseScreen(
+                                useBengaliDigits = useBengaliDigits,
+                                viewModel = incomeExpenseViewModel
+                            )
+                        }
                         is Screen.SavingsGoals -> {
-                            SavingsGoalsScreen(
-                                useBengaliDigits = useBengaliDigits
+                            val savingsViewModel: SavingsGoalsViewModel = viewModel()
+                            SavingsInvestmentScreen(
+                                useBengaliDigits = useBengaliDigits,
+                                viewModel = savingsViewModel,
+                                onGoalClick = { goalId ->
+                                    navigateTo(Screen.SavingsGoalDetail(goalId))
+                                }
+                            )
+                        }
+                        is Screen.SavingsGoalDetail -> {
+                            val savingsViewModel: SavingsGoalsViewModel = viewModel()
+                            SavingsGoalDetailScreen(
+                                goalId = screen.goalId,
+                                viewModel = savingsViewModel,
+                                useBengaliDigits = useBengaliDigits,
+                                onNavigateBack = { popBack() }
+                            )
+                        }
+                        is Screen.FCoin -> {
+                            FCoinScreen(
+                                onNavigateBack = { popBack() }
                             )
                         }
                         is Screen.Category -> {
