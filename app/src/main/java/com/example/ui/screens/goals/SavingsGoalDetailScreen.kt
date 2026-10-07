@@ -83,7 +83,10 @@ fun SavingsGoalDetailScreen(
 
     var showAddDepositDialog by rememberSaveable { mutableStateOf(false) }
     var showAddWithdrawDialog by rememberSaveable { mutableStateOf(false) }
-    var editingEntry by remember { mutableStateOf<SavingsEntryEntity?>(null) }
+    var editingEntryId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val editingEntry = remember(editingEntryId, detailState?.entries) {
+        editingEntryId?.let { id -> detailState?.entries?.firstOrNull { it.entry.id == id }?.entry }
+    }
     var showAddSectorDialog by rememberSaveable { mutableStateOf(false) }
 
     val goal = detailState?.goal
@@ -444,7 +447,7 @@ fun SavingsGoalDetailScreen(
                                 EntryRowItem(
                                     item = item,
                                     useBengaliDigits = useBengaliDigits,
-                                    onClick = { editingEntry = item.entry }
+                                    onClick = { editingEntryId = item.entry.id }
                                 )
                             }
                         }
@@ -528,7 +531,7 @@ fun SavingsGoalDetailScreen(
             sectors = mainState.sectors,
             currentGoalSavedPaisa = detailState?.savedPaisa ?: 0L,
             useBengaliDigits = useBengaliDigits,
-            onDismiss = { editingEntry = null },
+            onDismiss = { editingEntryId = null },
             onSave = { type, amountPaisa, sectorId, entryDate, note ->
                 viewModel.updateEntry(
                     entry = entry.copy(
@@ -538,14 +541,14 @@ fun SavingsGoalDetailScreen(
                         entryDate = entryDate,
                         note = note
                     ),
-                    onSuccess = { editingEntry = null },
+                    onSuccess = { editingEntryId = null },
                     onError = {}
                 )
             },
             onDelete = {
                 viewModel.deleteEntry(
                     entryId = entry.id,
-                    onSuccess = { editingEntry = null },
+                    onSuccess = { editingEntryId = null },
                     onError = {}
                 )
             },

@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,13 +70,15 @@ fun ManageSourcesCategoriesDialog(
     onRenameExpenseCategory: (Long, String, () -> Unit, (String) -> Unit) -> Unit,
     onDeleteExpenseCategory: (Long, () -> Unit, (String) -> Unit) -> Unit
 ) {
-    var selectedTab by remember { mutableIntStateOf(initialTab) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(initialTab) }
 
     // Dialog sub-states
-    var showAddDialog by remember { mutableStateOf(false) }
-    var renameItemTarget by remember { mutableStateOf<Pair<Long, String>?>(null) }
-    var deleteItemTarget by remember { mutableStateOf<Pair<Long, String>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var renameItemTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var renameItemTargetName by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleteItemTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var deleteItemTargetName by rememberSaveable { mutableStateOf<String?>(null) }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -235,8 +238,14 @@ fun ManageSourcesCategoriesDialog(
                                 ManageItemRow(
                                     name = item.name,
                                     isPreset = item.isPreset,
-                                    onRename = { renameItemTarget = Pair(item.id, item.name) },
-                                    onDelete = { deleteItemTarget = Pair(item.id, item.name) }
+                                    onRename = {
+                                        renameItemTargetId = item.id
+                                        renameItemTargetName = item.name
+                                    },
+                                    onDelete = {
+                                        deleteItemTargetId = item.id
+                                        deleteItemTargetName = item.name
+                                    }
                                 )
                             }
                         }
@@ -249,8 +258,14 @@ fun ManageSourcesCategoriesDialog(
                                 ManageItemRow(
                                     name = item.name,
                                     isPreset = item.isPreset,
-                                    onRename = { renameItemTarget = Pair(item.id, item.name) },
-                                    onDelete = { deleteItemTarget = Pair(item.id, item.name) }
+                                    onRename = {
+                                        renameItemTargetId = item.id
+                                        renameItemTargetName = item.name
+                                    },
+                                    onDelete = {
+                                        deleteItemTargetId = item.id
+                                        deleteItemTargetName = item.name
+                                    }
                                 )
                             }
                         }
@@ -262,8 +277,8 @@ fun ManageSourcesCategoriesDialog(
 
     // --- Sub-dialog: Add New Item ---
     if (showAddDialog) {
-        var newName by remember { mutableStateOf("") }
-        var inputError by remember { mutableStateOf<String?>(null) }
+        var newName by rememberSaveable { mutableStateOf("") }
+        var inputError by rememberSaveable { mutableStateOf<String?>(null) }
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
@@ -335,12 +350,17 @@ fun ManageSourcesCategoriesDialog(
     }
 
     // --- Sub-dialog: Rename Item ---
-    renameItemTarget?.let { (id, currentName) ->
-        var editedName by remember { mutableStateOf(currentName) }
-        var renameError by remember { mutableStateOf<String?>(null) }
+    if (renameItemTargetId != null && renameItemTargetName != null) {
+        val id = renameItemTargetId!!
+        val currentName = renameItemTargetName!!
+        var editedName by rememberSaveable { mutableStateOf(currentName) }
+        var renameError by rememberSaveable { mutableStateOf<String?>(null) }
 
         AlertDialog(
-            onDismissRequest = { renameItemTarget = null },
+            onDismissRequest = {
+                renameItemTargetId = null
+                renameItemTargetName = null
+            },
             title = {
                 Text(
                     text = if (selectedTab == 0) IncomeExpenseStrings.DIALOG_RENAME_SOURCE else IncomeExpenseStrings.DIALOG_RENAME_CATEGORY,
@@ -375,13 +395,15 @@ fun ManageSourcesCategoriesDialog(
                         }
                         if (selectedTab == 0) {
                             onRenameIncomeSource(id, clean, {
-                                renameItemTarget = null
+                                renameItemTargetId = null
+                                renameItemTargetName = null
                             }, { err ->
                                 renameError = err
                             })
                         } else {
                             onRenameExpenseCategory(id, clean, {
-                                renameItemTarget = null
+                                renameItemTargetId = null
+                                renameItemTargetName = null
                             }, { err ->
                                 renameError = err
                             })
@@ -396,7 +418,10 @@ fun ManageSourcesCategoriesDialog(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { renameItemTarget = null },
+                    onClick = {
+                        renameItemTargetId = null
+                        renameItemTargetName = null
+                    },
                     modifier = Modifier.testTag("btn_cancel_rename_manage")
                 ) {
                     Text(IncomeExpenseStrings.BTN_CANCEL)
@@ -406,9 +431,14 @@ fun ManageSourcesCategoriesDialog(
     }
 
     // --- Sub-dialog: Confirm Delete Item ---
-    deleteItemTarget?.let { (id, name) ->
+    if (deleteItemTargetId != null && deleteItemTargetName != null) {
+        val targetId = deleteItemTargetId!!
+        val name = deleteItemTargetName!!
         AlertDialog(
-            onDismissRequest = { deleteItemTarget = null },
+            onDismissRequest = {
+                deleteItemTargetId = null
+                deleteItemTargetName = null
+            },
             title = {
                 Text(
                     text = IncomeExpenseStrings.CONFIRM_DELETE_TITLE,
@@ -421,8 +451,8 @@ fun ManageSourcesCategoriesDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        val targetId = id
-                        deleteItemTarget = null
+                        deleteItemTargetId = null
+                        deleteItemTargetName = null
                         if (selectedTab == 0) {
                             onDeleteIncomeSource(targetId, {
                                 errorMessage = null
@@ -446,7 +476,10 @@ fun ManageSourcesCategoriesDialog(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { deleteItemTarget = null },
+                    onClick = {
+                        deleteItemTargetId = null
+                        deleteItemTargetName = null
+                    },
                     modifier = Modifier.testTag("btn_cancel_delete_manage")
                 ) {
                     Text(IncomeExpenseStrings.BTN_CANCEL)

@@ -6,6 +6,8 @@
     <string name="nav_home">হোম</string>
     <string name="nav_portfolio">পোর্টফোলিও</string>
     <string name="nav_ledger">বাকির খাতা</string>
+    <string name="nav_income_expense">আয়-ব্যয়</string>
+    <string name="nav_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
     <string name="nav_savings_goals">সঞ্চয় লক্ষ্য</string>
     <string name="nav_learn_stock">শেয়ার বাজার শিখুন</string>
     <string name="nav_settings">সেটিংস</string>
@@ -23,6 +25,10 @@
     <string name="subtitle_portfolio">DSE ও CSE শেয়ারের অন-ডিভাইস হিসাব</string>
     <string name="title_ledger">বাকির খাতা</string>
     <string name="subtitle_ledger">ব্যক্তিগত ও ব্যবসায়িক বাকি-বকেয়ার সহজ হিসাব</string>
+    <string name="title_income_expense">আয়-ব্যয়</string>
+    <string name="subtitle_income_expense">দৈনিক ও মাসিক আয়-ব্যয়ের সহজ খাতা</string>
+    <string name="title_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
+    <string name="subtitle_savings_investment">লক্ষ্যভিত্তিক সঞ্চয় ও বিনিয়োগের হিসাব</string>
     <string name="title_savings_goals">সঞ্চয় লক্ষ্য (Savings Goals)</string>
     <string name="subtitle_savings_goals">আর্থিক লক্ষ্য ও অগ্রগতির হিসাব</string>
     <string name="title_settings">সেটিংস (Settings)</string>

@@ -6,6 +6,8 @@
     <string name="nav_home">Home</string>
     <string name="nav_portfolio">Portfolio</string>
     <string name="nav_ledger">Credit Ledger</string>
+    <string name="nav_income_expense">Income &amp; Expense</string>
+    <string name="nav_savings_investment">Savings &amp; Investment</string>
     <string name="nav_savings_goals">Savings Goals</string>
     <string name="nav_learn_stock">Learn Stock</string>
     <string name="nav_settings">Settings</string>
@@ -23,6 +25,10 @@
     <string name="subtitle_portfolio">On-device tracking for DSE &amp; CSE shares</string>
     <string name="title_ledger">Credit Ledger</string>
     <string name="subtitle_ledger">Personal &amp; business debit-credit tracker</string>
+    <string name="title_income_expense">Income &amp; Expense</string>
+    <string name="subtitle_income_expense">Daily &amp; monthly income and expense tracker</string>
+    <string name="title_savings_investment">Savings &amp; Investment</string>
+    <string name="subtitle_savings_investment">Goal-based savings &amp; investment tracker</string>
     <string name="title_savings_goals">Savings Goals</string>
     <string name="subtitle_savings_goals">Track financial milestones &amp; progress</string>
     <string name="title_settings">Settings</string>
