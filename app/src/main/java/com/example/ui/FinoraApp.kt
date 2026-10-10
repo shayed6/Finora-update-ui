@@ -478,6 +478,12 @@ fun FinoraApp(
                                 onHisabPatiClick = {
                                     navigateTo(Screen.HisabPati)
                                 },
+                                onNavigateToIncomeExpense = {
+                                    navigateTo(Screen.IncomeExpense)
+                                },
+                                onNavigateToSummary = {
+                                    navigateTo(Screen.AccountsSummary)
+                                },
                                 useBengaliDigits = useBengaliDigits
                             )
                         }

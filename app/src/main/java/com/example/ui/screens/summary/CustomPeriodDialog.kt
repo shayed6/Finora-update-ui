@@ -1,6 +1,6 @@
 package com.example.ui.screens.summary
 
-import android.app.DatePickerDialog
+import com.example.ui.components.FinoraDatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

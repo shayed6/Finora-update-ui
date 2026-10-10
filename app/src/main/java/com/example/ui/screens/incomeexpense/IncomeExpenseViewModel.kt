@@ -172,6 +172,32 @@ class IncomeExpenseViewModel(
         initialValue = IncomeExpenseUiState(isLoading = true)
     )
 
+    val recentTransactions: StateFlow<List<TransactionDisplayItem>> = combine(
+        repository.allTransactions,
+        repository.allIncomeSources,
+        repository.allExpenseCategories
+    ) { allTransactions, sources, categories ->
+        val sourcesMap = sources.associateBy { it.id }
+        val categoriesMap = categories.associateBy { it.id }
+        allTransactions.take(5).map { tx ->
+            val name = if (tx.type == CashTransactionType.INCOME.name) {
+                sourcesMap[tx.sourceId]?.name ?: "অজানা উৎস"
+            } else {
+                categoriesMap[tx.categoryId]?.name ?: "অজানা খাত"
+            }
+            val linkedName = tx.linkedIncomeSourceId?.let { sourcesMap[it]?.name }
+            TransactionDisplayItem(
+                transaction = tx,
+                categoryOrSourceName = name,
+                linkedSourceName = linkedName
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun setTab(tab: CashTransactionType) {
         _activeTab.value = tab
     }

@@ -1,6 +1,6 @@
 package com.example.ui.screens.goals
 
-import android.app.DatePickerDialog
+import com.example.ui.components.FinoraDatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -109,11 +109,14 @@ fun AddEditSavingsEntryDialog(
     var sectorDropdownExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    fun showDatePicker() {
-        val cal = Calendar.getInstance().apply { timeInMillis = entryDateTimestamp }
-        val datePicker = DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = entryDateTimestamp,
+            allowFutureDates = false,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
                 val newCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
@@ -128,13 +131,8 @@ fun AddEditSavingsEntryDialog(
                 } else {
                     entryDateTimestamp = selectedTime
                 }
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
+            }
         )
-        datePicker.datePicker.maxDate = System.currentTimeMillis()
-        datePicker.show()
     }
 
     if (showDeleteConfirm) {
@@ -278,7 +276,7 @@ fun AddEditSavingsEntryDialog(
 
                 // Date Picker
                 Surface(
-                    onClick = { showDatePicker() },
+                    onClick = { showDatePickerDialog = true },
                     shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier

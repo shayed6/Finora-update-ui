@@ -1,7 +1,6 @@
 package com.example.ui.screens.incomeexpense
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import com.example.ui.components.FinoraDateTimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -119,40 +118,17 @@ fun AddEditExpenseDialog(
     var linkedSourceExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    fun showDateTimePicker() {
-        val calendar = Calendar.getInstance().apply { timeInMillis = occurredAtTimestamp }
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                TimePickerDialog(
-                    context,
-                    { _, hourOfDay, minute ->
-                        val newCal = Calendar.getInstance().apply {
-                            set(Calendar.YEAR, year)
-                            set(Calendar.MONTH, month)
-                            set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                            set(Calendar.HOUR_OF_DAY, hourOfDay)
-                            set(Calendar.MINUTE, minute)
-                            set(Calendar.SECOND, 0)
-                        }
-                        val chosen = newCal.timeInMillis
-                        if (chosen > System.currentTimeMillis() + 60_000L) {
-                            occurredAtTimestamp = System.currentTimeMillis()
-                        } else {
-                            occurredAtTimestamp = chosen
-                        }
-                    },
-                    calendar.get(Calendar.HOUR_OF_DAY),
-                    calendar.get(Calendar.MINUTE),
-                    false
-                ).show()
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).apply {
-            datePicker.maxDate = System.currentTimeMillis()
-        }.show()
+    var showDateTimePickerDialog by remember { mutableStateOf(false) }
+
+    if (showDateTimePickerDialog) {
+        FinoraDateTimePickerDialog(
+            initialDateTimeMillis = occurredAtTimestamp,
+            allowFutureDateTime = false,
+            onDismissRequest = { showDateTimePickerDialog = false },
+            onDateTimeSelected = { chosen ->
+                occurredAtTimestamp = chosen
+            }
+        )
     }
 
     if (showDeleteConfirm) {
@@ -409,7 +385,7 @@ fun AddEditExpenseDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .clickable { showDateTimePicker() }
+                        .clickable { showDateTimePickerDialog = true }
                         .testTag("chip_expense_datetime")
                 ) {
                     Row(

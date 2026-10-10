@@ -1,6 +1,6 @@
 package com.example.ui.screens.goals
 
-import android.app.DatePickerDialog
+import com.example.ui.components.FinoraDatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,13 +69,14 @@ fun AddEditGoalDialog(
     var targetDateTimestamp by rememberSaveable { mutableStateOf(goal?.targetDate) }
     var nameError by rememberSaveable { mutableStateOf<String?>(null) }
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
 
-    fun showDatePicker() {
-        val cal = Calendar.getInstance()
-        targetDateTimestamp?.let { cal.timeInMillis = it }
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = targetDateTimestamp ?: System.currentTimeMillis(),
+            allowFutureDates = true,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
                 val newCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
@@ -85,11 +86,8 @@ fun AddEditGoalDialog(
                     set(Calendar.SECOND, 59)
                 }
                 targetDateTimestamp = newCal.timeInMillis
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+            }
+        )
     }
 
     AlertDialog(
@@ -150,7 +148,7 @@ fun AddEditGoalDialog(
 
                 // Target Date Picker (Optional)
                 Surface(
-                    onClick = { showDatePicker() },
+                    onClick = { showDatePickerDialog = true },
                     shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier

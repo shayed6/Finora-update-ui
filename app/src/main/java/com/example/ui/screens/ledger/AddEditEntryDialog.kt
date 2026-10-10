@@ -1,6 +1,6 @@
 package com.example.ui.screens.ledger
 
-import android.app.DatePickerDialog
+import com.example.ui.components.FinoraDatePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -99,23 +99,22 @@ fun AddEditEntryDialog(
     var amountError by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Date picker dialog launcher
-    fun showDatePicker() {
-        val calendar = Calendar.getInstance().apply { timeInMillis = entryDateTimestamp }
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = entryDateTimestamp,
+            allowFutureDates = false,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
                 val newCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
                     set(Calendar.DAY_OF_MONTH, dayOfMonth)
                 }
                 entryDateTimestamp = newCal.timeInMillis
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+            }
+        )
     }
 
     if (showDeleteConfirm) {
@@ -300,7 +299,7 @@ fun AddEditEntryDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .clickable { showDatePicker() }
+                        .clickable { showDatePickerDialog = true }
                         .testTag("chip_entry_date")
                 ) {
                     Row(
