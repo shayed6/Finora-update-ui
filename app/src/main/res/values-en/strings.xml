@@ -8,6 +8,7 @@
     <string name="nav_ledger">Credit Ledger</string>
     <string name="nav_income_expense">Income &amp; Expense</string>
     <string name="nav_savings_investment">Savings &amp; Investment</string>
+    <string name="nav_accounts_summary">Accounts Summary</string>
     <string name="nav_savings_goals">Savings Goals</string>
     <string name="nav_learn_stock">Learn Stock</string>
     <string name="nav_settings">Settings</string>
@@ -29,6 +30,10 @@
     <string name="subtitle_income_expense">Daily &amp; monthly income and expense tracker</string>
     <string name="title_savings_investment">Savings &amp; Investment</string>
     <string name="subtitle_savings_investment">Goal-based savings &amp; investment tracker</string>
+    <string name="title_accounts_summary">Accounts Summary</string>
+    <string name="subtitle_accounts_summary">Overall Income, Expense, Savings &amp; Ledger</string>
+    <string name="title_cycle_settings">Cycle Settings</string>
+    <string name="subtitle_cycle_settings">Configure Income Source Cycles</string>
     <string name="title_savings_goals">Savings Goals</string>
     <string name="subtitle_savings_goals">Track financial milestones &amp; progress</string>
     <string name="title_settings">Settings</string>

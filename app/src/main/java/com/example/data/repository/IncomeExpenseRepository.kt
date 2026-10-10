@@ -182,6 +182,65 @@ class IncomeExpenseRepository(private val dao: IncomeExpenseDao) {
         dao.deleteTransactionById(id)
     }
 
+    suspend fun applyWorkProfilePresets(selectedProfiles: Set<String>) = withContext(Dispatchers.IO) {
+        val existingSources = dao.getAllIncomeSourcesList()
+        val existingCategories = dao.getAllExpenseCategoriesList()
+
+        for (profileKey in selectedProfiles) {
+            val (sourcesToAdd, categoriesToAdd) = when (profileKey) {
+                com.example.data.preferences.WorkProfileKey.BUSINESS -> Pair(
+                    listOf("বিক্রি", "সেবা আয়"),
+                    listOf("পণ্য ক্রয়", "দোকান ভাড়া", "কর্মচারী বেতন", "বিদ্যুৎ ও ইন্টারনেট", "পরিবহন")
+                )
+                com.example.data.preferences.WorkProfileKey.JOB -> Pair(
+                    listOf("বেতন", "বোনাস", "ওভারটাইম"),
+                    emptyList()
+                )
+                com.example.data.preferences.WorkProfileKey.FREELANCE -> Pair(
+                    listOf("ক্লায়েন্ট পেমেন্ট"),
+                    listOf("সফটওয়্যার ও টুলস", "ইন্টারনেট")
+                )
+                else -> Pair(emptyList(), emptyList())
+            }
+
+            for (srcName in sourcesToAdd) {
+                val clean = normalizeName(srcName)
+                val existing = existingSources.find { normalizeName(it.name) == clean }
+                if (existing != null) {
+                    if (existing.profile == null) {
+                        dao.updateIncomeSource(existing.copy(profile = profileKey))
+                    }
+                } else {
+                    dao.insertIncomeSource(
+                        IncomeSourceEntity(
+                            name = srcName,
+                            isPreset = true,
+                            profile = profileKey
+                        )
+                    )
+                }
+            }
+
+            for (catName in categoriesToAdd) {
+                val clean = normalizeName(catName)
+                val existing = existingCategories.find { normalizeName(it.name) == clean }
+                if (existing != null) {
+                    if (existing.profile == null) {
+                        dao.updateExpenseCategory(existing.copy(profile = profileKey))
+                    }
+                } else {
+                    dao.insertExpenseCategory(
+                        ExpenseCategoryEntity(
+                            name = catName,
+                            isPreset = true,
+                            profile = profileKey
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     companion object {
         val PRESET_INCOME_SOURCES = listOf(
             "বেতন",

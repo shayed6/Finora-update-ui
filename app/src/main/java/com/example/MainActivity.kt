@@ -28,17 +28,8 @@ import com.example.ui.FinoraApp
 import com.example.ui.Screen
 import com.example.ui.screens.FinoraSplashScreen
 import com.example.ui.theme.FinoraTheme
-import com.example.widget.PortfolioWidgetProvider
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
-import com.example.data.scraper.LivePriceScraperWorker
 
 class MainActivity : ComponentActivity() {
-    private var navigateToPortfolioEvent by mutableStateOf(0L)
-    private var startDirectlyOnPortfolio by mutableStateOf(false)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
@@ -50,7 +41,6 @@ class MainActivity : ComponentActivity() {
         }
         FavoritesManager.init(this)
         AdManager.initialize(this)
-        handleWidgetIntent(intent, isInitial = true)
         enableEdgeToEdge()
         setContent {
             val userPrefs = remember { UserPreferencesRepository.getInstance(applicationContext) }
@@ -91,7 +81,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 FinoraTheme(darkTheme = isDarkTheme) {
-                    var showSplash by rememberSaveable { mutableStateOf(!startDirectlyOnPortfolio) }
+                    var showSplash by rememberSaveable { mutableStateOf(true) }
 
                     Crossfade(
                         targetState = showSplash,
@@ -107,45 +97,11 @@ class MainActivity : ComponentActivity() {
                                 themeMode = themeMode,
                                 isDarkTheme = isDarkTheme,
                                 appLanguage = appLanguage,
-                                initialScreen = if (startDirectlyOnPortfolio) Screen.Portfolio else Screen.Home,
-                                openPortfolioTimestamp = navigateToPortfolioEvent
+                                initialScreen = Screen.Home
                             )
                         }
                     }
                 }
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleWidgetIntent(intent, isInitial = false)
-    }
-
-    private fun handleWidgetIntent(intent: android.content.Intent?, isInitial: Boolean) {
-        if (intent == null) return
-        val isWidgetOpen = intent.action == PortfolioWidgetProvider.ACTION_OPEN_PORTFOLIO ||
-                intent.getStringExtra(PortfolioWidgetProvider.EXTRA_NAVIGATE_TO) == PortfolioWidgetProvider.DESTINATION_PORTFOLIO
-
-        if (isWidgetOpen) {
-            if (isInitial) {
-                startDirectlyOnPortfolio = true
-            }
-            navigateToPortfolioEvent = System.currentTimeMillis()
-
-            // Requirement C: Trigger fresh scrape on widget tap
-            try {
-                val workRequest = OneTimeWorkRequestBuilder<LivePriceScraperWorker>()
-                    .setInputData(workDataOf(LivePriceScraperWorker.KEY_FORCE_REFRESH to true))
-                    .build()
-                WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-                    LivePriceScraperWorker.WORK_NAME,
-                    ExistingWorkPolicy.REPLACE,
-                    workRequest
-                )
-            } catch (e: Exception) {
-                // WorkManager enqueue silent fallback
             }
         }
     }

@@ -25,7 +25,6 @@ class LivePriceScraperWorker(
                 val db = AppDatabase.getDatabase(applicationContext)
                 db.livePriceDao().insertOrUpdatePrices(prices)
                 Log.d(TAG, "ScraperWorker saved ${prices.size} live prices to database")
-                com.example.widget.PortfolioWidgetProvider.updateAllWidgets(applicationContext)
             }
             Result.success()
         } catch (e: Exception) {

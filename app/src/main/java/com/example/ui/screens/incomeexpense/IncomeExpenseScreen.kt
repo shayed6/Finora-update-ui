@@ -57,8 +57,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import android.app.Application
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -74,13 +76,36 @@ import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncomeExpenseScreen(
     useBengaliDigits: Boolean = true,
-    viewModel: IncomeExpenseViewModel = viewModel()
+    viewModel: IncomeExpenseViewModel = viewModel(
+        factory = IncomeExpenseViewModel.Factory(
+            LocalContext.current.applicationContext as Application
+        )
+    )
 ) {
+    val context = LocalContext.current
+    val orgRepo = remember { com.example.data.preferences.OrganizationInfoRepository.getInstance(context) }
+    val workTypePromptShown by orgRepo.workTypePromptShown.collectAsState(initial = null)
+
+    if (workTypePromptShown == false) {
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        com.example.ui.screens.WorkTypeScreen(
+            onNavigateBack = {
+                scope.launch { orgRepo.setWorkTypePromptShown(true) }
+            },
+            isFirstTimePrompt = true,
+            onComplete = {
+                // Completed/skipped inside WorkTypeScreen
+            }
+        )
+        return
+    }
+
     val uiState by viewModel.uiState.collectAsState()
 
     // Dialog controllers

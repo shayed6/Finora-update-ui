@@ -8,6 +8,7 @@
     <string name="nav_ledger">বাকির খাতা</string>
     <string name="nav_income_expense">আয়-ব্যয়</string>
     <string name="nav_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
+    <string name="nav_accounts_summary">হিসাব নিকাশ</string>
     <string name="nav_savings_goals">সঞ্চয় লক্ষ্য</string>
     <string name="nav_learn_stock">শেয়ার বাজার শিখুন</string>
     <string name="nav_settings">সেটিংস</string>
@@ -29,6 +30,10 @@
     <string name="subtitle_income_expense">দৈনিক ও মাসিক আয়-ব্যয়ের সহজ খাতা</string>
     <string name="title_savings_investment">সঞ্চয় ও বিনিয়োগ</string>
     <string name="subtitle_savings_investment">লক্ষ্যভিত্তিক সঞ্চয় ও বিনিয়োগের হিসাব</string>
+    <string name="title_accounts_summary">হিসাব নিকাশ</string>
+    <string name="subtitle_accounts_summary">আয়, ব্যয়, সঞ্চয় ও বাকির সামগ্রিক হিসাব</string>
+    <string name="title_cycle_settings">চক্র নির্ধারণ</string>
+    <string name="subtitle_cycle_settings">আয়ের উৎসের হিসাব চক্র নির্ধারণ</string>
     <string name="title_savings_goals">সঞ্চয় লক্ষ্য (Savings Goals)</string>
     <string name="subtitle_savings_goals">আর্থিক লক্ষ্য ও অগ্রগতির হিসাব</string>
     <string name="title_settings">সেটিংস (Settings)</string>

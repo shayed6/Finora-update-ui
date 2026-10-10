@@ -88,4 +88,16 @@ interface SavingsGoalDao {
 
     @Query("DELETE FROM investment_sectors WHERE id = :id")
     suspend fun deleteSectorById(id: Long)
+
+    @Query("""
+        SELECT 
+            COALESCE(SUM(CASE WHEN type = 'DEPOSIT' THEN amount ELSE 0 END), 0) -
+            COALESCE(SUM(CASE WHEN type = 'WITHDRAW' THEN amount ELSE 0 END), 0)
+        FROM savings_entries
+        WHERE entry_date >= :startTime AND entry_date <= :endTime
+    """)
+    suspend fun getNetSavingsInRange(startTime: Long, endTime: Long): Long
+
+    @Query("SELECT COUNT(*) FROM savings_entries WHERE entry_date >= :startTime AND entry_date <= :endTime")
+    suspend fun countSavingsEntriesInRange(startTime: Long, endTime: Long): Int
 }

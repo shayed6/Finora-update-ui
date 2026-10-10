@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Search
@@ -80,6 +82,8 @@ fun HomeScreen(
     onCalculatorClick: (CalculatorDef) -> Unit,
     onPortfolioClick: () -> Unit,
     onFCoinClick: () -> Unit = {},
+    onCalculatorsClick: () -> Unit = {},
+    onHisabPatiClick: () -> Unit = {},
     useBengaliDigits: Boolean = true,
     portfolioViewModel: PortfolioViewModel = viewModel(),
     modifier: Modifier = Modifier
@@ -121,6 +125,38 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Part B1: Two large cards at the top: "ক্যালকুলেটর" & "হিসাব পাতি"
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_top_two_cards"),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Card 1: ক্যালকুলেটর
+                HomePrimaryNavCard(
+                    title = "ক্যালকুলেটর",
+                    subtitle = "৩৭টি স্টক ও ব্যাংকিং ক্যালকুলেটর",
+                    icon = Icons.Default.Calculate,
+                    accentColor = PrimaryBlue,
+                    onClick = onCalculatorsClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("home_card_calculators")
+                )
+
+                // Card 2: হিসাব পাতি
+                HomePrimaryNavCard(
+                    title = "হিসাব পাতি",
+                    subtitle = "খাতা, আয়-ব্যয় ও সঞ্চয় হিসাব",
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    accentColor = GrowthGreen,
+                    onClick = onHisabPatiClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("home_card_hisab_pati")
+                )
+            }
+
             // Part A1 & A2: Compact "Current Investment" summary card, tappable to open Portfolio screen
             CurrentInvestmentWidget(
                 summary = portfolioSummary,
@@ -606,3 +642,66 @@ private fun FavoriteCalculatorCard(
         }
     }
 }
+
+@Composable
+fun HomePrimaryNavCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .height(110.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(accentColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Column {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+

@@ -71,6 +71,14 @@ import com.example.ui.screens.ledger.LedgerListScreen
 import com.example.ui.screens.ledger.LedgerPersonDetailScreen
 import com.example.ui.screens.ledger.LedgerViewModel
 import com.example.ui.screens.portfolio.PortfolioScreen
+import com.example.ui.screens.summary.AccountsSummaryScreen
+import com.example.ui.screens.summary.AccountsSummaryViewModel
+import com.example.ui.screens.summary.CycleSettingsScreen
+import android.app.Application
+import com.example.ui.screens.CalculatorsHubScreen
+import com.example.ui.screens.HisabPatiHubScreen
+import com.example.ui.screens.OrganizationInfoScreen
+import com.example.ui.screens.WorkTypeScreen
 import com.example.util.AppConfig
 import com.example.util.NetworkMonitor
 import com.example.util.OfflineBlockingOverlay
@@ -78,12 +86,18 @@ import kotlinx.coroutines.launch
 
 sealed class Screen {
     data object Home : Screen()
+    data object CalculatorsHub : Screen()
+    data object HisabPati : Screen()
+    data object WorkType : Screen()
+    data object OrganizationInfo : Screen()
     data object Portfolio : Screen()
     data object LedgerList : Screen()
     data class LedgerPersonDetail(val partyId: Long) : Screen()
     data object IncomeExpense : Screen()
     data object SavingsGoals : Screen()
     data class SavingsGoalDetail(val goalId: Long) : Screen()
+    data object AccountsSummary : Screen()
+    data object CycleSettings : Screen()
     data object FCoin : Screen()
     data class Category(val category: CalculatorCategory) : Screen()
     data class Calculator(
@@ -188,9 +202,13 @@ fun FinoraApp(
                 }
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
+            DrawerDestination.HISAB_PATI -> navigateTo(Screen.HisabPati)
+            DrawerDestination.WORK_TYPE -> navigateTo(Screen.WorkType)
+            DrawerDestination.ORG_INFO -> navigateTo(Screen.OrganizationInfo)
             DrawerDestination.LEDGER -> navigateTo(Screen.LedgerList)
             DrawerDestination.INCOME_EXPENSE -> navigateTo(Screen.IncomeExpense)
             DrawerDestination.SAVINGS_GOALS -> navigateTo(Screen.SavingsGoals)
+            DrawerDestination.ACCOUNTS_SUMMARY -> navigateTo(Screen.AccountsSummary)
             DrawerDestination.FCOIN -> navigateTo(Screen.FCoin)
             DrawerDestination.LEARN_STOCK -> navigateTo(Screen.LearnStock)
             DrawerDestination.SETTINGS -> navigateTo(Screen.Settings)
@@ -212,11 +230,15 @@ fun FinoraApp(
 
     // Determine current Drawer destination
     val activeDrawerDestination = when (currentScreen) {
-        is Screen.Home, is Screen.Category, is Screen.Calculator -> DrawerDestination.HOME
+        is Screen.Home, is Screen.Category, is Screen.Calculator, is Screen.CalculatorsHub -> DrawerDestination.HOME
         is Screen.Portfolio -> DrawerDestination.PORTFOLIO
-        is Screen.LedgerList, is Screen.LedgerPersonDetail -> DrawerDestination.LEDGER
-        is Screen.IncomeExpense -> DrawerDestination.INCOME_EXPENSE
-        is Screen.SavingsGoals, is Screen.SavingsGoalDetail -> DrawerDestination.SAVINGS_GOALS
+        is Screen.HisabPati -> DrawerDestination.HISAB_PATI
+        is Screen.WorkType -> DrawerDestination.WORK_TYPE
+        is Screen.OrganizationInfo -> DrawerDestination.ORG_INFO
+        is Screen.LedgerList, is Screen.LedgerPersonDetail -> DrawerDestination.HISAB_PATI
+        is Screen.IncomeExpense -> DrawerDestination.HISAB_PATI
+        is Screen.SavingsGoals, is Screen.SavingsGoalDetail -> DrawerDestination.HISAB_PATI
+        is Screen.AccountsSummary, is Screen.CycleSettings -> DrawerDestination.HISAB_PATI
         is Screen.FCoin -> DrawerDestination.FCOIN
         is Screen.LearnStock -> DrawerDestination.LEARN_STOCK
         is Screen.Settings -> DrawerDestination.SETTINGS
@@ -255,6 +277,30 @@ fun FinoraApp(
                 subtitle = null
                 canNavigateBack = false
                 showAdMobBanner = true
+            }
+            is Screen.CalculatorsHub -> {
+                title = stringResource(R.string.title_calculators)
+                subtitle = stringResource(R.string.subtitle_calculators)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.HisabPati -> {
+                title = stringResource(R.string.title_hisab_pati)
+                subtitle = stringResource(R.string.subtitle_hisab_pati)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.WorkType -> {
+                title = stringResource(R.string.title_work_type)
+                subtitle = stringResource(R.string.subtitle_work_type)
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.OrganizationInfo -> {
+                title = stringResource(R.string.title_org_info)
+                subtitle = stringResource(R.string.subtitle_org_info)
+                canNavigateBack = true
+                showAdMobBanner = false
             }
             is Screen.Category -> {
                 title = if (isEnglish) currentScreen.category.titleEn else currentScreen.category.titleBn
@@ -295,6 +341,18 @@ fun FinoraApp(
             is Screen.SavingsGoalDetail -> {
                 title = stringResource(R.string.title_savings_investment)
                 subtitle = null
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.AccountsSummary -> {
+                title = stringResource(R.string.title_accounts_summary)
+                subtitle = stringResource(R.string.subtitle_accounts_summary)
+                canNavigateBack = true
+                showAdMobBanner = true
+            }
+            is Screen.CycleSettings -> {
+                title = stringResource(R.string.title_cycle_settings)
+                subtitle = stringResource(R.string.subtitle_cycle_settings)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
@@ -414,7 +472,42 @@ fun FinoraApp(
                                 onFCoinClick = {
                                     navigateTo(Screen.FCoin)
                                 },
+                                onCalculatorsClick = {
+                                    navigateTo(Screen.CalculatorsHub)
+                                },
+                                onHisabPatiClick = {
+                                    navigateTo(Screen.HisabPati)
+                                },
                                 useBengaliDigits = useBengaliDigits
+                            )
+                        }
+                        is Screen.CalculatorsHub -> {
+                            CalculatorsHubScreen(
+                                onCategoryClick = { category ->
+                                    navigateTo(Screen.Category(category))
+                                },
+                                onCalculatorClick = { calc ->
+                                    navigateTo(Screen.Calculator(calc))
+                                },
+                                useBengaliDigits = useBengaliDigits
+                            )
+                        }
+                        is Screen.HisabPati -> {
+                            HisabPatiHubScreen(
+                                onOpenLedger = { navigateTo(Screen.LedgerList) },
+                                onOpenIncomeExpense = { navigateTo(Screen.IncomeExpense) },
+                                onOpenSavings = { navigateTo(Screen.SavingsGoals) },
+                                onOpenSummary = { navigateTo(Screen.AccountsSummary) }
+                            )
+                        }
+                        is Screen.WorkType -> {
+                            WorkTypeScreen(
+                                onNavigateBack = { popBack() }
+                            )
+                        }
+                        is Screen.OrganizationInfo -> {
+                            OrganizationInfoScreen(
+                                onNavigateBack = { popBack() }
                             )
                         }
                         is Screen.Portfolio -> {
@@ -442,7 +535,9 @@ fun FinoraApp(
                             )
                         }
                         is Screen.IncomeExpense -> {
-                            val incomeExpenseViewModel: IncomeExpenseViewModel = viewModel()
+                            val incomeExpenseViewModel: IncomeExpenseViewModel = viewModel(
+                                factory = IncomeExpenseViewModel.Factory(context.applicationContext as Application)
+                            )
                             IncomeExpenseScreen(
                                 useBengaliDigits = useBengaliDigits,
                                 viewModel = incomeExpenseViewModel
@@ -463,6 +558,27 @@ fun FinoraApp(
                             SavingsGoalDetailScreen(
                                 goalId = screen.goalId,
                                 viewModel = savingsViewModel,
+                                useBengaliDigits = useBengaliDigits,
+                                onNavigateBack = { popBack() }
+                            )
+                        }
+                        is Screen.AccountsSummary -> {
+                            val summaryViewModel: AccountsSummaryViewModel = viewModel(
+                                factory = AccountsSummaryViewModel.Factory(context.applicationContext as Application)
+                            )
+                            AccountsSummaryScreen(
+                                viewModel = summaryViewModel,
+                                useBengaliDigits = useBengaliDigits,
+                                onOpenLedger = { navigateTo(Screen.LedgerList) },
+                                onOpenCycleSettings = { navigateTo(Screen.CycleSettings) }
+                            )
+                        }
+                        is Screen.CycleSettings -> {
+                            val summaryViewModel: AccountsSummaryViewModel = viewModel(
+                                factory = AccountsSummaryViewModel.Factory(context.applicationContext as Application)
+                            )
+                            CycleSettingsScreen(
+                                viewModel = summaryViewModel,
                                 useBengaliDigits = useBengaliDigits,
                                 onNavigateBack = { popBack() }
                             )

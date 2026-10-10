@@ -36,7 +36,7 @@ data class LedgerListUiState(
         }
 }
 
-class LedgerViewModel(
+class LedgerViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: LedgerRepository = LedgerRepository.getInstance(application)
 ) : AndroidViewModel(application) {

@@ -32,6 +32,8 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AppShortcut
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -80,10 +82,14 @@ import com.example.util.AppConfig
 enum class DrawerDestination {
     HOME,
     PORTFOLIO,
+    HISAB_PATI,
+    FCOIN,
+    WORK_TYPE,
+    ORG_INFO,
     LEDGER,
     INCOME_EXPENSE,
     SAVINGS_GOALS,
-    FCOIN,
+    ACCOUNTS_SUMMARY,
     SETTINGS,
     ABOUT,
     PRIVACY_POLICY,
@@ -221,64 +227,24 @@ fun FinoraDrawerContent(
                     .testTag("drawer_item_portfolio")
             )
 
-            // Bakir Khata (বাকির খাতা - Notebook icon) right after Portfolio
+            // Hisab Pati (হিসাব পাতি - Notebook icon) right after Portfolio
             NavigationDrawerItem(
-                icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "বাকির খাতা Icon") },
+                icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "হিসাব পাতি Icon") },
                 label = {
                     Text(
-                        text = stringResource(R.string.nav_ledger),
-                        fontWeight = if (currentDestination == DrawerDestination.LEDGER) FontWeight.Bold else FontWeight.Normal
+                        text = stringResource(R.string.nav_hisab_pati),
+                        fontWeight = if (currentDestination == DrawerDestination.HISAB_PATI) FontWeight.Bold else FontWeight.Normal
                     )
                 },
-                selected = currentDestination == DrawerDestination.LEDGER,
+                selected = currentDestination == DrawerDestination.HISAB_PATI,
                 onClick = {
-                    onNavigate(DrawerDestination.LEDGER)
+                    onNavigate(DrawerDestination.HISAB_PATI)
                     onCloseDrawer()
                 },
                 colors = drawerItemColors,
                 modifier = Modifier
                     .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_ledger")
-            )
-
-            // আয়-ব্যয় (Income & Expense) right after বাকির খাতা
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "আয়-ব্যয় Icon") },
-                label = {
-                    Text(
-                        text = stringResource(R.string.nav_income_expense),
-                        fontWeight = if (currentDestination == DrawerDestination.INCOME_EXPENSE) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                selected = currentDestination == DrawerDestination.INCOME_EXPENSE,
-                onClick = {
-                    onNavigate(DrawerDestination.INCOME_EXPENSE)
-                    onCloseDrawer()
-                },
-                colors = drawerItemColors,
-                modifier = Modifier
-                    .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_income_expense")
-            )
-
-            // সঞ্চয় ও বিনিয়োগ (Savings & Investment) right after আয়-ব্যয়
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.Savings, contentDescription = "সঞ্চয় ও বিনিয়োগ Icon") },
-                label = {
-                    Text(
-                        text = stringResource(R.string.nav_savings_investment),
-                        fontWeight = if (currentDestination == DrawerDestination.SAVINGS_GOALS) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                selected = currentDestination == DrawerDestination.SAVINGS_GOALS,
-                onClick = {
-                    onNavigate(DrawerDestination.SAVINGS_GOALS)
-                    onCloseDrawer()
-                },
-                colors = drawerItemColors,
-                modifier = Modifier
-                    .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_savings_investment")
+                    .testTag("drawer_item_hisab_pati")
             )
 
             // F-Coin Rewards (শীঘ্রই আসছে)
@@ -324,6 +290,46 @@ fun FinoraDrawerContent(
                 modifier = Modifier
                     .padding(NavigationDrawerItemDefaults.ItemPadding)
                     .testTag("drawer_item_fcoin")
+            )
+
+            // কাজের ধরন (Work Type) right after F-Coin
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.BusinessCenter, contentDescription = "কাজের ধরন Icon") },
+                label = {
+                    Text(
+                        text = stringResource(R.string.nav_work_type),
+                        fontWeight = if (currentDestination == DrawerDestination.WORK_TYPE) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.WORK_TYPE,
+                onClick = {
+                    onNavigate(DrawerDestination.WORK_TYPE)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_work_type")
+            )
+
+            // প্রতিষ্ঠানের তথ্য (Organization Info) right after কাজের ধরন
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Business, contentDescription = "প্রতিষ্ঠানের তথ্য Icon") },
+                label = {
+                    Text(
+                        text = stringResource(R.string.nav_org_info),
+                        fontWeight = if (currentDestination == DrawerDestination.ORG_INFO) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.ORG_INFO,
+                onClick = {
+                    onNavigate(DrawerDestination.ORG_INFO)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_org_info")
             )
 
             // 2. Learn Stock (Expandable Section)

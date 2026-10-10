@@ -2,6 +2,8 @@ package com.example.ui.screens.incomeexpense
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.CashTransactionType
 import com.example.data.local.entity.ExpenseCategoryEntity
@@ -31,8 +33,25 @@ data class IncomeExpenseUiState(
 
 class IncomeExpenseViewModel(
     application: Application,
-    private val repository: IncomeExpenseRepository = IncomeExpenseRepository.getInstance(application)
+    private val repository: IncomeExpenseRepository
 ) : AndroidViewModel(application) {
+
+    constructor(application: Application) : this(
+        application,
+        IncomeExpenseRepository.getInstance(application)
+    )
+
+    companion object {
+        fun Factory(application: Application): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return IncomeExpenseViewModel(
+                    application,
+                    IncomeExpenseRepository.getInstance(application)
+                ) as T
+            }
+        }
+    }
 
     private val _activeTab = MutableStateFlow(CashTransactionType.INCOME)
     val activeTab: StateFlow<CashTransactionType> = _activeTab.asStateFlow()
@@ -45,6 +64,8 @@ class IncomeExpenseViewModel(
 
     private val _selectedCategoryFilterId = MutableStateFlow<Long?>(null)
     val selectedCategoryFilterId: StateFlow<Long?> = _selectedCategoryFilterId.asStateFlow()
+
+    private val orgRepo = com.example.data.preferences.OrganizationInfoRepository.getInstance(application)
 
     init {
         viewModelScope.launch {
@@ -61,13 +82,27 @@ class IncomeExpenseViewModel(
             _activeTab,
             _selectedMonthYear,
             _selectedSourceFilterId,
-            _selectedCategoryFilterId
-        ) { tab, monthYear, sourceFilter, catFilter ->
-            FilterTuple(tab, monthYear, sourceFilter, catFilter)
+            _selectedCategoryFilterId,
+            orgRepo.selectedWorkProfiles
+        ) { tab, monthYear, sourceFilter, catFilter, profiles ->
+            FilterTuple(tab, monthYear, sourceFilter, catFilter, profiles)
         }
     ) { allTransactions, sources, categories, tagLines, filterTuple ->
         val sourcesMap = sources.associateBy { it.id }
         val categoriesMap = categories.associateBy { it.id }
+
+        // Sort items so selected profiles appear first
+        val activeProfiles = filterTuple.selectedProfiles
+        val sortedSources = sources.sortedWith(
+            compareByDescending<IncomeSourceEntity> { it.profile != null && it.profile in activeProfiles }
+                .thenByDescending { it.isPreset }
+                .thenBy { it.id }
+        )
+        val sortedCategories = categories.sortedWith(
+            compareByDescending<ExpenseCategoryEntity> { it.profile != null && it.profile in activeProfiles }
+                .thenByDescending { it.isPreset }
+                .thenBy { it.id }
+        )
 
         // 1. Calculate Monthly Summary (based on selectedMonthYear)
         val monthStart = filterTuple.monthYear.toStartTimestamp()
@@ -124,8 +159,8 @@ class IncomeExpenseViewModel(
                 balancePaisa = balance
             ),
             displayedTransactions = displayItems,
-            incomeSources = sources,
-            expenseCategories = categories,
+            incomeSources = sortedSources,
+            expenseCategories = sortedCategories,
             selectedSourceFilterId = filterTuple.sourceFilter,
             selectedCategoryFilterId = filterTuple.catFilter,
             tagLineSuggestions = tagLines,
@@ -310,5 +345,6 @@ private data class FilterTuple(
     val tab: CashTransactionType,
     val monthYear: MonthYear,
     val sourceFilter: Long?,
-    val catFilter: Long?
+    val catFilter: Long?,
+    val selectedProfiles: Set<String> = emptySet()
 )

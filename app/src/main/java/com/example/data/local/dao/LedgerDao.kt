@@ -43,6 +43,9 @@ interface LedgerDao {
     @Query("SELECT * FROM ledger_entries ORDER BY entry_date DESC, created_at DESC")
     fun getAllEntries(): Flow<List<LedgerEntryEntity>>
 
+    @Query("SELECT * FROM ledger_entries ORDER BY entry_date DESC, created_at DESC")
+    suspend fun getAllEntriesList(): List<LedgerEntryEntity>
+
     @Query("SELECT * FROM ledger_entries WHERE party_id = :partyId ORDER BY entry_date DESC, created_at DESC")
     fun getEntriesForParty(partyId: Long): Flow<List<LedgerEntryEntity>>
 

@@ -99,4 +99,41 @@ interface IncomeExpenseDao {
 
     @Query("SELECT DISTINCT tag_line FROM income_expense_transactions WHERE tag_line IS NOT NULL AND tag_line != '' ORDER BY occurred_at DESC")
     suspend fun getDistinctTagLinesList(): List<String>
+
+    @Query("""
+        SELECT 
+            COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0) AS totalIncome,
+            COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0) AS totalExpense,
+            COUNT(*) AS txCount
+        FROM income_expense_transactions
+        WHERE occurred_at >= :startTime AND occurred_at <= :endTime
+    """)
+    suspend fun getAggregateInRange(startTime: Long, endTime: Long): IncomeExpenseAggregate
+
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM income_expense_transactions
+        WHERE type = 'INCOME' AND source_id = :sourceId AND occurred_at >= :startTime AND occurred_at <= :endTime
+    """)
+    suspend fun getIncomeForSourceInRange(sourceId: Long, startTime: Long, endTime: Long): Long
+
+    @Query("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM income_expense_transactions
+        WHERE type = 'EXPENSE' AND linked_income_source_id = :sourceId AND occurred_at >= :startTime AND occurred_at <= :endTime
+    """)
+    suspend fun getTaggedExpenseForSourceInRange(sourceId: Long, startTime: Long, endTime: Long): Long
+
+    @Query("""
+        SELECT DISTINCT source_id FROM income_expense_transactions WHERE source_id IS NOT NULL
+        UNION
+        SELECT DISTINCT linked_income_source_id FROM income_expense_transactions WHERE linked_income_source_id IS NOT NULL
+    """)
+    suspend fun getSourceIdsWithTransactions(): List<Long>
 }
+
+data class IncomeExpenseAggregate(
+    val totalIncome: Long,
+    val totalExpense: Long,
+    val txCount: Int
+)

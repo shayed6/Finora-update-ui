@@ -22,7 +22,7 @@ data class SavingsMainUiState(
     val isLoading: Boolean = true
 )
 
-class SavingsGoalsViewModel(
+class SavingsGoalsViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: SavingsGoalRepository = SavingsGoalRepository.getInstance(application)
 ) : AndroidViewModel(application) {

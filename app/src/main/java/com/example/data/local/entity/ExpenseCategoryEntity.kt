@@ -10,5 +10,6 @@ data class ExpenseCategoryEntity(
     val id: Long = 0L,
     val name: String,
     @ColumnInfo(name = "is_preset")
-    val isPreset: Boolean = false
+    val isPreset: Boolean = false,
+    val profile: String? = null
 )
