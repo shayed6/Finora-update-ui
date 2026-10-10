@@ -41,7 +41,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +70,6 @@ fun AddEditSavingsEntryDialog(
     onDelete: (() -> Unit)? = null,
     onAddNewSector: () -> Unit
 ) {
-    val context = LocalContext.current
     val isEditing = existingEntry != null
 
     var type by rememberSaveable {
@@ -107,9 +105,9 @@ fun AddEditSavingsEntryDialog(
 
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
     var sectorDropdownExpanded by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
-    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDatePickerDialog) {
         FinoraDatePickerDialog(

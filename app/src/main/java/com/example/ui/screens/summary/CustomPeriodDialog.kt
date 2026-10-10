@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,11 +22,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,9 +46,11 @@ fun CustomPeriodDialog(
     onDismiss: () -> Unit,
     onApply: (startMs: Long, endMs: Long) -> Unit
 ) {
-    val context = LocalContext.current
-    var startMs by remember { mutableLongStateOf(initialStartMs) }
-    var endMs by remember { mutableLongStateOf(initialEndMs) }
+    var startMs by rememberSaveable { mutableLongStateOf(initialStartMs) }
+    var endMs by rememberSaveable { mutableLongStateOf(initialEndMs) }
+
+    // Which picker to show: null = none, true = start, false = end
+    var showPickerForStart by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     fun formatDate(ms: Long): String {
         val sdf = SimpleDateFormat("dd MMMM, yyyy", Locale("bn", "BD"))
@@ -57,42 +58,50 @@ fun CustomPeriodDialog(
         return if (useBengaliDigits) BengaliFormatter.toBengaliDigits(formatted) else formatted
     }
 
-    fun showPicker(isStart: Boolean) {
-        val initialCal = Calendar.getInstance().apply {
-            timeInMillis = if (isStart) startMs else endMs
-        }
-        val dialog = DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
+    // Show FinoraDatePickerDialog for start date
+    if (showPickerForStart == true) {
+        FinoraDatePickerDialog(
+            initialDateMillis = startMs,
+            allowFutureDates = false,
+            onDismissRequest = { showPickerForStart = null },
+            onDateSelected = { year, month, dayOfMonth ->
                 val chosenCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
                     set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    if (isStart) {
-                        set(Calendar.HOUR_OF_DAY, 0)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    } else {
-                        set(Calendar.HOUR_OF_DAY, 23)
-                        set(Calendar.MINUTE, 59)
-                        set(Calendar.SECOND, 59)
-                        set(Calendar.MILLISECOND, 999)
-                    }
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                 }
-                if (isStart) {
-                    startMs = chosenCal.timeInMillis
-                    if (startMs > endMs) endMs = startMs
-                } else {
-                    endMs = chosenCal.timeInMillis
-                    if (endMs < startMs) startMs = endMs
-                }
-            },
-            initialCal.get(Calendar.YEAR),
-            initialCal.get(Calendar.MONTH),
-            initialCal.get(Calendar.DAY_OF_MONTH)
+                startMs = chosenCal.timeInMillis
+                if (startMs > endMs) endMs = startMs
+                showPickerForStart = null
+            }
         )
-        dialog.show()
+    }
+
+    // Show FinoraDatePickerDialog for end date
+    if (showPickerForStart == false) {
+        FinoraDatePickerDialog(
+            initialDateMillis = endMs,
+            allowFutureDates = false,
+            onDismissRequest = { showPickerForStart = null },
+            onDateSelected = { year, month, dayOfMonth ->
+                val chosenCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                    set(Calendar.MILLISECOND, 999)
+                }
+                endMs = chosenCal.timeInMillis
+                if (endMs < startMs) startMs = endMs
+                showPickerForStart = null
+            }
+        )
     }
 
     AlertDialog(
@@ -115,7 +124,7 @@ fun CustomPeriodDialog(
                 OutlinedCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showPicker(true) }
+                        .clickable { showPickerForStart = true }
                         .testTag("picker_start_date"),
                     shape = RoundedCornerShape(10.dp)
                 ) {
@@ -142,7 +151,7 @@ fun CustomPeriodDialog(
                 OutlinedCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showPicker(false) }
+                        .clickable { showPickerForStart = false }
                         .testTag("picker_end_date"),
                     shape = RoundedCornerShape(10.dp)
                 ) {

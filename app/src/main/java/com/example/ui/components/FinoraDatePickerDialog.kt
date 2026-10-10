@@ -1,16 +1,8 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -37,6 +29,22 @@ import java.util.Calendar
 import java.util.TimeZone
 
 /**
+ * Normalizes a timestamp to UTC midnight (00:00:00.000 UTC).
+ * Material3 DatePicker REQUIRES initialSelectedDateMillis to be at UTC midnight,
+ * otherwise it throws IllegalArgumentException and crashes the app.
+ */
+private fun normalizeToUtcMidnight(millis: Long): Long {
+    val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        timeInMillis = millis
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    return utcCal.timeInMillis
+}
+
+/**
  * 100% pure Jetpack Compose DatePicker dialog.
  * Replaces legacy View-based android.app.DatePickerDialog across the application.
  * Completely immune to WindowManager.BadTokenException and missing XML theme crashes.
@@ -51,13 +59,17 @@ fun FinoraDatePickerDialog(
     onDismissRequest: () -> Unit,
     onDateSelected: (year: Int, month: Int, dayOfMonth: Int) -> Unit
 ) {
+    // Normalize to UTC midnight — Material3 DatePicker crashes with IllegalArgumentException
+    // if the initialSelectedDateMillis is not exactly at UTC midnight (00:00:00.000 UTC).
+    val normalizedInitial = normalizeToUtcMidnight(initialDateMillis)
+
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis,
+        initialSelectedDateMillis = normalizedInitial,
         selectableDates = if (!allowFutureDates) {
             object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    // Allow up to current system time + 24 hours to accommodate all timezones
-                    return utcTimeMillis <= System.currentTimeMillis() + 86_400_000L
+                    // Allow up to the current day's UTC midnight + 1 day to accommodate all timezones
+                    return utcTimeMillis <= normalizeToUtcMidnight(System.currentTimeMillis()) + 86_400_000L
                 }
             }
         } else {

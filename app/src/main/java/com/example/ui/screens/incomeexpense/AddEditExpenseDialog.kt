@@ -116,9 +116,9 @@ fun AddEditExpenseDialog(
     var amountError by remember { mutableStateOf<String?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var linkedSourceExpanded by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
-    var showDateTimePickerDialog by remember { mutableStateOf(false) }
+    var showDateTimePickerDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDateTimePickerDialog) {
         FinoraDateTimePickerDialog(

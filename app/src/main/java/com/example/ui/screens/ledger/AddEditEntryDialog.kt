@@ -97,9 +97,9 @@ fun AddEditEntryDialog(
     var noteText by rememberSaveable { mutableStateOf(existingEntry?.note ?: "") }
     var entryDateTimestamp by rememberSaveable { mutableLongStateOf(existingEntry?.entryDate ?: System.currentTimeMillis()) }
     var amountError by remember { mutableStateOf<String?>(null) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
-    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDatePickerDialog) {
         FinoraDatePickerDialog(

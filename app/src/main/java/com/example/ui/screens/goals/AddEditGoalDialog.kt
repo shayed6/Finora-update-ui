@@ -32,7 +32,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -53,7 +52,6 @@ fun AddEditGoalDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, targetAmountPaisa: Long?, targetDate: Long?) -> Unit
 ) {
-    val context = LocalContext.current
     val isEditing = goal != null
     val isDefault = goal?.isDefault == true
 
@@ -69,7 +67,7 @@ fun AddEditGoalDialog(
     var targetDateTimestamp by rememberSaveable { mutableStateOf(goal?.targetDate) }
     var nameError by rememberSaveable { mutableStateOf<String?>(null) }
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
-    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDatePickerDialog) {
         FinoraDatePickerDialog(
