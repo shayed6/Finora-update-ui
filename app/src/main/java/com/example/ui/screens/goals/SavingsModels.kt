@@ -99,11 +99,8 @@ data class GoalDetailState(
 )
 
 object SavingsFormatter {
-    private val dateFormatter = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
-
     fun formatDate(timestamp: Long, useBengaliDigits: Boolean = true): String {
-        val formatted = dateFormatter.format(Date(timestamp))
-        return if (useBengaliDigits) BengaliFormatter.toBengaliDigits(formatted) else formatted
+        return BengaliFormatter.formatBangladeshDate(timestamp, useBengaliDigits)
     }
 
     /**

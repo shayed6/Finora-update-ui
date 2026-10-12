@@ -53,72 +53,11 @@ fun CustomPeriodDialog(
     var showPickerForStart by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     fun formatDate(ms: Long): String {
-        val sdf = SimpleDateFormat("dd MMMM, yyyy", Locale("bn", "BD"))
-        val formatted = sdf.format(Date(ms))
-        return if (useBengaliDigits) BengaliFormatter.toBengaliDigits(formatted) else formatted
+        return BengaliFormatter.formatBangladeshDate(ms, useBengaliDigits)
     }
 
-    // Show FinoraDatePickerDialog for start date
-    if (showPickerForStart == true) {
-        FinoraDatePickerDialog(
-            initialDateMillis = startMs,
-            allowFutureDates = false,
-            onDismissRequest = { showPickerForStart = null },
-            onDateSelected = { year, month, dayOfMonth ->
-                val now = System.currentTimeMillis()
-                val todayCal = Calendar.getInstance()
-                val isToday = (todayCal.get(Calendar.YEAR) == year &&
-                               todayCal.get(Calendar.MONTH) == month &&
-                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
-
-                val chosenCal = Calendar.getInstance().apply {
-                    set(Calendar.YEAR, year)
-                    set(Calendar.MONTH, month)
-                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }
-                startMs = minOf(chosenCal.timeInMillis, now)
-                if (startMs > endMs) endMs = startMs
-                showPickerForStart = null
-            }
-        )
-    } else if (showPickerForStart == false) {
-        // Show FinoraDatePickerDialog for end date
-        FinoraDatePickerDialog(
-            initialDateMillis = endMs,
-            allowFutureDates = false,
-            onDismissRequest = { showPickerForStart = null },
-            onDateSelected = { year, month, dayOfMonth ->
-                val now = System.currentTimeMillis()
-                val todayCal = Calendar.getInstance()
-                val isToday = (todayCal.get(Calendar.YEAR) == year &&
-                               todayCal.get(Calendar.MONTH) == month &&
-                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
-
-                val chosenCal = Calendar.getInstance().apply {
-                    if (isToday) {
-                        timeInMillis = now
-                    } else {
-                        set(Calendar.YEAR, year)
-                        set(Calendar.MONTH, month)
-                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                        set(Calendar.HOUR_OF_DAY, 23)
-                        set(Calendar.MINUTE, 59)
-                        set(Calendar.SECOND, 59)
-                        set(Calendar.MILLISECOND, 999)
-                    }
-                }
-                endMs = minOf(chosenCal.timeInMillis, now)
-                if (endMs < startMs) startMs = endMs
-                showPickerForStart = null
-            }
-        )
-    } else {
-        AlertDialog(
-            onDismissRequest = onDismiss,
+    AlertDialog(
+        onDismissRequest = onDismiss,
             title = {
                 Text(
                 text = title,
@@ -204,5 +143,4 @@ fun CustomPeriodDialog(
             }
         }
     )
-    }
 }

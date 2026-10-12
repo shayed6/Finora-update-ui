@@ -132,63 +132,6 @@ fun SavingsGoalDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .testTag("screen_goal_detail"),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = goal?.name ?: "",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("btn_back_goal_detail")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                actions = {
-                    if (goal != null) {
-                        // Edit Goal Action
-                        IconButton(
-                            onClick = { showEditGoalDialog = true },
-                            modifier = Modifier.testTag("btn_edit_goal")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Goal",
-                                tint = Color.White
-                            )
-                        }
-
-                        // Delete Goal Action (only if not default goal)
-                        if (!goal.isDefault) {
-                            IconButton(
-                                onClick = { showDeleteGoalConfirm = true },
-                                modifier = Modifier.testTag("btn_delete_goal")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Goal",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = FinoraNavy
-                )
-            )
-        },
         bottomBar = {
             // Two Bottom Action Buttons: green "+ জমা / বিনিয়োগ" and smaller outlined "উত্তোলন"
             Surface(
@@ -244,26 +187,142 @@ fun SavingsGoalDetailScreen(
             }
         }
     ) { innerPadding ->
-        if (detailState == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(36.dp),
-                    color = PrimaryBlue
-                )
+        val state = detailState
+        if (state == null) {
+            val fallbackGoal = mainState.goals.firstOrNull { it.goal.id == goalId }
+            if (fallbackGoal != null) {
+                // Instantly render initial goal header without jumping through progress indicator
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = FinoraNavy),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+                            .testTag("card_goal_header")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = fallbackGoal.goal.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (fallbackGoal.goal.isDefault) {
+                                    Text(
+                                        text = SavingsStrings.BADGE_DEFAULT,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = PrimaryBlue
+                        )
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(36.dp),
+                        color = PrimaryBlue
+                    )
+                }
             }
         } else {
-            val state = detailState!!
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(MaterialTheme.colorScheme.background)
             ) {
+                // Goal Title Header Card
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = FinoraNavy),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+                        .testTag("card_goal_header")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = state.goal.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (state.goal.isDefault) {
+                                Text(
+                                    text = SavingsStrings.BADGE_DEFAULT,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        // Edit Goal Action
+                        IconButton(
+                            onClick = { showEditGoalDialog = true },
+                            modifier = Modifier.testTag("btn_edit_goal")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Goal",
+                                tint = Color.White
+                            )
+                        }
+
+                        // Delete Goal Action (only if not default goal)
+                        if (!state.goal.isDefault) {
+                            IconButton(
+                                onClick = { showDeleteGoalConfirm = true },
+                                modifier = Modifier.testTag("btn_delete_goal")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Goal",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
                 // Header with Progress & Badge
                 Column(
                     modifier = Modifier

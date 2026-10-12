@@ -1,21 +1,30 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,7 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.example.ui.theme.PrimaryBlue
+import com.example.util.BengaliFormatter
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -58,6 +70,7 @@ fun FinoraDatePickerDialog(
     allowFutureDates: Boolean = false,
     confirmButtonText: String = "ঠিক আছে",
     dismissButtonText: String = "বাতিল",
+    dismissOnConfirm: Boolean = true,
     onDismissRequest: () -> Unit,
     onDateSelected: (year: Int, month: Int, dayOfMonth: Int) -> Unit
 ) {
@@ -75,7 +88,8 @@ fun FinoraDatePickerDialog(
                 if (allowFutureDates) return true
                 // Always allow the initial selected date to avoid IllegalArgumentException in rememberDatePickerState
                 if (utcTimeMillis == safeInitialDateMillis) return true
-                return utcTimeMillis <= todayUtcMidnight + 86_400_000L
+                // Do not allow tomorrow or future dates if allowFutureDates is false
+                return utcTimeMillis <= todayUtcMidnight
             }
 
             override fun isSelectableYear(year: Int): Boolean = true
@@ -109,7 +123,9 @@ fun FinoraDatePickerDialog(
                             localCal.get(Calendar.DAY_OF_MONTH)
                         )
                     }
-                    onDismissRequest()
+                    if (dismissOnConfirm) {
+                        onDismissRequest()
+                    }
                 },
                 modifier = Modifier.testTag("btn_confirm_date_picker")
             ) {
@@ -136,7 +152,7 @@ fun FinoraDatePickerDialog(
 /**
  * Combined Date & Time Picker Dialog in pure Jetpack Compose.
  * Step 1: User picks Date.
- * Step 2: User optionally picks or confirms Time.
+ * Step 2: User confirms or selects exact Time.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,29 +164,27 @@ fun FinoraDateTimePickerDialog(
 ) {
     var isTimeStep by remember { mutableStateOf(false) }
 
-    var selectedYear by remember {
-        val cal = Calendar.getInstance().apply { timeInMillis = initialDateTimeMillis }
-        mutableStateOf(cal.get(Calendar.YEAR))
-    }
-    var selectedMonth by remember {
-        val cal = Calendar.getInstance().apply { timeInMillis = initialDateTimeMillis }
-        mutableStateOf(cal.get(Calendar.MONTH))
-    }
-    var selectedDay by remember {
-        val cal = Calendar.getInstance().apply { timeInMillis = initialDateTimeMillis }
-        mutableStateOf(cal.get(Calendar.DAY_OF_MONTH))
-    }
-
     val initialCal = remember(initialDateTimeMillis) {
         Calendar.getInstance().apply { timeInMillis = initialDateTimeMillis }
+    }
+
+    var selectedYear by remember {
+        mutableIntStateOf(initialCal.get(Calendar.YEAR))
+    }
+    var selectedMonth by remember {
+        mutableIntStateOf(initialCal.get(Calendar.MONTH))
+    }
+    var selectedDay by remember {
+        mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH))
     }
 
     if (!isTimeStep) {
         FinoraDatePickerDialog(
             initialDateMillis = initialDateTimeMillis,
             allowFutureDates = allowFutureDateTime,
-            confirmButtonText = "পরবর্তী (সময়) →",
+            confirmButtonText = "পরবর্তী (সময় নির্ধারণ) →",
             dismissButtonText = "বাতিল",
+            dismissOnConfirm = false,
             onDismissRequest = onDismissRequest,
             onDateSelected = { year, month, dayOfMonth ->
                 selectedYear = year
@@ -188,19 +202,56 @@ fun FinoraDateTimePickerDialog(
 
         AlertDialog(
             onDismissRequest = onDismissRequest,
+            shape = RoundedCornerShape(16.dp),
             title = {
-                Text(
-                    text = "সময় নির্বাচন করুন",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "সময় নির্বাচন করুন",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    TextButton(
+                        onClick = { isTimeStep = false },
+                        modifier = Modifier.testTag("btn_back_to_date_picker")
+                    ) {
+                        Text("← তারিখ পরিবর্তন", fontSize = 12.sp)
+                    }
+                }
             },
             text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    TimePicker(state = timePickerState)
+                    val formattedDateStr = BengaliFormatter.toBengaliDigits(
+                        "$selectedDay/${selectedMonth + 1}/$selectedYear"
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = PrimaryBlue.copy(alpha = 0.1f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "নির্বাচিত তারিখ: $formattedDateStr",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryBlue,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TimeInput(
+                        state = timePickerState,
+                        modifier = Modifier.testTag("time_input_picker")
+                    )
                 }
             },
             confirmButton = {
@@ -215,8 +266,9 @@ fun FinoraDateTimePickerDialog(
                             set(Calendar.SECOND, 0)
                             set(Calendar.MILLISECOND, 0)
                         }
-                        val finalTime = if (!allowFutureDateTime && resultCal.timeInMillis > System.currentTimeMillis() + 60_000L) {
-                            System.currentTimeMillis()
+                        val now = System.currentTimeMillis()
+                        val finalTime = if (!allowFutureDateTime && resultCal.timeInMillis > now) {
+                            now
                         } else {
                             resultCal.timeInMillis
                         }
@@ -229,20 +281,35 @@ fun FinoraDateTimePickerDialog(
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        // User can finish with just the picked date keeping current time
-                        val resultCal = Calendar.getInstance().apply {
-                            timeInMillis = initialDateTimeMillis
-                            set(Calendar.YEAR, selectedYear)
-                            set(Calendar.MONTH, selectedMonth)
-                            set(Calendar.DAY_OF_MONTH, selectedDay)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = {
+                            val now = Calendar.getInstance()
+                            val resultCal = Calendar.getInstance().apply {
+                                set(Calendar.YEAR, selectedYear)
+                                set(Calendar.MONTH, selectedMonth)
+                                set(Calendar.DAY_OF_MONTH, selectedDay)
+                                set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+                                set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            val currentTime = System.currentTimeMillis()
+                            val finalTime = if (!allowFutureDateTime && resultCal.timeInMillis > currentTime) {
+                                currentTime
+                            } else {
+                                resultCal.timeInMillis
+                            }
+                            onDateTimeSelected(finalTime)
+                            onDismissRequest()
                         }
-                        onDateTimeSelected(resultCal.timeInMillis)
-                        onDismissRequest()
+                    ) {
+                        Text("বর্তমান সময়")
                     }
-                ) {
-                    Text("এড়িয়ে যান")
+
+                    TextButton(onClick = onDismissRequest) {
+                        Text("বাতিল")
+                    }
                 }
             }
         )

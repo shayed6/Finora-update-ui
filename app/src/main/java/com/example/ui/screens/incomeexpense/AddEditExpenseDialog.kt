@@ -120,44 +120,10 @@ fun AddEditExpenseDialog(
 
     var showDateTimePickerDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDateTimePickerDialog) {
-        FinoraDateTimePickerDialog(
-            initialDateTimeMillis = occurredAtTimestamp,
-            allowFutureDateTime = false,
-            onDismissRequest = { showDateTimePickerDialog = false },
-            onDateTimeSelected = { chosen ->
-                occurredAtTimestamp = chosen
-            }
-        )
-    } else if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
-            text = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_MSG) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete?.invoke()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.testTag("btn_confirm_delete_expense")
-                ) {
-                    Text(IncomeExpenseStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(IncomeExpenseStrings.BTN_CANCEL)
-                }
-            }
-        )
-    } else {
-        val selectedCategoryName = categories.firstOrNull { it.id == selectedCategoryId }?.name ?: "খাত নির্বাচন করুন"
-        val selectedLinkedSourceName = incomeSources.firstOrNull { it.id == linkedSourceId }?.name ?: IncomeExpenseStrings.LINKED_SOURCE_NONE
+    val selectedCategoryName = categories.firstOrNull { it.id == selectedCategoryId }?.name ?: "খাত নির্বাচন করুন"
+    val selectedLinkedSourceName = incomeSources.firstOrNull { it.id == linkedSourceId }?.name ?: IncomeExpenseStrings.LINKED_SOURCE_NONE
 
-        AlertDialog(
+    AlertDialog(
             onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_expense"),
         shape = RoundedCornerShape(20.dp),
@@ -477,5 +443,42 @@ fun AddEditExpenseDialog(
             }
         }
     )
+
+    if (showDateTimePickerDialog) {
+        FinoraDateTimePickerDialog(
+            initialDateTimeMillis = occurredAtTimestamp,
+            allowFutureDateTime = false,
+            onDismissRequest = { showDateTimePickerDialog = false },
+            onDateTimeSelected = { chosen ->
+                occurredAtTimestamp = chosen
+                showDateTimePickerDialog = false
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
+            text = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_MSG) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("btn_confirm_delete_expense")
+                ) {
+                    Text(IncomeExpenseStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(IncomeExpenseStrings.BTN_CANCEL)
+                }
+            }
+        )
     }
 }

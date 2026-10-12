@@ -101,63 +101,10 @@ fun AddEditEntryDialog(
 
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDatePickerDialog) {
-        FinoraDatePickerDialog(
-            initialDateMillis = entryDateTimestamp,
-            allowFutureDates = false,
-            onDismissRequest = { showDatePickerDialog = false },
-            onDateSelected = { year, month, dayOfMonth ->
-                val now = System.currentTimeMillis()
-                val todayCal = Calendar.getInstance()
-                val isToday = (todayCal.get(Calendar.YEAR) == year &&
-                               todayCal.get(Calendar.MONTH) == month &&
-                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+    val typeColor = if (selectedType == LedgerEntryType.GAVE) AlertRed else GrowthGreen
+    val typeLabel = if (selectedType == LedgerEntryType.GAVE) LedgerStrings.BTN_GAVE else LedgerStrings.BTN_RECEIVED
 
-                val newCal = Calendar.getInstance().apply {
-                    if (isToday) {
-                        timeInMillis = now
-                    } else {
-                        set(Calendar.YEAR, year)
-                        set(Calendar.MONTH, month)
-                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                        set(Calendar.HOUR_OF_DAY, 12)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                }
-                entryDateTimestamp = minOf(newCal.timeInMillis, now)
-            }
-        )
-    } else if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(LedgerStrings.CONFIRM_DELETE_ENTRY_TITLE, fontWeight = FontWeight.Bold) },
-            text = { Text(LedgerStrings.CONFIRM_DELETE_ENTRY_MSG) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete?.invoke()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.testTag("btn_confirm_delete_entry")
-                ) {
-                    Text(LedgerStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(LedgerStrings.BTN_CANCEL)
-                }
-            }
-        )
-    } else {
-        val typeColor = if (selectedType == LedgerEntryType.GAVE) AlertRed else GrowthGreen
-        val typeLabel = if (selectedType == LedgerEntryType.GAVE) LedgerStrings.BTN_GAVE else LedgerStrings.BTN_RECEIVED
-
-        AlertDialog(
+    AlertDialog(
             onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_entry"),
         shape = RoundedCornerShape(20.dp),
@@ -377,5 +324,61 @@ fun AddEditEntryDialog(
             }
         }
     )
+
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = entryDateTimestamp,
+            allowFutureDates = false,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
+                val now = System.currentTimeMillis()
+                val todayCal = Calendar.getInstance()
+                val isToday = (todayCal.get(Calendar.YEAR) == year &&
+                               todayCal.get(Calendar.MONTH) == month &&
+                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+
+                val newCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    if (isToday) {
+                        timeInMillis = now
+                    } else {
+                        set(Calendar.HOUR_OF_DAY, 12)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                }
+                entryDateTimestamp = minOf(newCal.timeInMillis, now)
+                showDatePickerDialog = false
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(LedgerStrings.CONFIRM_DELETE_ENTRY_TITLE, fontWeight = FontWeight.Bold) },
+            text = { Text(LedgerStrings.CONFIRM_DELETE_ENTRY_MSG) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("btn_confirm_delete_entry")
+                ) {
+                    Text(LedgerStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(LedgerStrings.BTN_CANCEL)
+                }
+            }
+        )
     }
 }

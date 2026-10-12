@@ -113,44 +113,10 @@ fun AddEditIncomeDialog(
 
     var showDateTimePickerDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDateTimePickerDialog) {
-        FinoraDateTimePickerDialog(
-            initialDateTimeMillis = occurredAtTimestamp,
-            allowFutureDateTime = false,
-            onDismissRequest = { showDateTimePickerDialog = false },
-            onDateTimeSelected = { chosen ->
-                occurredAtTimestamp = chosen
-            }
-        )
-    } else if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
-            text = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_MSG) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete?.invoke()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.testTag("btn_confirm_delete_income")
-                ) {
-                    Text(IncomeExpenseStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(IncomeExpenseStrings.BTN_CANCEL)
-                }
-            }
-        )
-    } else {
-        val selectedSourceName = sources.firstOrNull { it.id == selectedSourceId }?.name ?: "উৎস নির্বাচন করুন"
+    val selectedSourceName = sources.firstOrNull { it.id == selectedSourceId }?.name ?: "উৎস নির্বাচন করুন"
 
-        AlertDialog(
-            onDismissRequest = onDismiss,
+    AlertDialog(
+        onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_income"),
         shape = RoundedCornerShape(20.dp),
         title = {
@@ -425,5 +391,42 @@ fun AddEditIncomeDialog(
             }
         }
     )
+
+    if (showDateTimePickerDialog) {
+        FinoraDateTimePickerDialog(
+            initialDateTimeMillis = occurredAtTimestamp,
+            allowFutureDateTime = false,
+            onDismissRequest = { showDateTimePickerDialog = false },
+            onDateTimeSelected = { chosen ->
+                occurredAtTimestamp = chosen
+                showDateTimePickerDialog = false
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
+            text = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_MSG) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("btn_confirm_delete_income")
+                ) {
+                    Text(IncomeExpenseStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(IncomeExpenseStrings.BTN_CANCEL)
+                }
+            }
+        )
     }
 }

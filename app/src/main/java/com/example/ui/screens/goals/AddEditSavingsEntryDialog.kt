@@ -109,69 +109,15 @@ fun AddEditSavingsEntryDialog(
 
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDatePickerDialog) {
-        FinoraDatePickerDialog(
-            initialDateMillis = entryDateTimestamp,
-            allowFutureDates = false,
-            onDismissRequest = { showDatePickerDialog = false },
-            onDateSelected = { year, month, dayOfMonth ->
-                val now = System.currentTimeMillis()
-                val todayCal = Calendar.getInstance()
-                val isToday = (todayCal.get(Calendar.YEAR) == year &&
-                               todayCal.get(Calendar.MONTH) == month &&
-                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
-
-                val newCal = Calendar.getInstance().apply {
-                    if (isToday) {
-                        timeInMillis = now
-                    } else {
-                        set(Calendar.YEAR, year)
-                        set(Calendar.MONTH, month)
-                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                        set(Calendar.HOUR_OF_DAY, 12)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                }
-                entryDateTimestamp = minOf(newCal.timeInMillis, now)
-                amountError = null
-            }
-        )
-    } else if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(SavingsStrings.CONFIRM_DELETE_ENTRY_TITLE, fontWeight = FontWeight.Bold) },
-            text = { Text(SavingsStrings.CONFIRM_DELETE_ENTRY_MSG) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete?.invoke()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.testTag("btn_confirm_delete_entry")
-                ) {
-                    Text(SavingsStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(SavingsStrings.BTN_CANCEL)
-                }
-            }
-        )
+    val effectiveSectorId = if (selectedSectorId <= 0L && sectors.isNotEmpty()) {
+        sectors.first().id
     } else {
-        val effectiveSectorId = if (selectedSectorId <= 0L && sectors.isNotEmpty()) {
-            sectors.first().id
-        } else {
-            selectedSectorId
-        }
-        val selectedSectorName = sectors.firstOrNull { it.id == effectiveSectorId }?.name ?: "খাত নির্বাচন করুন"
+        selectedSectorId
+    }
+    val selectedSectorName = sectors.firstOrNull { it.id == effectiveSectorId }?.name ?: "খাত নির্বাচন করুন"
 
-        AlertDialog(
-            onDismissRequest = onDismiss,
+    AlertDialog(
+        onDismissRequest = onDismiss,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -414,5 +360,62 @@ fun AddEditSavingsEntryDialog(
             }
         }
     )
+
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = entryDateTimestamp,
+            allowFutureDates = false,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
+                val now = System.currentTimeMillis()
+                val todayCal = Calendar.getInstance()
+                val isToday = (todayCal.get(Calendar.YEAR) == year &&
+                               todayCal.get(Calendar.MONTH) == month &&
+                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+
+                val newCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    if (isToday) {
+                        timeInMillis = now
+                    } else {
+                        set(Calendar.HOUR_OF_DAY, 12)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                }
+                entryDateTimestamp = minOf(newCal.timeInMillis, now)
+                amountError = null
+                showDatePickerDialog = false
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(SavingsStrings.CONFIRM_DELETE_ENTRY_TITLE, fontWeight = FontWeight.Bold) },
+            text = { Text(SavingsStrings.CONFIRM_DELETE_ENTRY_MSG) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("btn_confirm_delete_entry")
+                ) {
+                    Text(SavingsStrings.BTN_DELETE, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(SavingsStrings.BTN_CANCEL)
+                }
+            }
+        )
     }
 }

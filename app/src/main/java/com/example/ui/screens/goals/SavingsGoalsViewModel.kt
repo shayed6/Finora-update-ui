@@ -89,15 +89,41 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
 
     private val detailStateFlowCache = mutableMapOf<Pair<Long, Boolean>, StateFlow<GoalDetailState?>>()
 
-    fun getGoalDetailState(goalId: Long, useBengaliDigits: Boolean = true): StateFlow<GoalDetailState?> {
+    fun getGoalDetailState(
+        goalId: Long,
+        useBengaliDigits: Boolean = true,
+        seedGoal: GoalWithStats? = null
+    ): StateFlow<GoalDetailState?> {
         return synchronized(detailStateFlowCache) {
-            detailStateFlowCache.getOrPut(goalId to useBengaliDigits) {
-                combine(
-                    repository.getGoalById(goalId),
-                    repository.getEntriesForGoal(goalId),
-                    repository.allSectors
-                ) { goal, entries, sectors ->
-                    if (goal == null) return@combine null
+            val key = goalId to useBengaliDigits
+            val existing = detailStateFlowCache[key]
+            if (existing != null) {
+                return@synchronized existing
+            }
+
+            val seedGoalWithStats = seedGoal ?: uiState.value.goals.firstOrNull { it.goal.id == goalId }
+            val initialGoalDetailState = seedGoalWithStats?.let { gs ->
+                val remPaisa = gs.goal.targetAmount?.let { target ->
+                    (target - gs.savedPaisa).coerceAtLeast(0L)
+                }
+                GoalDetailState(
+                    goal = gs.goal,
+                    savedPaisa = gs.savedPaisa,
+                    remainingPaisa = remPaisa,
+                    remainingTimeText = SavingsFormatter.formatRemainingTime(gs.goal.targetDate, useBengaliDigits),
+                    progressPercent = gs.progressPercent,
+                    isCompleted = gs.isCompleted,
+                    sectorBreakdown = emptyList(),
+                    entries = emptyList()
+                )
+            }
+
+            val newFlow = combine(
+                repository.getGoalById(goalId),
+                repository.getEntriesForGoal(goalId),
+                repository.allSectors
+            ) { goal, entries, sectors ->
+                if (goal == null) return@combine null
 
                     val sectorMap = sectors.associateBy { it.id }
 
@@ -149,9 +175,10 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
                 }.stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5000),
-                    initialValue = null
+                    initialValue = initialGoalDetailState
                 )
-            }
+            detailStateFlowCache[key] = newFlow
+            newFlow
         }
     }
 
@@ -184,6 +211,9 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             try {
                 repository.updateGoal(id, name, targetAmountPaisa, targetDate)
+                synchronized(detailStateFlowCache) {
+                    detailStateFlowCache.keys.filter { it.first == id }.forEach { detailStateFlowCache.remove(it) }
+                }
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "ত্রুটি ঘটেছে")
@@ -199,6 +229,9 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             try {
                 repository.deleteGoal(goalId)
+                synchronized(detailStateFlowCache) {
+                    detailStateFlowCache.keys.filter { it.first == goalId }.forEach { detailStateFlowCache.remove(it) }
+                }
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "ত্রুটি ঘটেছে")

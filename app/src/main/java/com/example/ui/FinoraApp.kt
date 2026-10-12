@@ -409,36 +409,34 @@ fun FinoraApp(
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                if (currentScreen !is Screen.SavingsGoalDetail) {
-                    FinoraTopBar(
-                        title = title,
-                        subtitle = subtitle,
-                        canNavigateBack = canNavigateBack,
-                        onNavigationClick = {
-                            if (canNavigateBack) {
-                                popBack()
-                            } else {
-                                scope.launch { drawerState.open() }
-                            }
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    scope.launch {
-                                        userPrefs.toggleDarkMode(!isDarkTheme)
-                                    }
-                                },
-                                modifier = Modifier.testTag("top_bar_theme_toggle")
-                            ) {
-                                Icon(
-                                    imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                    contentDescription = if (isDarkTheme) "লাইট মোড" else "ডার্ক মোড",
-                                    tint = Color.White
-                                )
-                            }
+                FinoraTopBar(
+                    title = title,
+                    subtitle = subtitle,
+                    canNavigateBack = canNavigateBack,
+                    onNavigationClick = {
+                        if (canNavigateBack) {
+                            popBack()
+                        } else {
+                            scope.launch { drawerState.open() }
                         }
-                    )
-                }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    userPrefs.toggleDarkMode(!isDarkTheme)
+                                }
+                            },
+                            modifier = Modifier.testTag("top_bar_theme_toggle")
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = if (isDarkTheme) "লাইট মোড" else "ডার্ক মোড",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                )
             },
             bottomBar = {
                 if (showAdMobBanner) {

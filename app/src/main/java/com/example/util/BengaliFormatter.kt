@@ -5,8 +5,62 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 object BengaliFormatter {
+    val LOCALE_BANGLADESH: Locale = Locale.Builder().setLanguage("bn").setRegion("BD").build()
+
+    private val bengaliMonthNames = arrayOf(
+        "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+        "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+    )
+
+    private val englishMonthNames = arrayOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
+
     private val bengaliDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
     private val englishDigits = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+
+    /**
+     * Formats a timestamp into a standardized date string (e.g. "১২ অক্টোবর, ২০২৬" or "12 October, 2026").
+     * Uses explicit Bangladeshi calendar month names to prevent system locale and timezone discrepancies.
+     */
+    fun formatBangladeshDate(timestamp: Long, useBengaliDigits: Boolean = true): String {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+        val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
+        val monthIdx = cal.get(java.util.Calendar.MONTH)
+        val year = cal.get(java.util.Calendar.YEAR)
+
+        return if (useBengaliDigits) {
+            val dayBn = toBengaliDigits(day.toString())
+            val monthBn = bengaliMonthNames.getOrElse(monthIdx) { "মাস" }
+            val yearBn = toBengaliDigits(year.toString())
+            "$dayBn $monthBn, $yearBn"
+        } else {
+            val monthEn = englishMonthNames.getOrElse(monthIdx) { "Month" }
+            "$day $monthEn, $year"
+        }
+    }
+
+    /**
+     * Formats a timestamp into a 12-hour AM/PM time string (e.g. "১০:৩০ AM" or "১০:৩০ পূর্বাহ্ন").
+     */
+    fun formatBangladeshTime(timestamp: Long, useBengaliDigits: Boolean = true): String {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+        val hour12 = cal.get(java.util.Calendar.HOUR).let { if (it == 0) 12 else it }
+        val minute = cal.get(java.util.Calendar.MINUTE)
+        val isAm = cal.get(java.util.Calendar.AM_PM) == java.util.Calendar.AM
+
+        val minuteStr = minute.toString().padStart(2, '0')
+        val timeBase = "$hour12:$minuteStr"
+
+        return if (useBengaliDigits) {
+            val amPmBn = if (isAm) "পূর্বাহ্ন" else "অপরাহ্ন"
+            "${toBengaliDigits(timeBase)} $amPmBn"
+        } else {
+            val amPmEn = if (isAm) "AM" else "PM"
+            "$timeBase $amPmEn"
+        }
+    }
 
     /**
      * Converts an English digit string or number to Bengali digits.

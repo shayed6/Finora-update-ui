@@ -69,26 +69,8 @@ fun AddEditGoalDialog(
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDatePickerDialog) {
-        FinoraDatePickerDialog(
-            initialDateMillis = targetDateTimestamp ?: System.currentTimeMillis(),
-            allowFutureDates = true,
-            onDismissRequest = { showDatePickerDialog = false },
-            onDateSelected = { year, month, dayOfMonth ->
-                val newCal = Calendar.getInstance().apply {
-                    set(Calendar.YEAR, year)
-                    set(Calendar.MONTH, month)
-                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    set(Calendar.HOUR_OF_DAY, 23)
-                    set(Calendar.MINUTE, 59)
-                    set(Calendar.SECOND, 59)
-                }
-                targetDateTimestamp = newCal.timeInMillis
-            }
-        )
-    } else {
-        AlertDialog(
-            onDismissRequest = onDismiss,
+    AlertDialog(
+        onDismissRequest = onDismiss,
         title = {
             Text(
                 text = if (isEditing) SavingsStrings.DIALOG_EDIT_GOAL_TITLE else SavingsStrings.DIALOG_ADD_GOAL_TITLE,
@@ -231,5 +213,24 @@ fun AddEditGoalDialog(
             }
         }
     )
+
+    if (showDatePickerDialog) {
+        FinoraDatePickerDialog(
+            initialDateMillis = targetDateTimestamp ?: System.currentTimeMillis(),
+            allowFutureDates = true,
+            onDismissRequest = { showDatePickerDialog = false },
+            onDateSelected = { year, month, dayOfMonth ->
+                val newCal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                }
+                targetDateTimestamp = newCal.timeInMillis
+                showDatePickerDialog = false
+            }
+        )
     }
 }

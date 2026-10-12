@@ -135,19 +135,15 @@ data class IncomeExpenseSummary(
 )
 
 object IncomeExpenseFormatter {
-    private val dateFormatter = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
-    private val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-    private val monthYearFormatterBn = SimpleDateFormat("MMMM, yyyy", Locale("bn", "BD"))
+    private val monthYearFormatterBn = SimpleDateFormat("MMMM, yyyy", BengaliFormatter.LOCALE_BANGLADESH)
     private val monthYearFormatterEn = SimpleDateFormat("MMMM yyyy", Locale.US)
 
     fun formatDate(timestamp: Long, useBengaliDigits: Boolean = true): String {
-        val formatted = dateFormatter.format(Date(timestamp))
-        return if (useBengaliDigits) BengaliFormatter.toBengaliDigits(formatted) else formatted
+        return BengaliFormatter.formatBangladeshDate(timestamp, useBengaliDigits)
     }
 
     fun formatTime(timestamp: Long, useBengaliDigits: Boolean = true): String {
-        val formatted = timeFormatter.format(Date(timestamp))
-        return if (useBengaliDigits) BengaliFormatter.toBengaliDigits(formatted) else formatted
+        return BengaliFormatter.formatBangladeshTime(timestamp, useBengaliDigits)
     }
 
     fun formatMonthYear(monthYear: MonthYear, useBengaliDigits: Boolean = true): String {
