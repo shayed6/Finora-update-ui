@@ -129,9 +129,7 @@ fun AddEditExpenseDialog(
                 occurredAtTimestamp = chosen
             }
         )
-    }
-
-    if (showDeleteConfirm) {
+    } else if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
@@ -155,13 +153,12 @@ fun AddEditExpenseDialog(
                 }
             }
         )
-    }
+    } else {
+        val selectedCategoryName = categories.firstOrNull { it.id == selectedCategoryId }?.name ?: "খাত নির্বাচন করুন"
+        val selectedLinkedSourceName = incomeSources.firstOrNull { it.id == linkedSourceId }?.name ?: IncomeExpenseStrings.LINKED_SOURCE_NONE
 
-    val selectedCategoryName = categories.firstOrNull { it.id == selectedCategoryId }?.name ?: "খাত নির্বাচন করুন"
-    val selectedLinkedSourceName = incomeSources.firstOrNull { it.id == linkedSourceId }?.name ?: IncomeExpenseStrings.LINKED_SOURCE_NONE
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
+        AlertDialog(
+            onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_expense"),
         shape = RoundedCornerShape(20.dp),
         title = {
@@ -480,4 +477,5 @@ fun AddEditExpenseDialog(
             }
         }
     )
+    }
 }

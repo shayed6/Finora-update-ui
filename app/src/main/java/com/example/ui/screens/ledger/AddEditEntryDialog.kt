@@ -107,17 +107,29 @@ fun AddEditEntryDialog(
             allowFutureDates = false,
             onDismissRequest = { showDatePickerDialog = false },
             onDateSelected = { year, month, dayOfMonth ->
+                val now = System.currentTimeMillis()
+                val todayCal = Calendar.getInstance()
+                val isToday = (todayCal.get(Calendar.YEAR) == year &&
+                               todayCal.get(Calendar.MONTH) == month &&
+                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+
                 val newCal = Calendar.getInstance().apply {
-                    set(Calendar.YEAR, year)
-                    set(Calendar.MONTH, month)
-                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                    if (isToday) {
+                        timeInMillis = now
+                    } else {
+                        set(Calendar.YEAR, year)
+                        set(Calendar.MONTH, month)
+                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                        set(Calendar.HOUR_OF_DAY, 12)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
                 }
-                entryDateTimestamp = newCal.timeInMillis
+                entryDateTimestamp = minOf(newCal.timeInMillis, now)
             }
         )
-    }
-
-    if (showDeleteConfirm) {
+    } else if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(LedgerStrings.CONFIRM_DELETE_ENTRY_TITLE, fontWeight = FontWeight.Bold) },
@@ -141,13 +153,12 @@ fun AddEditEntryDialog(
                 }
             }
         )
-    }
+    } else {
+        val typeColor = if (selectedType == LedgerEntryType.GAVE) AlertRed else GrowthGreen
+        val typeLabel = if (selectedType == LedgerEntryType.GAVE) LedgerStrings.BTN_GAVE else LedgerStrings.BTN_RECEIVED
 
-    val typeColor = if (selectedType == LedgerEntryType.GAVE) AlertRed else GrowthGreen
-    val typeLabel = if (selectedType == LedgerEntryType.GAVE) LedgerStrings.BTN_GAVE else LedgerStrings.BTN_RECEIVED
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
+        AlertDialog(
+            onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_entry"),
         shape = RoundedCornerShape(20.dp),
         title = {
@@ -366,4 +377,5 @@ fun AddEditEntryDialog(
             }
         }
     )
+    }
 }

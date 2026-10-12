@@ -65,6 +65,12 @@ fun CustomPeriodDialog(
             allowFutureDates = false,
             onDismissRequest = { showPickerForStart = null },
             onDateSelected = { year, month, dayOfMonth ->
+                val now = System.currentTimeMillis()
+                val todayCal = Calendar.getInstance()
+                val isToday = (todayCal.get(Calendar.YEAR) == year &&
+                               todayCal.get(Calendar.MONTH) == month &&
+                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+
                 val chosenCal = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
@@ -74,40 +80,47 @@ fun CustomPeriodDialog(
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }
-                startMs = chosenCal.timeInMillis
+                startMs = minOf(chosenCal.timeInMillis, now)
                 if (startMs > endMs) endMs = startMs
                 showPickerForStart = null
             }
         )
-    }
-
-    // Show FinoraDatePickerDialog for end date
-    if (showPickerForStart == false) {
+    } else if (showPickerForStart == false) {
+        // Show FinoraDatePickerDialog for end date
         FinoraDatePickerDialog(
             initialDateMillis = endMs,
             allowFutureDates = false,
             onDismissRequest = { showPickerForStart = null },
             onDateSelected = { year, month, dayOfMonth ->
+                val now = System.currentTimeMillis()
+                val todayCal = Calendar.getInstance()
+                val isToday = (todayCal.get(Calendar.YEAR) == year &&
+                               todayCal.get(Calendar.MONTH) == month &&
+                               todayCal.get(Calendar.DAY_OF_MONTH) == dayOfMonth)
+
                 val chosenCal = Calendar.getInstance().apply {
-                    set(Calendar.YEAR, year)
-                    set(Calendar.MONTH, month)
-                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    set(Calendar.HOUR_OF_DAY, 23)
-                    set(Calendar.MINUTE, 59)
-                    set(Calendar.SECOND, 59)
-                    set(Calendar.MILLISECOND, 999)
+                    if (isToday) {
+                        timeInMillis = now
+                    } else {
+                        set(Calendar.YEAR, year)
+                        set(Calendar.MONTH, month)
+                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }
                 }
-                endMs = chosenCal.timeInMillis
+                endMs = minOf(chosenCal.timeInMillis, now)
                 if (endMs < startMs) startMs = endMs
                 showPickerForStart = null
             }
         )
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
@@ -191,4 +204,5 @@ fun CustomPeriodDialog(
             }
         }
     )
+    }
 }

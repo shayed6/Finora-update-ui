@@ -86,10 +86,9 @@ fun AddEditGoalDialog(
                 targetDateTimestamp = newCal.timeInMillis
             }
         )
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
         title = {
             Text(
                 text = if (isEditing) SavingsStrings.DIALOG_EDIT_GOAL_TITLE else SavingsStrings.DIALOG_ADD_GOAL_TITLE,
@@ -232,4 +231,5 @@ fun AddEditGoalDialog(
             }
         }
     )
+    }
 }

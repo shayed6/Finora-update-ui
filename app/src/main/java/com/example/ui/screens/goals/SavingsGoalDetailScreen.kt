@@ -27,11 +27,13 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,8 +77,15 @@ fun SavingsGoalDetailScreen(
     useBengaliDigits: Boolean = true,
     onNavigateBack: () -> Unit
 ) {
-    val detailState by viewModel.getGoalDetailState(goalId, useBengaliDigits).collectAsState(initial = null)
+    BackHandler { onNavigateBack() }
+
+    val detailFlow = remember(goalId, useBengaliDigits, viewModel) {
+        viewModel.getGoalDetailState(goalId, useBengaliDigits)
+    }
+    val detailState by detailFlow.collectAsState()
     val mainState by viewModel.uiState.collectAsState()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var showEditGoalDialog by rememberSaveable { mutableStateOf(false) }
     var showDeleteGoalConfirm by rememberSaveable { mutableStateOf(false) }
@@ -242,7 +251,10 @@ fun SavingsGoalDetailScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("লোড হচ্ছে...")
+                CircularProgressIndicator(
+                    modifier = Modifier.size(36.dp),
+                    color = PrimaryBlue
+                )
             }
         } else {
             val state = detailState!!
@@ -470,7 +482,9 @@ fun SavingsGoalDetailScreen(
                     targetAmountPaisa = targetPaisa,
                     targetDate = targetDate,
                     onSuccess = { showEditGoalDialog = false },
-                    onError = {}
+                    onError = { err ->
+                        android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
         )
@@ -493,7 +507,9 @@ fun SavingsGoalDetailScreen(
                     entryDate = entryDate,
                     note = note,
                     onSuccess = { showAddDepositDialog = false },
-                    onError = {}
+                    onError = { err ->
+                        android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 )
             },
             onAddNewSector = { showAddSectorDialog = true }
@@ -517,7 +533,9 @@ fun SavingsGoalDetailScreen(
                     entryDate = entryDate,
                     note = note,
                     onSuccess = { showAddWithdrawDialog = false },
-                    onError = {}
+                    onError = { err ->
+                        android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 )
             },
             onAddNewSector = { showAddSectorDialog = true }
@@ -542,14 +560,18 @@ fun SavingsGoalDetailScreen(
                         note = note
                     ),
                     onSuccess = { editingEntryId = null },
-                    onError = {}
+                    onError = { err ->
+                        android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 )
             },
             onDelete = {
                 viewModel.deleteEntry(
                     entryId = entry.id,
                     onSuccess = { editingEntryId = null },
-                    onError = {}
+                    onError = { err ->
+                        android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 )
             },
             onAddNewSector = { showAddSectorDialog = true }
@@ -563,7 +585,9 @@ fun SavingsGoalDetailScreen(
             onSave = { name ->
                 viewModel.addCustomSector(name, {
                     showAddSectorDialog = false
-                }, {})
+                }, { err ->
+                    android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                })
             }
         )
     }

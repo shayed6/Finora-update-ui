@@ -24,12 +24,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,12 +48,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast
+import com.example.data.local.entity.SavingsEntryType
+import com.example.ui.theme.AlertRed
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
@@ -62,7 +71,13 @@ fun SavingsInvestmentScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val context = LocalContext.current
+    val defaultGoal = uiState.goals.firstOrNull { it.goal.isDefault } ?: uiState.goals.firstOrNull()
+
     var showAddGoalDialog by rememberSaveable { mutableStateOf(false) }
+    var showQuickDepositDialog by rememberSaveable { mutableStateOf(false) }
+    var showQuickWithdrawDialog by rememberSaveable { mutableStateOf(false) }
+    var showAddSectorDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier
@@ -113,44 +128,89 @@ fun SavingsInvestmentScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .testTag("card_total_savings")
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = GrowthGreen.copy(alpha = 0.14f),
-                        modifier = Modifier.size(48.dp)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Savings,
-                                contentDescription = null,
-                                tint = GrowthGreen,
-                                modifier = Modifier.size(26.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = GrowthGreen.copy(alpha = 0.14f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Savings,
+                                    contentDescription = null,
+                                    tint = GrowthGreen,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = SavingsStrings.CARD_TOTAL_SAVINGS,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = SavingsFormatter.formatBangladeshiTaka(uiState.totalSavingsPaisa, useBengaliDigits),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = GrowthGreen,
+                                modifier = Modifier.testTag("text_total_savings_amount")
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = SavingsStrings.CARD_TOTAL_SAVINGS,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = SavingsFormatter.formatBangladeshiTaka(uiState.totalSavingsPaisa, useBengaliDigits),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = GrowthGreen,
-                            modifier = Modifier.testTag("text_total_savings_amount")
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = { showQuickDepositDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = GrowthGreen),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1.2f)
+                                .height(40.dp)
+                                .testTag("btn_quick_deposit")
+                        ) {
+                            Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "+ জমা / বিনিয়োগ",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color.White
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = { showQuickWithdrawDialog = true },
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.2.dp, AlertRed),
+                            modifier = Modifier
+                                .weight(0.9f)
+                                .height(40.dp)
+                                .testTag("btn_quick_withdraw")
+                        ) {
+                            Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = AlertRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "উত্তোলন",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = AlertRed
+                            )
+                        }
                     }
                 }
             }
@@ -236,7 +296,81 @@ fun SavingsInvestmentScreen(
                         showAddGoalDialog = false
                         onGoalClick(newId)
                     },
-                    onError = { /* handled */ }
+                    onError = { err ->
+                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        )
+    }
+
+    // --- Quick Deposit Dialog ---
+    if (showQuickDepositDialog && defaultGoal != null) {
+        AddEditSavingsEntryDialog(
+            initialType = SavingsEntryType.DEPOSIT,
+            sectors = uiState.sectors,
+            currentGoalSavedPaisa = defaultGoal.savedPaisa,
+            useBengaliDigits = useBengaliDigits,
+            onDismiss = { showQuickDepositDialog = false },
+            onSave = { type, amountPaisa, sectorId, entryDate, note ->
+                viewModel.addEntry(
+                    goalId = defaultGoal.goal.id,
+                    type = type.name,
+                    amountPaisa = amountPaisa,
+                    sectorId = sectorId,
+                    entryDate = entryDate,
+                    note = note,
+                    onSuccess = {
+                        showQuickDepositDialog = false
+                        Toast.makeText(context, "সঞ্চয় সফলভাবে যোগ হয়েছে", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { err ->
+                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            },
+            onAddNewSector = { showAddSectorDialog = true }
+        )
+    }
+
+    // --- Quick Withdraw Dialog ---
+    if (showQuickWithdrawDialog && defaultGoal != null) {
+        AddEditSavingsEntryDialog(
+            initialType = SavingsEntryType.WITHDRAW,
+            sectors = uiState.sectors,
+            currentGoalSavedPaisa = defaultGoal.savedPaisa,
+            useBengaliDigits = useBengaliDigits,
+            onDismiss = { showQuickWithdrawDialog = false },
+            onSave = { type, amountPaisa, sectorId, entryDate, note ->
+                viewModel.addEntry(
+                    goalId = defaultGoal.goal.id,
+                    type = type.name,
+                    amountPaisa = amountPaisa,
+                    sectorId = sectorId,
+                    entryDate = entryDate,
+                    note = note,
+                    onSuccess = {
+                        showQuickWithdrawDialog = false
+                        Toast.makeText(context, "উত্তোলন সম্পন্ন হয়েছে", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { err ->
+                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            },
+            onAddNewSector = { showAddSectorDialog = true }
+        )
+    }
+
+    // --- Add Sector Dialog ---
+    if (showAddSectorDialog) {
+        AddCustomSectorDialog(
+            onDismiss = { showAddSectorDialog = false },
+            onSave = { name ->
+                viewModel.addCustomSector(
+                    name = name,
+                    onSuccess = { showAddSectorDialog = false },
+                    onError = { err -> Toast.makeText(context, err, Toast.LENGTH_SHORT).show() }
                 )
             }
         )

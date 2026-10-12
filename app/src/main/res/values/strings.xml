@@ -160,4 +160,5 @@
     <string name="calc_error_required">%1$s প্রদান করুন</string>
     <string name="calc_error_invalid_number">সঠিক সংখ্যা লিখুন (যেমন: ১২০ বা 120)</string>
     <string name="calc_copied_toast">হিসাবের সারাংশ ক্লিপবোর্ডে কপি করা হয়েছে</string>
+    <string name="google_app_id" translatable="false">1:100000000000:android:0000000000000000</string>
 </resources>

@@ -122,9 +122,7 @@ fun AddEditIncomeDialog(
                 occurredAtTimestamp = chosen
             }
         )
-    }
-
-    if (showDeleteConfirm) {
+    } else if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(IncomeExpenseStrings.CONFIRM_DELETE_TX_TITLE, fontWeight = FontWeight.Bold) },
@@ -148,12 +146,11 @@ fun AddEditIncomeDialog(
                 }
             }
         )
-    }
+    } else {
+        val selectedSourceName = sources.firstOrNull { it.id == selectedSourceId }?.name ?: "উৎস নির্বাচন করুন"
 
-    val selectedSourceName = sources.firstOrNull { it.id == selectedSourceId }?.name ?: "উৎস নির্বাচন করুন"
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
+        AlertDialog(
+            onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_add_edit_income"),
         shape = RoundedCornerShape(20.dp),
         title = {
@@ -428,4 +425,5 @@ fun AddEditIncomeDialog(
             }
         }
     )
+    }
 }

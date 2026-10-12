@@ -29,17 +29,19 @@ import java.util.Calendar
 import java.util.TimeZone
 
 /**
- * Normalizes a timestamp to UTC midnight (00:00:00.000 UTC).
- * Material3 DatePicker REQUIRES initialSelectedDateMillis to be at UTC midnight,
- * otherwise it throws IllegalArgumentException and crashes the app.
+ * Normalizes a timestamp by extracting its local year, month, and day,
+ * and mapping it to UTC midnight (00:00:00.000 UTC).
+ * This ensures that Material3 DatePicker displays the exact same calendar date
+ * as local time in any timezone, avoiding off-by-one date shifts.
  */
 private fun normalizeToUtcMidnight(millis: Long): Long {
+    val localCal = Calendar.getInstance().apply { timeInMillis = millis }
+    val y = localCal.get(Calendar.YEAR)
+    val m = localCal.get(Calendar.MONTH)
+    val d = localCal.get(Calendar.DAY_OF_MONTH)
     val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-        timeInMillis = millis
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
+        clear()
+        set(y, m, d, 0, 0, 0)
     }
     return utcCal.timeInMillis
 }
@@ -47,7 +49,7 @@ private fun normalizeToUtcMidnight(millis: Long): Long {
 /**
  * 100% pure Jetpack Compose DatePicker dialog.
  * Replaces legacy View-based android.app.DatePickerDialog across the application.
- * Completely immune to WindowManager.BadTokenException and missing XML theme crashes.
+ * Completely immune to WindowManager.BadTokenException and timezone shifts.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,22 +61,30 @@ fun FinoraDatePickerDialog(
     onDismissRequest: () -> Unit,
     onDateSelected: (year: Int, month: Int, dayOfMonth: Int) -> Unit
 ) {
-    // Normalize to UTC midnight — Material3 DatePicker crashes with IllegalArgumentException
-    // if the initialSelectedDateMillis is not exactly at UTC midnight (00:00:00.000 UTC).
-    val normalizedInitial = normalizeToUtcMidnight(initialDateMillis)
+    val safeInitialDateMillis = remember(initialDateMillis) {
+        normalizeToUtcMidnight(initialDateMillis)
+    }
+
+    val todayUtcMidnight = remember {
+        normalizeToUtcMidnight(System.currentTimeMillis())
+    }
+
+    val selectableDates = remember(allowFutureDates, safeInitialDateMillis, todayUtcMidnight) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                if (allowFutureDates) return true
+                // Always allow the initial selected date to avoid IllegalArgumentException in rememberDatePickerState
+                if (utcTimeMillis == safeInitialDateMillis) return true
+                return utcTimeMillis <= todayUtcMidnight + 86_400_000L
+            }
+
+            override fun isSelectableYear(year: Int): Boolean = true
+        }
+    }
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = normalizedInitial,
-        selectableDates = if (!allowFutureDates) {
-            object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    // Allow up to the current day's UTC midnight + 1 day to accommodate all timezones
-                    return utcTimeMillis <= normalizeToUtcMidnight(System.currentTimeMillis()) + 86_400_000L
-                }
-            }
-        } else {
-            object : SelectableDates {}
-        }
+        initialSelectedDateMillis = safeInitialDateMillis,
+        selectableDates = selectableDates
     )
 
     DatePickerDialog(
@@ -82,14 +92,23 @@ fun FinoraDatePickerDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis ?: initialDateMillis
-                    val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                        timeInMillis = selectedMillis
+                    try {
+                        val selectedMillis = datePickerState.selectedDateMillis ?: safeInitialDateMillis
+                        val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                            timeInMillis = selectedMillis
+                        }
+                        val year = utcCal.get(Calendar.YEAR)
+                        val month = utcCal.get(Calendar.MONTH)
+                        val day = utcCal.get(Calendar.DAY_OF_MONTH)
+                        onDateSelected(year, month, day)
+                    } catch (e: Exception) {
+                        val localCal = Calendar.getInstance().apply { timeInMillis = initialDateMillis }
+                        onDateSelected(
+                            localCal.get(Calendar.YEAR),
+                            localCal.get(Calendar.MONTH),
+                            localCal.get(Calendar.DAY_OF_MONTH)
+                        )
                     }
-                    val year = utcCal.get(Calendar.YEAR)
-                    val month = utcCal.get(Calendar.MONTH)
-                    val day = utcCal.get(Calendar.DAY_OF_MONTH)
-                    onDateSelected(year, month, day)
                     onDismissRequest()
                 },
                 modifier = Modifier.testTag("btn_confirm_date_picker")

@@ -87,66 +87,72 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
         initialValue = SavingsMainUiState(isLoading = true)
     )
 
+    private val detailStateFlowCache = mutableMapOf<Pair<Long, Boolean>, StateFlow<GoalDetailState?>>()
+
     fun getGoalDetailState(goalId: Long, useBengaliDigits: Boolean = true): StateFlow<GoalDetailState?> {
-        return combine(
-            repository.getGoalById(goalId),
-            repository.getEntriesForGoal(goalId),
-            repository.allSectors
-        ) { goal, entries, sectors ->
-            if (goal == null) return@combine null
+        return synchronized(detailStateFlowCache) {
+            detailStateFlowCache.getOrPut(goalId to useBengaliDigits) {
+                combine(
+                    repository.getGoalById(goalId),
+                    repository.getEntriesForGoal(goalId),
+                    repository.allSectors
+                ) { goal, entries, sectors ->
+                    if (goal == null) return@combine null
 
-            val sectorMap = sectors.associateBy { it.id }
+                    val sectorMap = sectors.associateBy { it.id }
 
-            var depositTotal = 0L
-            var withdrawTotal = 0L
-            val sectorTotals = mutableMapOf<String, Long>()
+                    var depositTotal = 0L
+                    var withdrawTotal = 0L
+                    val sectorTotals = mutableMapOf<String, Long>()
 
-            val displayEntries = entries.map { entry ->
-                val sName = sectorMap[entry.sectorId]?.name ?: "অন্যান্য"
-                if (entry.type == SavingsEntryType.DEPOSIT.name) {
-                    depositTotal += entry.amount
-                    sectorTotals[sName] = (sectorTotals[sName] ?: 0L) + entry.amount
-                } else if (entry.type == SavingsEntryType.WITHDRAW.name) {
-                    withdrawTotal += entry.amount
-                    sectorTotals[sName] = (sectorTotals[sName] ?: 0L) - entry.amount
-                }
-                SavingsEntryItem(entry = entry, sectorName = sName)
+                    val displayEntries = entries.map { entry ->
+                        val sName = sectorMap[entry.sectorId]?.name ?: "অন্যান্য"
+                        if (entry.type == SavingsEntryType.DEPOSIT.name) {
+                            depositTotal += entry.amount
+                            sectorTotals[sName] = (sectorTotals[sName] ?: 0L) + entry.amount
+                        } else if (entry.type == SavingsEntryType.WITHDRAW.name) {
+                            withdrawTotal += entry.amount
+                            sectorTotals[sName] = (sectorTotals[sName] ?: 0L) - entry.amount
+                        }
+                        SavingsEntryItem(entry = entry, sectorName = sName)
+                    }
+
+                    val savedPaisa = depositTotal - withdrawTotal
+
+                    val remainingPaisa = goal.targetAmount?.let { target ->
+                        (target - savedPaisa).coerceAtLeast(0L)
+                    }
+
+                    val progressPercent = goal.targetAmount?.let { target ->
+                        if (target > 0L) (savedPaisa.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 1f
+                    }
+
+                    val isCompleted = goal.targetAmount != null && savedPaisa >= goal.targetAmount
+
+                    val remainingTimeText = SavingsFormatter.formatRemainingTime(goal.targetDate, useBengaliDigits)
+
+                    val breakdown = sectorTotals.map { (name, total) ->
+                        SectorTotal(sectorName = name, totalPaisa = total)
+                    }.filter { it.totalPaisa > 0L }
+                        .sortedByDescending { it.totalPaisa }
+
+                    GoalDetailState(
+                        goal = goal,
+                        savedPaisa = savedPaisa,
+                        remainingPaisa = remainingPaisa,
+                        remainingTimeText = remainingTimeText,
+                        progressPercent = progressPercent,
+                        isCompleted = isCompleted,
+                        sectorBreakdown = breakdown,
+                        entries = displayEntries
+                    )
+                }.stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5000),
+                    initialValue = null
+                )
             }
-
-            val savedPaisa = depositTotal - withdrawTotal
-
-            val remainingPaisa = goal.targetAmount?.let { target ->
-                (target - savedPaisa).coerceAtLeast(0L)
-            }
-
-            val progressPercent = goal.targetAmount?.let { target ->
-                if (target > 0L) (savedPaisa.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 1f
-            }
-
-            val isCompleted = goal.targetAmount != null && savedPaisa >= goal.targetAmount
-
-            val remainingTimeText = SavingsFormatter.formatRemainingTime(goal.targetDate, useBengaliDigits)
-
-            val breakdown = sectorTotals.map { (name, total) ->
-                SectorTotal(sectorName = name, totalPaisa = total)
-            }.filter { it.totalPaisa > 0L }
-                .sortedByDescending { it.totalPaisa }
-
-            GoalDetailState(
-                goal = goal,
-                savedPaisa = savedPaisa,
-                remainingPaisa = remainingPaisa,
-                remainingTimeText = remainingTimeText,
-                progressPercent = progressPercent,
-                isCompleted = isCompleted,
-                sectorBreakdown = breakdown,
-                entries = displayEntries
-            )
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+        }
     }
 
     // --- Goal CRUD ---
