@@ -62,6 +62,12 @@ object BengaliFormatter {
         }
     }
 
+    fun formatBengaliDate(timestamp: Long): String = formatBangladeshDate(timestamp, true)
+
+    fun englishToBengaliDigits(input: String): String = toBengaliDigits(input)
+
+    fun bengaliToEnglishDigits(input: String): String = normalizeToEnglishDigits(input)
+
     /**
      * Converts an English digit string or number to Bengali digits.
      */

@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan for Finora's complete PDF & Invoice Generation System.\nIncludes:\n- Architecture & Database schema with Room entities (invoices, invoice_items, pdf_reports), DAO, Repository, and Migration 7->8.\n- Native Android PdfDocument rendering engine with custom text layout and bundled Noto Sans Bengali font support.\n- 5 comprehensive PDF modules: Invoice Generator, Income & Expense Report, Savings & Investment Report, Due & Ledger Statement, and Generated Reports History.\n- Native Android sharing, printing, SAF export, and preview integration.\n- Navigation integration into FinoraApp, FinoraDrawer, and HisabPatiHubScreen without regressions.\n- Unit and Robolectric verification tests.",
+  "updatedAt": "2026-10-12T14:08:45.055960659Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

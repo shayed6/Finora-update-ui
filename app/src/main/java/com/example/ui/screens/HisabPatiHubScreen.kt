@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Savings
@@ -45,6 +46,7 @@ fun HisabPatiHubScreen(
     onOpenIncomeExpense: () -> Unit,
     onOpenSavings: () -> Unit,
     onOpenSummary: () -> Unit,
+    onOpenPdfReports: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -120,6 +122,77 @@ fun HisabPatiHubScreen(
                     .weight(1f)
                     .testTag("card_hub_summary")
             )
+        }
+
+        // Full-width Hero Card: পিডিএফ রিপোর্ট ও ইনভয়েস (PDF Reports & Invoices)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onOpenPdfReports() }
+                .testTag("card_hub_pdf_reports"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.35f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryBlue.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PictureAsPdf,
+                        contentDescription = null,
+                        tint = PrimaryBlue,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "PDF রিপোর্ট ও ইনভয়েস",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(PrimaryBlue)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "PRO",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "চালান ইনভয়েস তৈরি, আয়-ব্যয় ও দেনা-পাওনার প্রিন্ট-রেডি PDF",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
         }
     }
 }

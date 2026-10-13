@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.local.dao.IncomeExpenseDao
+import com.example.data.local.dao.InvoiceDao
 import com.example.data.local.dao.LedgerDao
 import com.example.data.local.dao.LivePriceDao
 import com.example.data.local.dao.PortfolioDao
@@ -17,9 +18,12 @@ import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.IncomeExpenseTransactionEntity
 import com.example.data.local.entity.IncomeSourceEntity
 import com.example.data.local.entity.InvestmentSectorEntity
+import com.example.data.local.entity.InvoiceEntity
+import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.LedgerEntryEntity
 import com.example.data.local.entity.LedgerPartyEntity
 import com.example.data.local.entity.LivePriceEntity
+import com.example.data.local.entity.PdfReportHistoryEntity
 import com.example.data.local.entity.SavingsEntryEntity
 import com.example.data.local.entity.SavingsGoalEntity
 import com.example.data.local.entity.TransactionEntity
@@ -37,9 +41,12 @@ import com.example.data.local.entity.TransactionEntity
         LedgerEntryEntity::class,
         IncomeSourceEntity::class,
         ExpenseCategoryEntity::class,
-        IncomeExpenseTransactionEntity::class
+        IncomeExpenseTransactionEntity::class,
+        InvoiceEntity::class,
+        InvoiceItemEntity::class,
+        PdfReportHistoryEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -48,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun livePriceDao(): LivePriceDao
     abstract fun ledgerDao(): LedgerDao
     abstract fun incomeExpenseDao(): IncomeExpenseDao
+    abstract fun invoiceDao(): InvoiceDao
 
     companion object {
         @Volatile
@@ -213,6 +221,74 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `invoices` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `invoice_number` TEXT NOT NULL,
+                        `business_name` TEXT NOT NULL,
+                        `business_phone` TEXT,
+                        `business_address` TEXT,
+                        `customer_name` TEXT NOT NULL,
+                        `customer_phone` TEXT,
+                        `customer_address` TEXT,
+                        `invoice_date` INTEGER NOT NULL,
+                        `due_date` INTEGER,
+                        `subtotal_paisa` INTEGER NOT NULL,
+                        `discount_paisa` INTEGER NOT NULL,
+                        `additional_charges_paisa` INTEGER NOT NULL,
+                        `grand_total_paisa` INTEGER NOT NULL,
+                        `paid_amount_paisa` INTEGER NOT NULL,
+                        `due_amount_paisa` INTEGER NOT NULL,
+                        `payment_method` TEXT,
+                        `notes` TEXT,
+                        `terms` TEXT,
+                        `status` TEXT NOT NULL,
+                        `language` TEXT NOT NULL,
+                        `created_at` INTEGER NOT NULL,
+                        `updated_at` INTEGER NOT NULL,
+                        `pdf_file_path` TEXT
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_invoices_invoice_number` ON `invoices` (`invoice_number`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_created_at` ON `invoices` (`created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_customer_name` ON `invoices` (`customer_name`)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `invoice_items` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `invoice_id` INTEGER NOT NULL,
+                        `item_name` TEXT NOT NULL,
+                        `description` TEXT,
+                        `quantity` REAL NOT NULL,
+                        `unit_price_paisa` INTEGER NOT NULL,
+                        `total_price_paisa` INTEGER NOT NULL,
+                        `sort_order` INTEGER NOT NULL,
+                        FOREIGN KEY(`invoice_id`) REFERENCES `invoices`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoice_items_invoice_id` ON `invoice_items` (`invoice_id`)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `pdf_reports` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `report_type` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `subtitle` TEXT,
+                        `file_name` TEXT NOT NULL,
+                        `file_path` TEXT NOT NULL,
+                        `file_size_bytes` INTEGER NOT NULL,
+                        `date_range_start` INTEGER,
+                        `date_range_end` INTEGER,
+                        `created_at` INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_created_at` ON `pdf_reports` (`created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_report_type` ON `pdf_reports` (`report_type`)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -226,7 +302,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_3_4,
                         MIGRATION_4_5,
                         MIGRATION_5_6,
-                        MIGRATION_6_7
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
                     )
                     .build()
                 INSTANCE = instance

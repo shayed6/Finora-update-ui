@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import android.content.res.Configuration
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -71,7 +72,8 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalConfiguration provides localizedConfig,
                 LocalContext provides localizedContext,
-                LocalAppLanguage provides appLanguage
+                LocalAppLanguage provides appLanguage,
+                LocalActivityResultRegistryOwner provides this
             ) {
                 val isSystemDark = isSystemInDarkTheme()
                 val isDarkTheme = when (themeMode) {

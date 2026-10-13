@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -83,6 +84,7 @@ enum class DrawerDestination {
     HOME,
     PORTFOLIO,
     HISAB_PATI,
+    PDF_REPORTS,
     FCOIN,
     WORK_TYPE,
     ORG_INFO,
@@ -330,6 +332,26 @@ fun FinoraDrawerContent(
                 modifier = Modifier
                     .padding(NavigationDrawerItemDefaults.ItemPadding)
                     .testTag("drawer_item_org_info")
+            )
+
+            // পিডিএফ ও ইনভয়েস (PDF Reports & Invoices)
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF Reports Icon", tint = PrimaryBlue) },
+                label = {
+                    Text(
+                        text = stringResource(R.string.nav_pdf_reports),
+                        fontWeight = if (currentDestination == DrawerDestination.PDF_REPORTS) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                selected = currentDestination == DrawerDestination.PDF_REPORTS,
+                onClick = {
+                    onNavigate(DrawerDestination.PDF_REPORTS)
+                    onCloseDrawer()
+                },
+                colors = drawerItemColors,
+                modifier = Modifier
+                    .padding(NavigationDrawerItemDefaults.ItemPadding)
+                    .testTag("drawer_item_pdf_reports")
             )
 
             // 2. Learn Stock (Expandable Section)

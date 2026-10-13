@@ -98,6 +98,7 @@ sealed class Screen {
     data class SavingsGoalDetail(val goalId: Long) : Screen()
     data object AccountsSummary : Screen()
     data object CycleSettings : Screen()
+    data object PdfReports : Screen()
     data object FCoin : Screen()
     data class Category(val category: CalculatorCategory) : Screen()
     data class Calculator(
@@ -203,6 +204,7 @@ fun FinoraApp(
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
             DrawerDestination.HISAB_PATI -> navigateTo(Screen.HisabPati)
+            DrawerDestination.PDF_REPORTS -> navigateTo(Screen.PdfReports)
             DrawerDestination.WORK_TYPE -> navigateTo(Screen.WorkType)
             DrawerDestination.ORG_INFO -> navigateTo(Screen.OrganizationInfo)
             DrawerDestination.LEDGER -> navigateTo(Screen.LedgerList)
@@ -233,6 +235,7 @@ fun FinoraApp(
         is Screen.Home, is Screen.Category, is Screen.Calculator, is Screen.CalculatorsHub -> DrawerDestination.HOME
         is Screen.Portfolio -> DrawerDestination.PORTFOLIO
         is Screen.HisabPati -> DrawerDestination.HISAB_PATI
+        is Screen.PdfReports -> DrawerDestination.PDF_REPORTS
         is Screen.WorkType -> DrawerDestination.WORK_TYPE
         is Screen.OrganizationInfo -> DrawerDestination.ORG_INFO
         is Screen.LedgerList, is Screen.LedgerPersonDetail -> DrawerDestination.HISAB_PATI
@@ -353,6 +356,12 @@ fun FinoraApp(
             is Screen.CycleSettings -> {
                 title = stringResource(R.string.title_cycle_settings)
                 subtitle = stringResource(R.string.subtitle_cycle_settings)
+                canNavigateBack = true
+                showAdMobBanner = false
+            }
+            is Screen.PdfReports -> {
+                title = stringResource(R.string.title_pdf_reports)
+                subtitle = stringResource(R.string.subtitle_pdf_reports)
                 canNavigateBack = true
                 showAdMobBanner = false
             }
@@ -503,7 +512,13 @@ fun FinoraApp(
                                 onOpenLedger = { navigateTo(Screen.LedgerList) },
                                 onOpenIncomeExpense = { navigateTo(Screen.IncomeExpense) },
                                 onOpenSavings = { navigateTo(Screen.SavingsGoals) },
-                                onOpenSummary = { navigateTo(Screen.AccountsSummary) }
+                                onOpenSummary = { navigateTo(Screen.AccountsSummary) },
+                                onOpenPdfReports = { navigateTo(Screen.PdfReports) }
+                            )
+                        }
+                        is Screen.PdfReports -> {
+                            com.example.ui.screens.pdf.PdfReportsHubScreen(
+                                onNavigateBack = { popBack() }
                             )
                         }
                         is Screen.WorkType -> {

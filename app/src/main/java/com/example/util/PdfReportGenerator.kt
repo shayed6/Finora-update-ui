@@ -32,6 +32,64 @@ object PdfReportGenerator {
     private const val PAGE_HEIGHT = 842 // A4 height in points
     private const val MARGIN = 36f
 
+    fun generateInvoice(
+        context: Context,
+        invoiceWithItems: com.example.data.local.entity.InvoiceWithItems
+    ): File = com.example.util.pdf.InvoicePdfRenderer.generate(context, invoiceWithItems)
+
+    fun generateIncomeExpenseReport(
+        context: Context,
+        transactions: List<com.example.data.local.entity.IncomeExpenseTransactionEntity>,
+        sourcesMap: Map<Long, String> = emptyMap(),
+        categoriesMap: Map<Long, String> = emptyMap(),
+        filterTitle: String = "সার্বিক আয়-ব্যয় হিসাব",
+        useBengaliDigits: Boolean = true
+    ): File = com.example.util.pdf.IncomeExpensePdfRenderer.generate(
+        context, transactions, sourcesMap, categoriesMap, filterTitle, useBengaliDigits
+    )
+
+    fun generateSavingsInvestmentReport(
+        context: Context,
+        goals: List<com.example.data.local.entity.SavingsGoalEntity>,
+        entries: List<com.example.data.local.entity.SavingsEntryEntity> = emptyList(),
+        holdings: List<HoldingEntity> = emptyList(),
+        portfolioSummary: PortfolioSummary? = null,
+        useBengaliDigits: Boolean = true
+    ): File = com.example.util.pdf.SavingsInvestmentPdfRenderer.generate(
+        context, goals, entries, holdings, portfolioSummary, useBengaliDigits
+    )
+
+    fun generateDueReport(
+        context: Context,
+        parties: List<com.example.data.local.entity.LedgerPartyEntity>,
+        entries: List<com.example.data.local.entity.LedgerEntryEntity>,
+        reportKind: String = "ALL",
+        useBengaliDigits: Boolean = true
+    ): File = com.example.util.pdf.DueLedgerPdfRenderer.generateOverallDueReport(
+        context, parties, entries, reportKind, useBengaliDigits
+    )
+
+    fun generatePartyStatementReport(
+        context: Context,
+        party: com.example.data.local.entity.LedgerPartyEntity,
+        entries: List<com.example.data.local.entity.LedgerEntryEntity>,
+        useBengaliDigits: Boolean = true
+    ): File = com.example.util.pdf.DueLedgerPdfRenderer.generatePartyStatementPdf(
+        context, party, entries, useBengaliDigits
+    )
+
+    fun sharePdf(context: Context, file: File, subject: String) {
+        com.example.util.pdf.PdfCommon.sharePdf(context, file, subject)
+    }
+
+    fun printPdf(context: Context, file: File, jobName: String) {
+        com.example.util.pdf.PdfCommon.printPdf(context, file, jobName)
+    }
+
+    fun copyFileToUri(context: Context, sourceFile: File, destinationUri: Uri): Boolean {
+        return com.example.util.pdf.PdfCommon.copyFileToUri(context, sourceFile, destinationUri)
+    }
+
     fun exportSavingsGoalsPdf(
         context: Context,
         goals: List<SavingsGoalEntity>,
