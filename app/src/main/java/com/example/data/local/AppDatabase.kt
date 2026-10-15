@@ -23,7 +23,7 @@ import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.LedgerEntryEntity
 import com.example.data.local.entity.LedgerPartyEntity
 import com.example.data.local.entity.LivePriceEntity
-import com.example.data.local.entity.PdfReportHistoryEntity
+import com.example.data.local.entity.PdfReportEntity
 import com.example.data.local.entity.SavingsEntryEntity
 import com.example.data.local.entity.SavingsGoalEntity
 import com.example.data.local.entity.TransactionEntity
@@ -44,9 +44,9 @@ import com.example.data.local.entity.TransactionEntity
         IncomeExpenseTransactionEntity::class,
         InvoiceEntity::class,
         InvoiceItemEntity::class,
-        PdfReportHistoryEntity::class
+        PdfReportEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -278,14 +278,25 @@ abstract class AppDatabase : RoomDatabase() {
                         `subtitle` TEXT,
                         `file_name` TEXT NOT NULL,
                         `file_path` TEXT NOT NULL,
+                        `file_uri` TEXT NOT NULL DEFAULT '',
                         `file_size_bytes` INTEGER NOT NULL,
                         `date_range_start` INTEGER,
                         `date_range_end` INTEGER,
-                        `created_at` INTEGER NOT NULL
+                        `created_at` INTEGER NOT NULL,
+                        `timestamp` INTEGER NOT NULL DEFAULT 0
                     )
                 """.trimIndent())
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_created_at` ON `pdf_reports` (`created_at`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_report_type` ON `pdf_reports` (`report_type`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_timestamp` ON `pdf_reports` (`timestamp`)")
+            }
+        }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `file_uri` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `timestamp` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_timestamp` ON `pdf_reports` (`timestamp`)")
             }
         }
 
@@ -303,7 +314,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
                     )
                     .build()
                 INSTANCE = instance

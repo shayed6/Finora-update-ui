@@ -6,7 +6,7 @@ import com.example.data.local.dao.InvoiceDao
 import com.example.data.local.entity.InvoiceEntity
 import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.InvoiceWithItems
-import com.example.data.local.entity.PdfReportHistoryEntity
+import com.example.data.local.entity.PdfReportEntity
 import com.example.data.preferences.OrganizationInfoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +23,7 @@ class InvoiceRepository(
 ) {
 
     val allInvoices: Flow<List<InvoiceWithItems>> = dao.getAllInvoicesWithItems()
-    val allPdfReports: Flow<List<PdfReportHistoryEntity>> = dao.getAllPdfReports()
+    val allPdfReports: Flow<List<PdfReportEntity>> = dao.getAllPdfReports()
 
     fun searchInvoices(query: String): Flow<List<InvoiceWithItems>> =
         dao.searchInvoices(query.trim())
@@ -69,10 +69,10 @@ class InvoiceRepository(
     }
 
     // --- Report History ---
-    fun getReportsByType(type: String): Flow<List<PdfReportHistoryEntity>> =
+    fun getReportsByType(type: String): Flow<List<PdfReportEntity>> =
         dao.getPdfReportsByType(type)
 
-    suspend fun savePdfReport(report: PdfReportHistoryEntity): Long = withContext(Dispatchers.IO) {
+    suspend fun savePdfReport(report: PdfReportEntity): Long = withContext(Dispatchers.IO) {
         dao.insertPdfReport(report)
     }
 

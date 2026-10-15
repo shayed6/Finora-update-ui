@@ -13,7 +13,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.entity.InvoiceEntity
 import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.InvoiceWithItems
-import com.example.data.local.entity.PdfReportHistoryEntity
+import com.example.data.local.entity.PdfReportEntity
 import com.example.data.local.entity.ReportType
 import com.example.data.preferences.OrganizationInfo
 import com.example.data.preferences.OrganizationInfoRepository
@@ -66,7 +66,7 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
     val allInvoices: StateFlow<List<InvoiceWithItems>> = invoiceRepo.allInvoices
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allReportHistory: StateFlow<List<PdfReportHistoryEntity>> = invoiceRepo.allPdfReports
+    val allReportHistory: StateFlow<List<PdfReportEntity>> = invoiceRepo.allPdfReports
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val filteredInvoices: StateFlow<List<InvoiceWithItems>> = combine(
@@ -168,14 +168,16 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
 
                 // Save report history
                 invoiceRepo.savePdfReport(
-                    PdfReportHistoryEntity(
+                    PdfReportEntity(
                         reportType = ReportType.INVOICE,
                         title = "ইনভয়েস ${invoiceWithItems.invoice.invoiceNumber}",
                         subtitle = "${invoiceWithItems.invoice.customerName} • ৳ ${invoiceWithItems.invoice.grandTotalPaisa / 100.0}",
                         fileName = file.name,
                         filePath = file.absolutePath,
+                        fileUri = file.toURI().toString(),
                         fileSizeBytes = file.length(),
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        timestamp = System.currentTimeMillis()
                     )
                 )
 
@@ -262,16 +264,18 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 invoiceRepo.savePdfReport(
-                    PdfReportHistoryEntity(
+                    PdfReportEntity(
                         reportType = ReportType.INCOME_EXPENSE,
                         title = "আয়-ব্যয় রিপোর্ট ($filterTitle)",
                         subtitle = "${transactions.size}টি লেনদেন",
                         fileName = file.name,
                         filePath = file.absolutePath,
+                        fileUri = file.toURI().toString(),
                         fileSizeBytes = file.length(),
                         dateRangeStart = startTime,
                         dateRangeEnd = endTime,
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        timestamp = System.currentTimeMillis()
                     )
                 )
 
@@ -315,14 +319,16 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 invoiceRepo.savePdfReport(
-                    PdfReportHistoryEntity(
+                    PdfReportEntity(
                         reportType = ReportType.SAVINGS_INVESTMENT,
                         title = "সঞ্চয় ও বিনিয়োগ রিপোর্ট",
                         subtitle = "${goals.size}টি সঞ্চয় লক্ষ্য • ${holdings.size}টি স্টক হোল্ডিং",
                         fileName = file.name,
                         filePath = file.absolutePath,
+                        fileUri = file.toURI().toString(),
                         fileSizeBytes = file.length(),
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        timestamp = System.currentTimeMillis()
                     )
                 )
 
@@ -361,14 +367,16 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 invoiceRepo.savePdfReport(
-                    PdfReportHistoryEntity(
+                    PdfReportEntity(
                         reportType = ReportType.DUE_RECEIVABLE_PAYABLE,
                         title = title,
                         subtitle = "${parties.size} জন ব্যক্তি",
                         fileName = file.name,
                         filePath = file.absolutePath,
+                        fileUri = file.toURI().toString(),
                         fileSizeBytes = file.length(),
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        timestamp = System.currentTimeMillis()
                     )
                 )
 
@@ -405,14 +413,16 @@ class PdfReportsViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 invoiceRepo.savePdfReport(
-                    PdfReportHistoryEntity(
+                    PdfReportEntity(
                         reportType = ReportType.PARTY_STATEMENT,
                         title = "${party.name} - খতিয়ান স্টেটমেন্ট",
                         subtitle = "${entries.size}টি লেনদেন",
                         fileName = file.name,
                         filePath = file.absolutePath,
+                        fileUri = file.toURI().toString(),
                         fileSizeBytes = file.length(),
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        timestamp = System.currentTimeMillis()
                     )
                 )
 

@@ -10,7 +10,7 @@ import androidx.room.Update
 import com.example.data.local.entity.InvoiceEntity
 import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.InvoiceWithItems
-import com.example.data.local.entity.PdfReportHistoryEntity
+import com.example.data.local.entity.PdfReportEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -96,19 +96,19 @@ interface InvoiceDao {
 
     // --- PDF Reports History ---
     @Query("SELECT * FROM pdf_reports ORDER BY created_at DESC")
-    fun getAllPdfReports(): Flow<List<PdfReportHistoryEntity>>
+    fun getAllPdfReports(): Flow<List<PdfReportEntity>>
 
     @Query("SELECT * FROM pdf_reports WHERE report_type = :type ORDER BY created_at DESC")
-    fun getPdfReportsByType(type: String): Flow<List<PdfReportHistoryEntity>>
+    fun getPdfReportsByType(type: String): Flow<List<PdfReportEntity>>
 
     @Query("SELECT * FROM pdf_reports WHERE id = :id LIMIT 1")
-    suspend fun getPdfReportById(id: Long): PdfReportHistoryEntity?
+    suspend fun getPdfReportById(id: Long): PdfReportEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPdfReport(report: PdfReportHistoryEntity): Long
+    suspend fun insertPdfReport(report: PdfReportEntity): Long
 
     @Delete
-    suspend fun deletePdfReport(report: PdfReportHistoryEntity)
+    suspend fun deletePdfReport(report: PdfReportEntity)
 
     @Query("DELETE FROM pdf_reports WHERE id = :id")
     suspend fun deletePdfReportById(id: Long)

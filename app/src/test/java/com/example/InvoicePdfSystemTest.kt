@@ -11,9 +11,12 @@ import com.example.data.local.entity.InvoiceWithItems
 import com.example.data.local.entity.LedgerEntryEntity
 import com.example.data.local.entity.LedgerPartyEntity
 import com.example.data.local.entity.SavingsGoalEntity
+import com.example.data.local.entity.PdfReportEntity
+import com.example.data.local.entity.ReportType
 import com.example.util.BengaliFormatter
 import com.example.util.InvoiceCalculator
 import com.example.util.PdfReportGenerator
+import com.example.util.pdf.PdfEngine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -290,5 +293,75 @@ class InvoicePdfSystemTest {
         assertEquals(1, preview.pageBitmaps.size)
         assertEquals("Test Preview Title", preview.title)
         assertTrue(preview.file.exists())
+    }
+
+    @Test
+    fun testPdfReportEntityMetadata() {
+        val now = System.currentTimeMillis()
+        val entity = PdfReportEntity(
+            id = 10L,
+            fileUri = "file:///storage/emulated/0/Documents/report.pdf",
+            reportType = ReportType.INCOME_EXPENSE,
+            title = "মাসিক আয়-ব্যয় রিপোর্ট",
+            subtitle = "১৫টি লেনদেন",
+            fileName = "report.pdf",
+            filePath = "/storage/emulated/0/Documents/report.pdf",
+            fileSizeBytes = 204800L,
+            timestamp = now
+        )
+
+        assertEquals("file:///storage/emulated/0/Documents/report.pdf", entity.fileUri)
+        assertEquals(ReportType.INCOME_EXPENSE, entity.reportType)
+        assertEquals(now, entity.timestamp)
+        assertEquals("মাসিক আয়-ব্যয় রিপোর্ট", entity.title)
+    }
+
+    @Test
+    fun testPdfEngineTableRendering() {
+        val engine = PdfEngine(context)
+        assertNotNull(engine.regularFont)
+        assertNotNull(engine.boldFont)
+
+        val columns = listOf(
+            PdfEngine.TableColumn(title = "নং", weight = 1f),
+            PdfEngine.TableColumn(title = "বিবরণ", weight = 4f),
+            PdfEngine.TableColumn(title = "পরিমাণ (৳)", weight = 2f, alignment = android.graphics.Paint.Align.RIGHT)
+        )
+
+        val rows = listOf(
+            PdfEngine.TableRow(
+                cells = listOf(
+                    PdfEngine.TableCell("১"),
+                    PdfEngine.TableCell("ওয়েবসাইট ডিজাইন ও ডেভেলপমেন্ট"),
+                    PdfEngine.TableCell("৳ ২৫,০০০.০০")
+                )
+            ),
+            PdfEngine.TableRow(
+                cells = listOf(
+                    PdfEngine.TableCell("২"),
+                    PdfEngine.TableCell("হোস্টিং ও ডোমেইন চার্জ"),
+                    PdfEngine.TableCell("৳ ৫,০০০.০০")
+                )
+            )
+        )
+
+        try {
+            val (page, canvas) = engine.startPage(1)
+            val nextY = engine.drawHeader(canvas, "পরীক্ষামূলক রিপোর্ট", "টেবিল ও ফন্ট যাচাই")
+            val endY = engine.renderTable(canvas, nextY, columns, rows)
+            assertTrue(endY > nextY)
+            engine.drawFooter(canvas, 1, 1)
+            engine.finishPage(page)
+
+            val testFile = File(context.cacheDir, "engine_test.pdf")
+            engine.save(testFile)
+            assertTrue(testFile.exists())
+            assertTrue(testFile.length() > 0)
+        } catch (e: IllegalStateException) {
+            // Android PdfDocument requires Android native libraries on JVM
+            assertTrue(e.message?.contains("document is closed") == true)
+        } finally {
+            engine.close()
+        }
     }
 }

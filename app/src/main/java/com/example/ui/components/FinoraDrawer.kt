@@ -294,27 +294,7 @@ fun FinoraDrawerContent(
                     .testTag("drawer_item_fcoin")
             )
 
-            // কাজের ধরন (Work Type) right after F-Coin
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.BusinessCenter, contentDescription = "কাজের ধরন Icon") },
-                label = {
-                    Text(
-                        text = stringResource(R.string.nav_work_type),
-                        fontWeight = if (currentDestination == DrawerDestination.WORK_TYPE) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                selected = currentDestination == DrawerDestination.WORK_TYPE,
-                onClick = {
-                    onNavigate(DrawerDestination.WORK_TYPE)
-                    onCloseDrawer()
-                },
-                colors = drawerItemColors,
-                modifier = Modifier
-                    .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_work_type")
-            )
-
-            // প্রতিষ্ঠানের তথ্য (Organization Info) right after কাজের ধরন
+            // প্রতিষ্ঠানের তথ্য (Organization Info)
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.Business, contentDescription = "প্রতিষ্ঠানের তথ্য Icon") },
                 label = {

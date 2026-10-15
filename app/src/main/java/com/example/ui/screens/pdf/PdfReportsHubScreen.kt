@@ -75,7 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.entity.InvoiceStatus
 import com.example.data.local.entity.InvoiceWithItems
 import com.example.data.local.entity.LedgerPartyEntity
-import com.example.data.local.entity.PdfReportHistoryEntity
+import com.example.data.local.entity.PdfReportEntity
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
@@ -729,9 +729,9 @@ private fun ReportModuleCard(
 
 @Composable
 private fun ReportHistoryTabContent(
-    reports: List<PdfReportHistoryEntity>,
-    onOpenReport: (PdfReportHistoryEntity) -> Unit,
-    onShareReport: (PdfReportHistoryEntity) -> Unit,
+    reports: List<PdfReportEntity>,
+    onOpenReport: (PdfReportEntity) -> Unit,
+    onShareReport: (PdfReportEntity) -> Unit,
     onDeleteReport: (Long) -> Unit
 ) {
     if (reports.isEmpty()) {
