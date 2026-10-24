@@ -23,6 +23,8 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.example.R
+import com.example.data.preferences.OrganizationInfo
+import com.example.data.preferences.OrganizationInfoRepository
 import com.example.util.BengaliFormatter
 import java.io.File
 import java.io.FileInputStream
@@ -157,7 +159,8 @@ object PdfCommon {
         subTitle: String?,
         dateStr: String,
         currentPage: Int,
-        totalPages: Int
+        totalPages: Int,
+        orgInfo: OrganizationInfo? = null
     ): Float {
         var y = MARGIN
 
@@ -170,46 +173,61 @@ object PdfCommon {
 
         y += 18f
 
-        // Brand Logo or icon
-        val logoSize = 36f
-        if (logoBitmap != null) {
-            val logoRect = RectF(MARGIN, y, MARGIN + logoSize, y + logoSize)
-            val paint = Paint().apply { isFilterBitmap = true; isAntiAlias = true }
-            canvas.drawBitmap(logoBitmap, null, logoRect, paint)
-        } else {
-            val badgePaint = Paint().apply {
-                color = ColorBluePrimary
-                style = Paint.Style.FILL
-                isAntiAlias = true
-            }
-            canvas.drawRoundRect(MARGIN, y, MARGIN + logoSize, y + logoSize, 6f, 6f, badgePaint)
-        }
+        val hasOrg = orgInfo != null && orgInfo.name.isNotBlank()
+        val headlineText = if (hasOrg) orgInfo!!.name.trim() else "FINORA"
 
-        // Title and App Name
+        // Headline (Organization name if inputted, else FINORA) - without Finora logo
         val brandPaint = Paint().apply {
             color = ColorNavyDark
-            textSize = 16f
+            textSize = if (hasOrg) 16f else 17f
             typeface = fonts.bold
             isAntiAlias = true
         }
-        canvas.drawText("FINORA", MARGIN + logoSize + 10f, y + 14f, brandPaint)
+        canvas.drawText(headlineText, MARGIN, y + 14f, brandPaint)
 
-        val titlePaint = Paint().apply {
-            color = ColorDarkText
-            textSize = 10.5f
-            typeface = fonts.bold
-            isAntiAlias = true
-        }
-        canvas.drawText(title, MARGIN + logoSize + 10f, y + 28f, titlePaint)
+        // Contact / Address line if organization has address or phone
+        val contactLine = if (hasOrg) {
+            val parts = mutableListOf<String>()
+            if (orgInfo!!.address.isNotBlank()) parts.add(orgInfo.address.trim())
+            if (orgInfo.phone.isNotBlank()) parts.add("মোবাইল: ${orgInfo.phone.trim()}")
+            if (parts.isNotEmpty()) parts.joinToString(" • ") else null
+        } else null
 
-        if (!subTitle.isNullOrBlank()) {
-            val subPaint = Paint().apply {
+        if (contactLine != null) {
+            val contactPaint = Paint().apply {
                 color = ColorGrayText
                 textSize = 8.5f
                 typeface = fonts.regular
                 isAntiAlias = true
             }
-            canvas.drawText(subTitle, MARGIN + logoSize + 10f, y + 40f, subPaint)
+            canvas.drawText(contactLine.take(80), MARGIN, y + 26f, contactPaint)
+
+            val titlePaint = Paint().apply {
+                color = ColorBluePrimary
+                textSize = 10f
+                typeface = fonts.bold
+                isAntiAlias = true
+            }
+            val displayTitle = if (!subTitle.isNullOrBlank()) "$title • $subTitle" else title
+            canvas.drawText(displayTitle.take(75), MARGIN, y + 39f, titlePaint)
+        } else {
+            val titlePaint = Paint().apply {
+                color = ColorDarkText
+                textSize = 10.5f
+                typeface = fonts.bold
+                isAntiAlias = true
+            }
+            canvas.drawText(title, MARGIN, y + 28f, titlePaint)
+
+            if (!subTitle.isNullOrBlank()) {
+                val subPaint = Paint().apply {
+                    color = ColorGrayText
+                    textSize = 8.5f
+                    typeface = fonts.regular
+                    isAntiAlias = true
+                }
+                canvas.drawText(subTitle, MARGIN, y + 40f, subPaint)
+            }
         }
 
         // Right side: Date and Page Info
@@ -224,7 +242,7 @@ object PdfCommon {
         canvas.drawText("পৃষ্ঠা $currentPage / $totalPages", PAGE_WIDTH - MARGIN, y + 28f, datePaint)
 
         // Divider Line
-        y += logoSize + 12f
+        y += 46f
         val linePaint = Paint().apply {
             color = ColorGrayBorder
             strokeWidth = 1f
@@ -256,12 +274,8 @@ object PdfCommon {
             typeface = fonts.regular
             isAntiAlias = true
         }
-        val branding = if (isEnglish) {
-            "Finora Smart Financial App • 100% On-Device Secure Records"
-        } else {
-            "Finora • ১০০% অন-ডিভাইস নিরাপদ স্মার্ট আর্থিক হিসাব খাতা"
-        }
-        canvas.drawText(branding, MARGIN, y, footerTextPaint)
+        val disclaimerText = "উক্ত হিসাব সাথে ফিনোরা কোন ভাবে সংযুক্ত নয়"
+        canvas.drawText(disclaimerText, MARGIN, y, footerTextPaint)
 
         val pagePaint = Paint().apply {
             color = ColorNavyDark

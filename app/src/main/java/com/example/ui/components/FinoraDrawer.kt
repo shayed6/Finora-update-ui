@@ -86,7 +86,6 @@ enum class DrawerDestination {
     HISAB_PATI,
     PDF_REPORTS,
     FCOIN,
-    WORK_TYPE,
     ORG_INFO,
     LEDGER,
     INCOME_EXPENSE,

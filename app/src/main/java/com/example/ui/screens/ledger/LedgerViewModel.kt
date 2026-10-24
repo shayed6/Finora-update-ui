@@ -17,24 +17,11 @@ import kotlinx.coroutines.launch
 
 data class LedgerListUiState(
     val parties: List<PartyWithBalance> = emptyList(),
+    val filteredParties: List<PartyWithBalance> = emptyList(),
     val summary: LedgerSummary = LedgerSummary(0L, 0L, 0),
     val searchQuery: String = "",
     val isLoading: Boolean = false
-) {
-    val filteredParties: List<PartyWithBalance>
-        get() {
-            if (searchQuery.isBlank()) return parties
-            val q = searchQuery.trim().lowercase()
-            val qNorm = com.example.util.BengaliFormatter.normalizeToEnglishDigits(q)
-            return parties.filter { item ->
-                val nameMatches = item.party.name.lowercase().contains(q)
-                val phone = item.party.phone?.lowercase() ?: ""
-                val phoneNorm = com.example.util.BengaliFormatter.normalizeToEnglishDigits(phone)
-                val phoneMatches = phone.contains(q) || (phoneNorm.isNotBlank() && phoneNorm.contains(qNorm))
-                nameMatches || phoneMatches
-            }
-        }
-}
+)
 
 class LedgerViewModel @JvmOverloads constructor(
     application: Application,
@@ -88,8 +75,23 @@ class LedgerViewModel @JvmOverloads constructor(
             }
         }
 
+        // Precompute filtered list off the UI thread
+        val filtered = if (query.isBlank()) {
+            partiesWithBalance
+        } else {
+            val q = query.trim().lowercase()
+            val qNorm = com.example.util.BengaliFormatter.normalizeToEnglishDigits(q)
+            partiesWithBalance.filter { item ->
+                val nameMatches = item.party.name.lowercase().contains(q)
+                val phone = item.party.phone?.lowercase() ?: ""
+                val phoneNorm = com.example.util.BengaliFormatter.normalizeToEnglishDigits(phone)
+                nameMatches || (phone.contains(q) || (phoneNorm.isNotBlank() && phoneNorm.contains(qNorm)))
+            }
+        }
+
         LedgerListUiState(
             parties = partiesWithBalance,
+            filteredParties = filtered,
             summary = LedgerSummary(
                 totalPaboPaisa = totalPabo,
                 totalDeboPaisa = totalDebo,

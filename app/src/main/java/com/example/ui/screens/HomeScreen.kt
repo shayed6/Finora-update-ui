@@ -174,19 +174,17 @@ fun HomeScreen(
             )
         }
 
-        // 3. Recent Transactions List Component (Last 5 financial entries from Room DB beneath summary card)
-        item(key = "recent_transactions_card") {
-            HomeRecentTransactionsCard(
-                transactions = recentTransactions,
-                useBengaliDigits = useBengaliDigits,
+        // 3. Quick Actions Row (Directly above search bar: ব্যয় যোগ, আয় যোগ, হিসাব পাতি)
+        item(key = "quick_actions_row") {
+            HomeQuickActionsRow(
                 isEnglish = isEnglish,
-                onViewAllClick = onNavigateToIncomeExpense,
                 onAddExpenseClick = { showAddExpenseDialog = true },
-                onAddIncomeClick = { showAddIncomeDialog = true }
+                onAddIncomeClick = { showAddIncomeDialog = true },
+                onOpenHisabClick = onHisabPatiClick
             )
         }
 
-        // 3. Search Bar
+        // 4. Search Bar
         item(key = "search_field") {
             OutlinedTextField(
                 value = searchQuery,
@@ -227,16 +225,6 @@ fun HomeScreen(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
-            )
-        }
-
-        // 4. Quick Actions Row (Directly below Portfolio & Search sections)
-        item(key = "quick_actions_row") {
-            HomeQuickActionsRow(
-                isEnglish = isEnglish,
-                onAddExpenseClick = { showAddExpenseDialog = true },
-                onAddIncomeClick = { showAddIncomeDialog = true },
-                onOpenHisabClick = onHisabPatiClick
             )
         }
 
@@ -324,6 +312,18 @@ fun HomeScreen(
                             .testTag("home_card_hisab_pati")
                     )
                 }
+            }
+
+            // 5. Recent Transactions List Component (Below Calculator Categories and Hisab Pati)
+            item(key = "recent_transactions_card") {
+                HomeRecentTransactionsCard(
+                    transactions = recentTransactions,
+                    useBengaliDigits = useBengaliDigits,
+                    isEnglish = isEnglish,
+                    onViewAllClick = onNavigateToIncomeExpense,
+                    onAddExpenseClick = { showAddExpenseDialog = true },
+                    onAddIncomeClick = { showAddIncomeDialog = true }
+                )
             }
 
             // On-device privacy indicator footer
@@ -998,7 +998,7 @@ fun HomeQuickActionsRow(
     ) {
         // Quick Action 1: Add Expense (High priority red tone)
         QuickActionButton(
-            label = if (isEnglish) "+ Add Expense" else "+ ব্যয় যোগ করুন",
+            label = if (isEnglish) "+ Add Expense" else "+ ব্যয় যোগ",
             icon = Icons.Default.ArrowDownward,
             accentColor = AlertRed,
             onClick = onAddExpenseClick,
@@ -1008,7 +1008,7 @@ fun HomeQuickActionsRow(
 
         // Quick Action 2: Add Income (Green tone)
         QuickActionButton(
-            label = if (isEnglish) "+ Add Income" else "+ আয় যোগ করুন",
+            label = if (isEnglish) "+ Add Income" else "+ আয় যোগ",
             icon = Icons.Default.ArrowUpward,
             accentColor = GrowthGreen,
             onClick = onAddIncomeClick,
@@ -1018,7 +1018,7 @@ fun HomeQuickActionsRow(
 
         // Quick Action 3: Open Accounts / Khata
         QuickActionButton(
-            label = if (isEnglish) "Hisab Pati" else "হিসাব খাতা",
+            label = if (isEnglish) "Hisab Pati" else "হিসাব পাতি",
             icon = Icons.AutoMirrored.Filled.MenuBook,
             accentColor = PrimaryBlue,
             onClick = onOpenHisabClick,

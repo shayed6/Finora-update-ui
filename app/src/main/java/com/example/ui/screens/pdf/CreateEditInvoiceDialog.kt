@@ -161,6 +161,7 @@ fun CreateEditInvoiceDialog(
     var showInvoiceDatePicker by remember { mutableStateOf(false) }
     var showDueDatePicker by remember { mutableStateOf(false) }
     var showPartyPicker by remember { mutableStateOf(false) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     // Calculation derived state
     val calculationResult by remember {
@@ -714,8 +715,10 @@ fun CreateEditInvoiceDialog(
 
                         Button(
                             onClick = {
+                                if (isSubmitting) return@Button
                                 if (customerName.isBlank()) return@Button
 
+                                isSubmitting = true
                                 val entities = draftItems.filter { it.name.isNotBlank() }.mapIndexed { index, draft ->
                                     val qty = draft.quantityStr.toDoubleOrNull() ?: 1.0
                                     val unitPaisa = InvoiceCalculator.parseTakaToPaisa(draft.unitPriceStr)
@@ -761,7 +764,7 @@ fun CreateEditInvoiceDialog(
                                 onSaveInvoice(invoiceEntity, entities)
                                 onDismiss()
                             },
-                            enabled = customerName.isNotBlank() && draftItems.any { it.name.isNotBlank() },
+                            enabled = !isSubmitting && customerName.isNotBlank() && draftItems.any { it.name.isNotBlank() },
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                             modifier = Modifier
                                 .weight(2f)

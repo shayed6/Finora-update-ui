@@ -16,7 +16,15 @@ enum class CashTransactionType {
         Index(value = ["occurred_at"]),
         Index(value = ["type"]),
         Index(value = ["source_id"]),
-        Index(value = ["category_id"])
+        Index(value = ["category_id"]),
+        Index(value = ["occurred_at", "created_at"]),
+        Index(value = ["type", "occurred_at", "created_at"]),
+        Index(value = ["linked_income_source_id"]),
+        Index(value = ["source_id", "occurred_at"]),
+        Index(value = ["category_id", "occurred_at"]),
+        Index(value = ["type", "source_id", "occurred_at"]),
+        Index(value = ["type", "category_id", "occurred_at"]),
+        Index(value = ["tag_line"])
     ]
 )
 data class IncomeExpenseTransactionEntity(

@@ -72,4 +72,18 @@ interface LedgerDao {
         deleteEntriesForParty(partyId)
         deletePartyById(partyId)
     }
+
+    @Query("""
+        SELECT 
+            party_id AS partyId,
+            COALESCE(SUM(CASE WHEN type = 'GAVE' THEN amount_paisa ELSE -amount_paisa END), 0) AS netBalance
+        FROM ledger_entries
+        GROUP BY party_id
+    """)
+    suspend fun getPartyBalances(): List<PartyBalanceAggregate>
 }
+
+data class PartyBalanceAggregate(
+    val partyId: Long,
+    val netBalance: Long
+)

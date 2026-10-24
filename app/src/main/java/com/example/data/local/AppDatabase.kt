@@ -46,7 +46,7 @@ import com.example.data.local.entity.TransactionEntity
         InvoiceItemEntity::class,
         PdfReportEntity::class
     ],
-    version = 9,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -300,6 +300,51 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_occurred_at_created_at` ON `income_expense_transactions` (`occurred_at`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_type_occurred_at_created_at` ON `income_expense_transactions` (`type`, `occurred_at`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_linked_income_source_id` ON `income_expense_transactions` (`linked_income_source_id`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_source_id_occurred_at` ON `income_expense_transactions` (`source_id`, `occurred_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_tag_line` ON `income_expense_transactions` (`tag_line`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ledger_entries_party_id_entry_date_created_at` ON `ledger_entries` (`party_id`, `entry_date`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_savings_entries_goal_id_entry_date_created_at` ON `savings_entries` (`goal_id`, `entry_date`, `created_at`)")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Income Expense Transactions
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_category_id_occurred_at` ON `income_expense_transactions` (`category_id`, `occurred_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_type_source_id_occurred_at` ON `income_expense_transactions` (`type`, `source_id`, `occurred_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_income_expense_transactions_type_category_id_occurred_at` ON `income_expense_transactions` (`type`, `category_id`, `occurred_at`)")
+
+                // Stock/Portfolio Transactions & Dividends
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_dateTimestamp` ON `transactions` (`dateTimestamp`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_holdingId_dateTimestamp` ON `transactions` (`holdingId`, `dateTimestamp`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_dividends_dateTimestamp` ON `dividends` (`dateTimestamp`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_dividends_holdingId_dateTimestamp` ON `dividends` (`holdingId`, `dateTimestamp`)")
+
+                // Ledger Entries
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ledger_entries_type` ON `ledger_entries` (`type`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ledger_entries_category` ON `ledger_entries` (`category`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ledger_entries_entry_date_created_at` ON `ledger_entries` (`entry_date`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ledger_entries_party_id_type` ON `ledger_entries` (`party_id`, `type`)")
+
+                // Savings Entries
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_savings_entries_type` ON `savings_entries` (`type`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_savings_entries_entry_date_created_at` ON `savings_entries` (`entry_date`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_savings_entries_type_entry_date` ON `savings_entries` (`type`, `entry_date`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_savings_entries_sector_id_entry_date` ON `savings_entries` (`sector_id`, `entry_date`)")
+
+                // Invoices
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_invoice_date` ON `invoices` (`invoice_date`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_status` ON `invoices` (`status`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_invoice_date_created_at` ON `invoices` (`invoice_date`, `created_at`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_invoices_status_invoice_date_created_at` ON `invoices` (`status`, `invoice_date`, `created_at`)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -315,7 +360,9 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .build()
                 INSTANCE = instance

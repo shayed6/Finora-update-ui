@@ -205,7 +205,6 @@ fun FinoraApp(
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
             DrawerDestination.HISAB_PATI -> navigateTo(Screen.HisabPati)
             DrawerDestination.PDF_REPORTS -> navigateTo(Screen.PdfReports)
-            DrawerDestination.WORK_TYPE -> navigateTo(Screen.WorkType)
             DrawerDestination.ORG_INFO -> navigateTo(Screen.OrganizationInfo)
             DrawerDestination.LEDGER -> navigateTo(Screen.LedgerList)
             DrawerDestination.INCOME_EXPENSE -> navigateTo(Screen.IncomeExpense)
@@ -236,7 +235,7 @@ fun FinoraApp(
         is Screen.Portfolio -> DrawerDestination.PORTFOLIO
         is Screen.HisabPati -> DrawerDestination.HISAB_PATI
         is Screen.PdfReports -> DrawerDestination.PDF_REPORTS
-        is Screen.WorkType -> DrawerDestination.WORK_TYPE
+        is Screen.WorkType -> DrawerDestination.HOME
         is Screen.OrganizationInfo -> DrawerDestination.ORG_INFO
         is Screen.LedgerList, is Screen.LedgerPersonDetail -> DrawerDestination.HISAB_PATI
         is Screen.IncomeExpense -> DrawerDestination.HISAB_PATI

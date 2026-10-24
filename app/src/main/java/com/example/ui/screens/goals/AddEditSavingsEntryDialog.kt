@@ -104,6 +104,7 @@ fun AddEditSavingsEntryDialog(
     }
 
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
     var sectorDropdownExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -289,7 +290,9 @@ fun AddEditSavingsEntryDialog(
         },
         confirmButton = {
             Button(
+                enabled = !isSubmitting,
                 onClick = {
+                    if (isSubmitting) return@Button
                     val parsedPaisa = SavingsFormatter.parseInputToPaisa(amountText)
                     if (amountText.isBlank() || parsedPaisa == null) {
                         val cleaned = BengaliFormatter.normalizeToEnglishDigits(amountText).replace(",", "").replace("৳", "").trim()
@@ -334,6 +337,7 @@ fun AddEditSavingsEntryDialog(
                         selectedSectorId
                     }
 
+                    isSubmitting = true
                     onSave(
                         type,
                         parsedPaisa,

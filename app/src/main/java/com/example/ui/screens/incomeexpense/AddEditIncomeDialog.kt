@@ -108,6 +108,7 @@ fun AddEditIncomeDialog(
     }
 
     var amountError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
     var sourceExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -349,7 +350,9 @@ fun AddEditIncomeDialog(
         },
         confirmButton = {
             Button(
+                enabled = !isSubmitting,
                 onClick = {
+                    if (isSubmitting) return@Button
                     val parsedPaisa = IncomeExpenseFormatter.parseInputToPaisa(amountText)
                     if (amountText.isBlank() || parsedPaisa == null) {
                         val cleaned = BengaliFormatter.normalizeToEnglishDigits(amountText).replace(",", "").replace("৳", "").trim()
@@ -366,6 +369,7 @@ fun AddEditIncomeDialog(
                     } else if (selectedSourceId <= 0L && sources.isNotEmpty()) {
                         selectedSourceId = sources.first().id
                     } else {
+                        isSubmitting = true
                         onSave(
                             parsedPaisa,
                             selectedSourceId,

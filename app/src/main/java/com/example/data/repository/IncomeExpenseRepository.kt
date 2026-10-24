@@ -17,8 +17,23 @@ class IncomeExpenseRepository(private val dao: IncomeExpenseDao) {
     val allTransactions: Flow<List<IncomeExpenseTransactionEntity>> = dao.getAllTransactions()
     val allDistinctTagLines: Flow<List<String>> = dao.getAllDistinctTagLines()
 
+    fun getRecentTransactions(limit: Int): Flow<List<IncomeExpenseTransactionEntity>> =
+        dao.getRecentTransactions(limit)
+
     fun getTransactionsInRange(startTime: Long, endTime: Long): Flow<List<IncomeExpenseTransactionEntity>> =
         dao.getTransactionsInRange(startTime, endTime)
+
+    fun getTransactionsPaged(
+        type: String? = null,
+        startTime: Long? = null,
+        endTime: Long? = null,
+        sourceId: Long? = null,
+        categoryId: Long? = null
+    ): androidx.paging.PagingSource<Int, IncomeExpenseTransactionEntity> =
+        dao.getTransactionsPaged(type, startTime, endTime, sourceId, categoryId)
+
+    fun getAggregateInRangeFlow(startTime: Long, endTime: Long): Flow<com.example.data.local.dao.IncomeExpenseAggregate> =
+        dao.getAggregateInRangeFlow(startTime, endTime)
 
     suspend fun ensurePresets() = withContext(Dispatchers.IO) {
         val existingSources = dao.getAllIncomeSourcesList()

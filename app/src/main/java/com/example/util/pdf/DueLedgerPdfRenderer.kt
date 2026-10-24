@@ -86,6 +86,8 @@ object DueLedgerPdfRenderer {
             else -> "বাকির খাতা ও দেনা-পাওনা বিবরণী (Due & Credit Ledger)"
         }
 
+        val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
         for (pageIndex in 0 until totalPages) {
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
             val page = pdfDocument.startPage(pageInfo)
@@ -104,7 +106,8 @@ object DueLedgerPdfRenderer {
                 subTitle = "গ্রাহক ও মহাজনের খাতা • ১০০% অন-ডিভাইস নিরাপদ হিসাব",
                 dateStr = dateStr,
                 currentPage = pageIndex + 1,
-                totalPages = totalPages
+                totalPages = totalPages,
+                orgInfo = orgInfo
             )
 
             if (pageIndex == 0) {
@@ -163,6 +166,8 @@ object DueLedgerPdfRenderer {
         val currentDateStr = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
         val dateStr = if (useBengaliDigits) BengaliFormatter.formatBengaliDate(System.currentTimeMillis()) else currentDateStr
 
+        val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
         for (pageIndex in 0 until totalPages) {
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
             val page = pdfDocument.startPage(pageInfo)
@@ -181,7 +186,8 @@ object DueLedgerPdfRenderer {
                 subTitle = "${party.name} • খতিয়ান ও লেনদেন অডিট ট্রেইল",
                 dateStr = dateStr,
                 currentPage = pageIndex + 1,
-                totalPages = totalPages
+                totalPages = totalPages,
+                orgInfo = orgInfo
             )
 
             if (pageIndex == 0) {

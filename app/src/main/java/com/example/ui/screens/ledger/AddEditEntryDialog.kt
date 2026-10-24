@@ -97,6 +97,7 @@ fun AddEditEntryDialog(
     var noteText by rememberSaveable { mutableStateOf(existingEntry?.note ?: "") }
     var entryDateTimestamp by rememberSaveable { mutableLongStateOf(existingEntry?.entryDate ?: System.currentTimeMillis()) }
     var amountError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
@@ -290,7 +291,9 @@ fun AddEditEntryDialog(
         },
         confirmButton = {
             Button(
+                enabled = !isSubmitting,
                 onClick = {
+                    if (isSubmitting) return@Button
                     val parsedPaisa = LedgerFormatter.parseInputToPaisa(amountText)
                     if (amountText.isBlank() || parsedPaisa == null) {
                         val cleaned = BengaliFormatter.normalizeToEnglishDigits(amountText).replace(",", "").replace("৳", "").trim()
@@ -305,6 +308,7 @@ fun AddEditEntryDialog(
                     } else if (parsedPaisa <= 0L) {
                         amountError = LedgerStrings.ERROR_AMOUNT_ZERO
                     } else {
+                        isSubmitting = true
                         onSave(selectedType, parsedPaisa, noteText.trim().ifBlank { null }, entryDateTimestamp)
                     }
                 },

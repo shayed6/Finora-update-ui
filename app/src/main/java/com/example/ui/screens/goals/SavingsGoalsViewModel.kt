@@ -177,6 +177,10 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
                     started = SharingStarted.WhileSubscribed(5000),
                     initialValue = initialGoalDetailState
                 )
+            if (detailStateFlowCache.size >= 8) {
+                val oldestKey = detailStateFlowCache.keys.firstOrNull()
+                if (oldestKey != null) detailStateFlowCache.remove(oldestKey)
+            }
             detailStateFlowCache[key] = newFlow
             newFlow
         }

@@ -43,6 +43,7 @@ fun AddEditPartyDialog(
     var name by rememberSaveable { mutableStateOf(party?.name ?: "") }
     var phone by rememberSaveable { mutableStateOf(party?.phone ?: "") }
     var nameError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     var duplicatePhoneParty by remember { mutableStateOf<LedgerPartyEntity?>(null) }
     var duplicateNameParty by remember { mutableStateOf<LedgerPartyEntity?>(null) }
@@ -255,8 +256,10 @@ fun AddEditPartyDialog(
                     }
 
                     // 3. No duplicate detected
+                    isSubmitting = true
                     onSave(trimmedName, cleanPhone)
                 },
+                enabled = !isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.testTag("btn_save_party")

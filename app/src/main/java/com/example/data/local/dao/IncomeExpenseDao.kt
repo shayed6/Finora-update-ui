@@ -68,6 +68,9 @@ interface IncomeExpenseDao {
     @Query("SELECT * FROM income_expense_transactions ORDER BY occurred_at DESC, created_at DESC")
     fun getAllTransactions(): Flow<List<IncomeExpenseTransactionEntity>>
 
+    @Query("SELECT * FROM income_expense_transactions ORDER BY occurred_at DESC, created_at DESC LIMIT :limit")
+    fun getRecentTransactions(limit: Int): Flow<List<IncomeExpenseTransactionEntity>>
+
     @Query("SELECT * FROM income_expense_transactions WHERE occurred_at >= :startTime AND occurred_at <= :endTime ORDER BY occurred_at DESC, created_at DESC")
     fun getTransactionsInRange(startTime: Long, endTime: Long): Flow<List<IncomeExpenseTransactionEntity>>
 
@@ -109,6 +112,33 @@ interface IncomeExpenseDao {
         WHERE occurred_at >= :startTime AND occurred_at <= :endTime
     """)
     suspend fun getAggregateInRange(startTime: Long, endTime: Long): IncomeExpenseAggregate
+
+    @Query("""
+        SELECT 
+            COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0) AS totalIncome,
+            COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0) AS totalExpense,
+            COUNT(*) AS txCount
+        FROM income_expense_transactions
+        WHERE occurred_at >= :startTime AND occurred_at <= :endTime
+    """)
+    fun getAggregateInRangeFlow(startTime: Long, endTime: Long): Flow<IncomeExpenseAggregate>
+
+    @Query("""
+        SELECT * FROM income_expense_transactions
+        WHERE (:type IS NULL OR type = :type)
+          AND (:startTime IS NULL OR occurred_at >= :startTime)
+          AND (:endTime IS NULL OR occurred_at <= :endTime)
+          AND (:sourceId IS NULL OR source_id = :sourceId)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+        ORDER BY occurred_at DESC, created_at DESC
+    """)
+    fun getTransactionsPaged(
+        type: String? = null,
+        startTime: Long? = null,
+        endTime: Long? = null,
+        sourceId: Long? = null,
+        categoryId: Long? = null
+    ): androidx.paging.PagingSource<Int, IncomeExpenseTransactionEntity>
 
     @Query("""
         SELECT COALESCE(SUM(amount), 0)

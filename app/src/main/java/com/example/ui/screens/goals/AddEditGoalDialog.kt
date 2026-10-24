@@ -28,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +68,7 @@ fun AddEditGoalDialog(
     var targetDateTimestamp by rememberSaveable { mutableStateOf(goal?.targetDate) }
     var nameError by rememberSaveable { mutableStateOf<String?>(null) }
     var amountError by rememberSaveable { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
@@ -178,7 +180,9 @@ fun AddEditGoalDialog(
         },
         confirmButton = {
             Button(
+                enabled = !isSubmitting,
                 onClick = {
+                    if (isSubmitting) return@Button
                     val cleanName = name.trim()
                     if (cleanName.isBlank()) {
                         nameError = SavingsStrings.ERROR_NAME_REQUIRED
@@ -195,6 +199,7 @@ fun AddEditGoalDialog(
                         targetPaisa = parsed
                     }
 
+                    isSubmitting = true
                     onSave(cleanName, targetPaisa, targetDateTimestamp)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = GrowthGreen),

@@ -63,6 +63,8 @@ object IncomeExpensePdfRenderer {
         var currentIndex = 0
         val currentDateStr = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
 
+        val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
         for (pageIndex in 0 until totalPages) {
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
             val page = pdfDocument.startPage(pageInfo)
@@ -84,7 +86,8 @@ object IncomeExpensePdfRenderer {
                 subTitle = filterTitle,
                 dateStr = if (useBengaliDigits) BengaliFormatter.formatBengaliDate(System.currentTimeMillis()) else currentDateStr,
                 currentPage = pageIndex + 1,
-                totalPages = totalPages
+                totalPages = totalPages,
+                orgInfo = orgInfo
             )
 
             if (pageIndex == 0) {

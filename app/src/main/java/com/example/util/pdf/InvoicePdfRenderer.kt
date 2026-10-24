@@ -9,6 +9,8 @@ import android.graphics.pdf.PdfDocument
 import com.example.data.local.entity.InvoiceItemEntity
 import com.example.data.local.entity.InvoiceStatus
 import com.example.data.local.entity.InvoiceWithItems
+import com.example.data.preferences.OrganizationInfo
+import com.example.data.preferences.OrganizationInfoRepository
 import com.example.util.BengaliFormatter
 import com.example.util.pdf.PdfCommon.CONTENT_WIDTH
 import com.example.util.pdf.PdfCommon.ColorBlueBg
@@ -55,6 +57,13 @@ object InvoicePdfRenderer {
             1 + ((items.size - maxItemsFirstPage + itemsPerSubsequentPage - 1) / itemsPerSubsequentPage)
         }
 
+        val storedOrg = OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+        val orgInfo = OrganizationInfo(
+            name = invoice.businessName.ifBlank { storedOrg.name },
+            address = invoice.businessAddress?.ifBlank { storedOrg.address } ?: storedOrg.address,
+            phone = invoice.businessPhone?.ifBlank { storedOrg.phone } ?: storedOrg.phone
+        )
+
         var currentItemIndex = 0
 
         for (pageIndex in 0 until totalPages) {
@@ -79,7 +88,8 @@ object InvoicePdfRenderer {
                 subTitle = if (isEnglish) "Official Commercial Invoice" else "ব্যবসায়িক চালান ও বিক্রয় হিসাব",
                 dateStr = if (isEnglish) dateStr else BengaliFormatter.formatBengaliDate(invoice.invoiceDate),
                 currentPage = pageIndex + 1,
-                totalPages = totalPages
+                totalPages = totalPages,
+                orgInfo = orgInfo
             )
 
             if (pageIndex == 0) {

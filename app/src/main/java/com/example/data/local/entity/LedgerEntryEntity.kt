@@ -23,7 +23,12 @@ enum class LedgerEntryType {
     ],
     indices = [
         Index(value = ["party_id"]),
-        Index(value = ["entry_date"])
+        Index(value = ["entry_date"]),
+        Index(value = ["type"]),
+        Index(value = ["category"]),
+        Index(value = ["entry_date", "created_at"]),
+        Index(value = ["party_id", "entry_date", "created_at"]),
+        Index(value = ["party_id", "type"])
     ]
 )
 data class LedgerEntryEntity(

@@ -16,7 +16,11 @@ enum class InvoiceStatus {
     indices = [
         Index(value = ["invoice_number"], unique = true),
         Index(value = ["created_at"]),
-        Index(value = ["customer_name"])
+        Index(value = ["customer_name"]),
+        Index(value = ["invoice_date"]),
+        Index(value = ["status"]),
+        Index(value = ["invoice_date", "created_at"]),
+        Index(value = ["status", "invoice_date", "created_at"])
     ]
 )
 data class InvoiceEntity(

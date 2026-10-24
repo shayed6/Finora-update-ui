@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.data.preferences.AppLanguage
 import com.example.ui.LocalAppLanguage
 import java.util.Locale
+import kotlinx.coroutines.launch
 import com.example.ads.AdManager
 import com.example.data.FavoritesManager
 import com.example.data.preferences.AppThemeMode
@@ -33,15 +34,21 @@ import com.example.ui.theme.FinoraTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            val jsCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/js")
-            val wasmCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/wasm")
-            if (!jsCache.exists()) jsCache.mkdirs()
-            if (!wasmCache.exists()) wasmCache.mkdirs()
-        } catch (_: Exception) {
+        // Startup optimization: Offload disk I/O to background dispatcher
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                val jsCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/js")
+                val wasmCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/wasm")
+                if (!jsCache.exists()) jsCache.mkdirs()
+                if (!wasmCache.exists()) wasmCache.mkdirs()
+            } catch (_: Exception) {
+            }
         }
         FavoritesManager.init(this)
-        AdManager.initialize(this)
+        // Startup optimization: Defer AdManager & UMP SDK initialization past initial render
+        window.decorView.post {
+            AdManager.initialize(this@MainActivity)
+        }
         enableEdgeToEdge()
         setContent {
             val userPrefs = remember { UserPreferencesRepository.getInstance(applicationContext) }

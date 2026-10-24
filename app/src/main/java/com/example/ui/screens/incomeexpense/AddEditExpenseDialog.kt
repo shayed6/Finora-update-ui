@@ -114,6 +114,7 @@ fun AddEditExpenseDialog(
     }
 
     var amountError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var linkedSourceExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
@@ -400,7 +401,9 @@ fun AddEditExpenseDialog(
         },
         confirmButton = {
             Button(
+                enabled = !isSubmitting,
                 onClick = {
+                    if (isSubmitting) return@Button
                     val parsedPaisa = IncomeExpenseFormatter.parseInputToPaisa(amountText)
                     if (amountText.isBlank() || parsedPaisa == null) {
                         val cleaned = BengaliFormatter.normalizeToEnglishDigits(amountText).replace(",", "").replace("৳", "").trim()
@@ -417,6 +420,7 @@ fun AddEditExpenseDialog(
                     } else if (selectedCategoryId <= 0L && categories.isNotEmpty()) {
                         selectedCategoryId = categories.first().id
                     } else {
+                        isSubmitting = true
                         onSave(
                             parsedPaisa,
                             selectedCategoryId,

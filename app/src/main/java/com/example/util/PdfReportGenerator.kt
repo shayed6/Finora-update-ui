@@ -124,6 +124,8 @@ object PdfReportGenerator {
             val overallPercent = if (totalTarget > 0) (totalSaved / totalTarget) * 100.0 else 0.0
             val completedCount = 0
 
+            val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
             for (pageIndex in 0 until totalPages) {
                 val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
                 val page = pdfDocument.startPage(pageInfo)
@@ -140,7 +142,7 @@ object PdfReportGenerator {
                 drawFinoraWatermark(canvas, logoBitmap)
 
                 // 3. Draw Header
-                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages)
+                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages, orgInfo = orgInfo)
 
                 // 4. Draw Summary Overview only on page 1
                 if (pageIndex == 0) {
@@ -259,6 +261,8 @@ object PdfReportGenerator {
             val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
             val currentDateStr = dateFormat.format(Date())
 
+            val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
             for (pageIndex in 0 until totalPages) {
                 val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
                 val page = pdfDocument.startPage(pageInfo)
@@ -275,7 +279,7 @@ object PdfReportGenerator {
                 drawFinoraWatermark(canvas, logoBitmap)
 
                 // 3. Draw Header
-                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages, title = "শেয়ার পোর্টফোলিও ও ডিভিডেন্ড রিপোর্ট", subTitle = "DSE ও CSE ইনভেস্টমেন্ট ও ডিভিডেন্ড আয় বিবরণী")
+                var currentY = drawHeader(canvas, logoBitmap, currentDateStr, pageIndex + 1, totalPages, title = "শেয়ার পোর্টফোলিও ও ডিভিডেন্ড রিপোর্ট", subTitle = "DSE ও CSE ইনভেস্টমেন্ট ও ডিভিডেন্ড আয় বিবরণী", orgInfo = orgInfo)
 
                 // 4. Draw Portfolio Summary Overview only on page 1
                 if (pageIndex == 0) {
@@ -436,7 +440,8 @@ object PdfReportGenerator {
         currentPage: Int,
         totalPages: Int,
         title: String = "ব্যক্তিগত সঞ্চয় ও আর্থিক লক্ষ্য রিপোর্ট (Savings Goals Report)",
-        subTitle: String = "১০০% অন-ডিভাইস নিরাপদ আর্থিক হিসাব"
+        subTitle: String = "১০০% অন-ডিভাইস নিরাপদ আর্থিক হিসাব",
+        orgInfo: com.example.data.preferences.OrganizationInfo? = null
     ): Float {
         var y = MARGIN + 10f
 
@@ -449,50 +454,62 @@ object PdfReportGenerator {
 
         y = MARGIN + 22f
 
-        // Small Logo Icon or Badge
-        val logoSize = 38f
-        if (logoBitmap != null) {
-            val logoRect = RectF(MARGIN, y, MARGIN + logoSize, y + logoSize)
-            val paint = Paint().apply { isFilterBitmap = true; isAntiAlias = true }
-            canvas.drawBitmap(logoBitmap, null, logoRect, paint)
-        } else {
-            val badgePaint = Paint().apply {
-                color = Color.parseColor("#2563EB")
-                style = Paint.Style.FILL
-                isAntiAlias = true
-            }
-            canvas.drawRoundRect(MARGIN, y, MARGIN + logoSize, y + logoSize, 8f, 8f, badgePaint)
-        }
+        val hasOrg = orgInfo != null && orgInfo.name.isNotBlank()
+        val headlineText = if (hasOrg) orgInfo!!.name.trim() else "FINORA"
 
-        // Title and App Name
+        // Headline without Finora logo
         val brandPaint = Paint().apply {
             color = Color.parseColor("#0F172A")
-            textSize = 18f
+            textSize = if (hasOrg) 16f else 18f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
-        canvas.drawText("FINORA", MARGIN + logoSize + 10f, y + 16f, brandPaint)
+        canvas.drawText(headlineText, MARGIN, y + 14f, brandPaint)
 
-        val titlePaint = Paint().apply {
-            color = Color.parseColor("#475569")
-            textSize = 10.5f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            isAntiAlias = true
+        val contactLine = if (hasOrg) {
+            val parts = mutableListOf<String>()
+            if (orgInfo!!.address.isNotBlank()) parts.add(orgInfo.address.trim())
+            if (orgInfo.phone.isNotBlank()) parts.add("মোবাইল: ${orgInfo.phone.trim()}")
+            if (parts.isNotEmpty()) parts.joinToString(" • ") else null
+        } else null
+
+        if (contactLine != null) {
+            val contactPaint = Paint().apply {
+                color = Color.parseColor("#64748B")
+                textSize = 8.5f
+                isAntiAlias = true
+            }
+            canvas.drawText(contactLine.take(80), MARGIN, y + 26f, contactPaint)
+
+            val titlePaint = Paint().apply {
+                color = Color.parseColor("#2563EB")
+                textSize = 10f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            canvas.drawText(title.take(75), MARGIN, y + 38f, titlePaint)
+        } else {
+            val titlePaint = Paint().apply {
+                color = Color.parseColor("#475569")
+                textSize = 10.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                isAntiAlias = true
+            }
+            canvas.drawText(title, MARGIN, y + 30f, titlePaint)
         }
-        canvas.drawText(title, MARGIN + logoSize + 10f, y + 32f, titlePaint)
 
         // Right side: Date and Page Info
         val datePaint = Paint().apply {
             color = Color.parseColor("#64748B")
-            textSize = 9.5f
+            textSize = 9f
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
-        canvas.drawText("তারিখ: $dateStr", PAGE_WIDTH - MARGIN, y + 16f, datePaint)
-        canvas.drawText("পৃষ্ঠা $currentPage / $totalPages", PAGE_WIDTH - MARGIN, y + 32f, datePaint)
+        canvas.drawText("তারিখ: $dateStr", PAGE_WIDTH - MARGIN, y + 14f, datePaint)
+        canvas.drawText("পৃষ্ঠা $currentPage / $totalPages", PAGE_WIDTH - MARGIN, y + 28f, datePaint)
 
         // Divider Line
-        y += logoSize + 12f
+        y += 46f
         val linePaint = Paint().apply {
             color = Color.parseColor("#E2E8F0")
             strokeWidth = 1f
@@ -1002,7 +1019,7 @@ object PdfReportGenerator {
             textSize = 8.5f
             isAntiAlias = true
         }
-        canvas.drawText("Finora — আপনার স্মার্ট ব্যক্তিগত অর্থায়ন ও সঞ্চয় সহায়ক | ১০০% অন-ডিভাইস নিরাপদ হিসাব", MARGIN, y + 2f, footerPaint)
+        canvas.drawText("উক্ত হিসাব সাথে ফিনোরা কোন ভাবে সংযুক্ত নয়", MARGIN, y + 2f, footerPaint)
 
         val pagePaint = Paint().apply {
             color = Color.parseColor("#94A3B8")

@@ -10,11 +10,20 @@ import com.example.data.local.entity.ExpenseCategoryEntity
 import com.example.data.local.entity.IncomeExpenseTransactionEntity
 import com.example.data.local.entity.IncomeSourceEntity
 import com.example.data.repository.IncomeExpenseRepository
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -73,8 +82,69 @@ class IncomeExpenseViewModel(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val summaryFlow: Flow<com.example.data.local.dao.IncomeExpenseAggregate> = _selectedMonthYear.flatMapLatest { monthYear ->
+        repository.getAggregateInRangeFlow(
+            startTime = monthYear.toStartTimestamp(),
+            endTime = monthYear.toEndTimestamp()
+        )
+    }
+
+    private val nameLookupsFlow = combine(
+        repository.allIncomeSources,
+        repository.allExpenseCategories
+    ) { sources, categories ->
+        Pair(sources.associateBy { it.id }, categories.associateBy { it.id })
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val pagedTransactions: Flow<PagingData<TransactionDisplayItem>> = combine(
+        _activeTab,
+        _selectedMonthYear,
+        _selectedSourceFilterId,
+        _selectedCategoryFilterId
+    ) { tab, monthYear, sourceFilter, catFilter ->
+        val type = tab.name
+        val startTime = monthYear.toStartTimestamp()
+        val endTime = monthYear.toEndTimestamp()
+        val sourceId = if (tab == CashTransactionType.INCOME) sourceFilter else null
+        val categoryId = if (tab == CashTransactionType.EXPENSE) catFilter else null
+        FilterParams(type, startTime, endTime, sourceId, categoryId)
+    }.flatMapLatest { params ->
+        Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                prefetchDistance = 5,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                repository.getTransactionsPaged(
+                    type = params.type,
+                    startTime = params.startTime,
+                    endTime = params.endTime,
+                    sourceId = params.sourceId,
+                    categoryId = params.categoryId
+                )
+            }
+        ).flow
+    }.combine(nameLookupsFlow) { pagingData, (sourcesMap, categoriesMap) ->
+        pagingData.map { tx ->
+            val name = if (tx.type == CashTransactionType.INCOME.name) {
+                sourcesMap[tx.sourceId]?.name ?: "অজানা উৎস"
+            } else {
+                categoriesMap[tx.categoryId]?.name ?: "অজানা খাত"
+            }
+            val linkedName = tx.linkedIncomeSourceId?.let { sourcesMap[it]?.name }
+            TransactionDisplayItem(
+                transaction = tx,
+                categoryOrSourceName = name,
+                linkedSourceName = linkedName
+            )
+        }
+    }.cachedIn(viewModelScope)
+
     val uiState: StateFlow<IncomeExpenseUiState> = combine(
-        repository.allTransactions,
+        summaryFlow,
         repository.allIncomeSources,
         repository.allExpenseCategories,
         repository.allDistinctTagLines,
@@ -87,10 +157,7 @@ class IncomeExpenseViewModel(
         ) { tab, monthYear, sourceFilter, catFilter, profiles ->
             FilterTuple(tab, monthYear, sourceFilter, catFilter, profiles)
         }
-    ) { allTransactions, sources, categories, tagLines, filterTuple ->
-        val sourcesMap = sources.associateBy { it.id }
-        val categoriesMap = categories.associateBy { it.id }
-
+    ) { aggregate, sources, categories, tagLines, filterTuple ->
         // Sort items so selected profiles appear first
         val activeProfiles = filterTuple.selectedProfiles
         val sortedSources = sources.sortedWith(
@@ -104,61 +171,15 @@ class IncomeExpenseViewModel(
                 .thenBy { it.id }
         )
 
-        // 1. Calculate Monthly Summary (based on selectedMonthYear)
-        val monthStart = filterTuple.monthYear.toStartTimestamp()
-        val monthEnd = filterTuple.monthYear.toEndTimestamp()
-
-        val monthTransactions = allTransactions.filter {
-            it.occurredAt in monthStart..monthEnd
-        }
-
-        var totalIncome = 0L
-        var totalExpense = 0L
-        monthTransactions.forEach { tx ->
-            if (tx.type == CashTransactionType.INCOME.name) {
-                totalIncome += tx.amount
-            } else if (tx.type == CashTransactionType.EXPENSE.name) {
-                totalExpense += tx.amount
-            }
-        }
-        val balance = totalIncome - totalExpense
-
-        // 2. Filter displayed items based on activeTab and source/category filter
-        val tabTransactions = monthTransactions.filter {
-            it.type == filterTuple.tab.name
-        }
-
-        val filteredTransactions = tabTransactions.filter { tx ->
-            if (filterTuple.tab == CashTransactionType.INCOME) {
-                filterTuple.sourceFilter == null || tx.sourceId == filterTuple.sourceFilter
-            } else {
-                filterTuple.catFilter == null || tx.categoryId == filterTuple.catFilter
-            }
-        }
-
-        val displayItems = filteredTransactions.map { tx ->
-            val name = if (tx.type == CashTransactionType.INCOME.name) {
-                sourcesMap[tx.sourceId]?.name ?: "অজানা উৎস"
-            } else {
-                categoriesMap[tx.categoryId]?.name ?: "অজানা খাত"
-            }
-            val linkedName = tx.linkedIncomeSourceId?.let { sourcesMap[it]?.name }
-            TransactionDisplayItem(
-                transaction = tx,
-                categoryOrSourceName = name,
-                linkedSourceName = linkedName
-            )
-        }
-
         IncomeExpenseUiState(
             activeTab = filterTuple.tab,
             selectedMonthYear = filterTuple.monthYear,
             summary = IncomeExpenseSummary(
-                totalIncomePaisa = totalIncome,
-                totalExpensePaisa = totalExpense,
-                balancePaisa = balance
+                totalIncomePaisa = aggregate.totalIncome,
+                totalExpensePaisa = aggregate.totalExpense,
+                balancePaisa = aggregate.totalIncome - aggregate.totalExpense
             ),
-            displayedTransactions = displayItems,
+            displayedTransactions = emptyList(),
             incomeSources = sortedSources,
             expenseCategories = sortedCategories,
             selectedSourceFilterId = filterTuple.sourceFilter,
@@ -173,13 +194,13 @@ class IncomeExpenseViewModel(
     )
 
     val recentTransactions: StateFlow<List<TransactionDisplayItem>> = combine(
-        repository.allTransactions,
+        repository.getRecentTransactions(5),
         repository.allIncomeSources,
         repository.allExpenseCategories
-    ) { allTransactions, sources, categories ->
+    ) { recentList, sources, categories ->
         val sourcesMap = sources.associateBy { it.id }
         val categoriesMap = categories.associateBy { it.id }
-        allTransactions.take(5).map { tx ->
+        recentList.map { tx ->
             val name = if (tx.type == CashTransactionType.INCOME.name) {
                 sourcesMap[tx.sourceId]?.name ?: "অজানা উৎস"
             } else {
@@ -373,4 +394,12 @@ private data class FilterTuple(
     val sourceFilter: Long?,
     val catFilter: Long?,
     val selectedProfiles: Set<String> = emptySet()
+)
+
+private data class FilterParams(
+    val type: String,
+    val startTime: Long,
+    val endTime: Long,
+    val sourceId: Long?,
+    val categoryId: Long?
 )

@@ -74,6 +74,8 @@ object SavingsInvestmentPdfRenderer {
         // Page 2: Stock Portfolio / Investment Assets (if holdings exist) or combined
         val totalPages = if (holdings.isNotEmpty()) 2 else 1
 
+        val orgInfo = com.example.data.preferences.OrganizationInfoRepository.getInstance(context).getOrganizationInfoBlocking()
+
         for (pageIndex in 0 until totalPages) {
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
             val page = pdfDocument.startPage(pageInfo)
@@ -97,7 +99,8 @@ object SavingsInvestmentPdfRenderer {
                     subTitle = "লক্ষ্যভিত্তিক নগদ জমার হিসাব • ১০০% অন-ডিভাইস নিরাপদ",
                     dateStr = dateStr,
                     currentPage = 1,
-                    totalPages = totalPages
+                    totalPages = totalPages,
+                    orgInfo = orgInfo
                 )
 
                 // Summary Cards for Savings
@@ -117,7 +120,8 @@ object SavingsInvestmentPdfRenderer {
                     subTitle = "পুঁজিবাজার বিনিয়োগ ও সমাপনী বাজারমূল্য • পৃথক সম্পদ খতিয়ান",
                     dateStr = dateStr,
                     currentPage = 2,
-                    totalPages = totalPages
+                    totalPages = totalPages,
+                    orgInfo = orgInfo
                 )
 
                 // Investment Summary Cards

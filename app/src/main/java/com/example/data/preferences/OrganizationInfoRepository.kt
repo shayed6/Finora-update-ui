@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -49,24 +50,48 @@ class OrganizationInfoRepository private constructor(private val context: Contex
         }
     }
 
+    private var cachedOrgInfo: OrganizationInfo = OrganizationInfo()
+
     val organizationInfo: Flow<OrganizationInfo> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
         .map { prefs ->
-            OrganizationInfo(
+            val info = OrganizationInfo(
                 name = prefs[ORG_NAME_KEY] ?: "",
                 address = prefs[ORG_ADDRESS_KEY] ?: "",
                 phone = prefs[ORG_PHONE_KEY] ?: "",
                 invoicePrefix = prefs[INVOICE_PREFIX_KEY] ?: "INV-"
             )
+            cachedOrgInfo = info
+            info
         }
+
+    suspend fun getOrganizationInfo(): OrganizationInfo {
+        return try {
+            organizationInfo.first()
+        } catch (_: Exception) {
+            cachedOrgInfo
+        }
+    }
+
+    fun getCachedOrganizationInfo(): OrganizationInfo = cachedOrgInfo
+
+    fun getOrganizationInfoBlocking(): OrganizationInfo {
+        return try {
+            kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                getOrganizationInfo()
+            }
+        } catch (_: Exception) {
+            cachedOrgInfo
+        }
+    }
 
     suspend fun saveOrganizationInfo(
         name: String,
         address: String,
         phone: String,
-        invoicePrefix: String
+        invoicePrefix: String = "INV-"
     ) {
         context.dataStore.edit { prefs ->
             prefs[ORG_NAME_KEY] = name.take(60)

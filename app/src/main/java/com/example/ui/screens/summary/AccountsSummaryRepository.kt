@@ -158,22 +158,12 @@ class AccountsSummaryRepository(
     }
 
     suspend fun calculateLedgerOverview(): LedgerOverview = withContext(Dispatchers.IO) {
-        val parties = ledgerDao.getAllPartiesList()
-        val entries = ledgerDao.getAllEntriesList()
-
-        val entriesByParty = entries.groupBy { it.partyId }
+        val balances = ledgerDao.getPartyBalances()
         var totalPabo = 0L
         var totalDebo = 0L
 
-        parties.forEach { party ->
-            val partyEntries = entriesByParty[party.id] ?: emptyList()
-            var gave = 0L
-            var received = 0L
-            partyEntries.forEach { entry ->
-                if (entry.type == LedgerEntryType.GAVE.name) gave += entry.amountPaisa
-                else if (entry.type == LedgerEntryType.RECEIVED.name) received += entry.amountPaisa
-            }
-            val net = gave - received
+        balances.forEach { b ->
+            val net = b.netBalance
             if (net > 0L) {
                 totalPabo += net
             } else if (net < 0L) {

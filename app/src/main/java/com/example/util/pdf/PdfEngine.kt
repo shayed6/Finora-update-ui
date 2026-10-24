@@ -11,6 +11,7 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.res.ResourcesCompat
 import com.example.R
+import com.example.data.preferences.OrganizationInfo
 import com.example.util.BengaliFormatter
 import java.io.File
 import java.io.FileOutputStream
@@ -143,34 +144,77 @@ class PdfEngine(
         subtitle: String? = null,
         dateText: String? = null,
         pageNumber: Int = 1,
-        totalPages: Int = 1
+        totalPages: Int = 1,
+        orgInfo: OrganizationInfo? = null
     ): Float {
         var y = margin
 
-        // Finora Emblem / Logo
-        if (logoBitmap != null) {
-            val logoRect = RectF(margin, y, margin + 40f, y + 40f)
-            canvas.drawBitmap(logoBitmap, null, logoRect, Paint().apply { isFilterBitmap = true })
-        }
+        val hasOrg = orgInfo != null && orgInfo.name.isNotBlank()
+        val headlineText = if (hasOrg) orgInfo!!.name.trim() else title
 
-        // Title with Noto Sans Bengali font
+        // Headline without Finora logo
         val titlePaint = Paint().apply {
             color = colorNavyDark
             textSize = 15f
             typeface = boldFont
             isAntiAlias = true
         }
-        canvas.drawText(title, margin + 48f, y + 16f, titlePaint)
+        canvas.drawText(headlineText, margin, y + 15f, titlePaint)
 
-        // Subtitle
-        if (subtitle != null) {
-            val subtitlePaint = Paint().apply {
+        // Contact info or subtitle
+        val contactLine = if (hasOrg) {
+            val parts = mutableListOf<String>()
+            if (orgInfo!!.address.isNotBlank()) parts.add(orgInfo.address.trim())
+            if (orgInfo.phone.isNotBlank()) parts.add("মোবাইল: ${orgInfo.phone.trim()}")
+            if (parts.isNotEmpty()) parts.joinToString(" • ") else null
+        } else null
+
+        if (contactLine != null) {
+            val contactPaint = Paint().apply {
                 color = colorGrayText
-                textSize = 8.5f
+                textSize = 8f
                 typeface = regularFont
                 isAntiAlias = true
             }
-            canvas.drawText(subtitle, margin + 48f, y + 28f, subtitlePaint)
+            canvas.drawText(contactLine.take(80), margin, y + 26f, contactPaint)
+
+            val reportTypePaint = Paint().apply {
+                color = colorBluePrimary
+                textSize = 9.5f
+                typeface = boldFont
+                isAntiAlias = true
+            }
+            val displayTitle = if (subtitle != null) "$title • $subtitle" else title
+            canvas.drawText(displayTitle.take(75), margin, y + 38f, reportTypePaint)
+        } else {
+            if (hasOrg) {
+                val reportTypePaint = Paint().apply {
+                    color = colorBluePrimary
+                    textSize = 9.5f
+                    typeface = boldFont
+                    isAntiAlias = true
+                }
+                canvas.drawText(title, margin, y + 27f, reportTypePaint)
+                if (subtitle != null) {
+                    val subtitlePaint = Paint().apply {
+                        color = colorGrayText
+                        textSize = 8.5f
+                        typeface = regularFont
+                        isAntiAlias = true
+                    }
+                    canvas.drawText(subtitle, margin, y + 38f, subtitlePaint)
+                }
+            } else {
+                if (subtitle != null) {
+                    val subtitlePaint = Paint().apply {
+                        color = colorGrayText
+                        textSize = 8.5f
+                        typeface = regularFont
+                        isAntiAlias = true
+                    }
+                    canvas.drawText(subtitle, margin, y + 28f, subtitlePaint)
+                }
+            }
         }
 
         // Top right metadata (Date and Page indicator)
@@ -187,7 +231,7 @@ class PdfEngine(
         }
         canvas.drawText("পৃষ্ঠা $pageNumber / $totalPages", margin + contentWidth, y + 26f, metaPaint)
 
-        y += 44f
+        y += 46f
 
         // Top Header Divider Line
         val linePaint = Paint().apply {
@@ -221,12 +265,8 @@ class PdfEngine(
             isAntiAlias = true
         }
 
-        val brandText = if (isEnglish) {
-            "Generated securely by Finora App • 100% On-Device Financial Manager"
-        } else {
-            "Finora অ্যাপ দ্বারা অন-ডিভাইস শতভাগ নিরাপদ ও নির্ভুলভাবে প্রস্তুতকৃত"
-        }
-        canvas.drawText(brandText, margin, y + 4f, footerTextPaint)
+        val disclaimer = "উক্ত হিসাব সাথে ফিনোরা কোন ভাবে সংযুক্ত নয়"
+        canvas.drawText(disclaimer, margin, y + 4f, footerTextPaint)
 
         val pageStr = if (isEnglish) {
             "Page $pageNumber of $totalPages"

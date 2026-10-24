@@ -33,11 +33,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.LoadState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -336,9 +339,23 @@ fun IncomeExpenseScreen(
                 onSelectCategory = { viewModel.setCategoryFilter(it) }
             )
 
-            // --- Virtualized Transaction List Grouped by Date (Newest first) ---
-            val displayItems = uiState.displayedTransactions
-            if (displayItems.isEmpty()) {
+            // --- Virtualized Transaction List with Paging 3 (Newest first) ---
+            val pagedItems = viewModel.pagedTransactions.collectAsLazyPagingItems()
+
+            if (pagedItems.loadState.refresh is LoadState.Loading && pagedItems.itemCount == 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(36.dp),
+                        color = PrimaryBlue,
+                        strokeWidth = 3.dp
+                    )
+                }
+            } else if (pagedItems.itemCount == 0 && pagedItems.loadState.refresh !is LoadState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -378,20 +395,6 @@ fun IncomeExpenseScreen(
                     }
                 }
             } else {
-                // Group by date (yyyy-MM-dd start of day)
-                val grouped = remember(displayItems) {
-                    displayItems.groupBy { item ->
-                        val cal = Calendar.getInstance().apply {
-                            timeInMillis = item.transaction.occurredAt
-                            set(Calendar.HOUR_OF_DAY, 0)
-                            set(Calendar.MINUTE, 0)
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }
-                        cal.timeInMillis
-                    }
-                }
-
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -399,32 +402,66 @@ fun IncomeExpenseScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    grouped.forEach { (dateTimestamp, itemsOnDate) ->
-                        // Date Header
-                        item(key = "header_$dateTimestamp") {
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = IncomeExpenseFormatter.formatDate(dateTimestamp, useBengaliDigits),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    items(
+                        count = pagedItems.itemCount,
+                        key = { index -> pagedItems.peek(index)?.transaction?.id ?: index }
+                    ) { index ->
+                        val item = pagedItems[index]
+                        if (item != null) {
+                            val showHeader = if (index == 0) {
+                                true
+                            } else {
+                                val prevItem = pagedItems.peek(index - 1)
+                                if (prevItem != null) {
+                                    !isSameDay(prevItem.transaction.occurredAt, item.transaction.occurredAt)
+                                } else {
+                                    false
+                                }
+                            }
+
+                            Column {
+                                if (showHeader) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = IncomeExpenseFormatter.formatDate(item.transaction.occurredAt, useBengaliDigits),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+
+                                TransactionRowItem(
+                                    item = item,
+                                    useBengaliDigits = useBengaliDigits,
+                                    onClick = { editingTransaction = item.transaction }
                                 )
                             }
                         }
+                    }
 
-                        items(itemsOnDate, key = { it.transaction.id }) { displayItem ->
-                            TransactionRowItem(
-                                item = displayItem,
-                                useBengaliDigits = useBengaliDigits,
-                                onClick = { editingTransaction = displayItem.transaction }
-                            )
+                    if (pagedItems.loadState.append is LoadState.Loading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = PrimaryBlue,
+                                    strokeWidth = 2.dp
+                                )
+                            }
                         }
                     }
                 }
@@ -887,4 +924,11 @@ private fun MonthPickerDialog(
             }
         }
     )
+}
+
+private fun isSameDay(t1: Long, t2: Long): Boolean {
+    val offset = java.util.TimeZone.getDefault().getOffset(t1)
+    val day1 = (t1 + offset) / 86_400_000L
+    val day2 = (t2 + offset) / 86_400_000L
+    return day1 == day2
 }

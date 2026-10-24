@@ -15,7 +15,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["holdingId"])]
+    indices = [
+        Index(value = ["holdingId"]),
+        Index(value = ["dateTimestamp"]),
+        Index(value = ["holdingId", "dateTimestamp"])
+    ]
 )
 data class DividendEntity(
     @PrimaryKey(autoGenerate = true)

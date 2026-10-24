@@ -15,7 +15,12 @@ enum class SavingsEntryType {
     indices = [
         Index(value = ["goal_id"]),
         Index(value = ["sector_id"]),
-        Index(value = ["entry_date"])
+        Index(value = ["entry_date"]),
+        Index(value = ["type"]),
+        Index(value = ["entry_date", "created_at"]),
+        Index(value = ["type", "entry_date"]),
+        Index(value = ["sector_id", "entry_date"]),
+        Index(value = ["goal_id", "entry_date", "created_at"])
     ]
 )
 data class SavingsEntryEntity(

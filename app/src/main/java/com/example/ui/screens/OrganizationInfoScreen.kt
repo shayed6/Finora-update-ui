@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,7 +65,6 @@ fun OrganizationInfoScreen(
     var orgName by rememberSaveable { mutableStateOf("") }
     var orgAddress by rememberSaveable { mutableStateOf("") }
     var orgPhone by rememberSaveable { mutableStateOf("") }
-    var invoicePrefix by rememberSaveable { mutableStateOf("INV-") }
     var isInitialized by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(savedInfo) {
@@ -75,7 +73,6 @@ fun OrganizationInfoScreen(
             orgName = info.name
             orgAddress = info.address
             orgPhone = info.phone
-            invoicePrefix = info.invoicePrefix.ifBlank { "INV-" }
             isInitialized = true
         }
     }
@@ -128,8 +125,7 @@ fun OrganizationInfoScreen(
                                 repo.saveOrganizationInfo(
                                     name = orgName,
                                     address = orgAddress,
-                                    phone = orgPhone,
-                                    invoicePrefix = invoicePrefix
+                                    phone = orgPhone
                                 )
                                 Toast.makeText(
                                     context,
@@ -233,31 +229,6 @@ fun OrganizationInfoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("input_org_phone"),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-
-            // 4. ইনভয়েস নম্বরের প্রিফিক্স (optional, max 8, default "INV-")
-            OutlinedTextField(
-                value = invoicePrefix,
-                onValueChange = { if (it.length <= 8) invoicePrefix = it },
-                label = { Text("ইনভয়েস নম্বরের প্রিফিক্স (ঐচ্ছিক)") },
-                placeholder = { Text("INV-") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Receipt,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("input_invoice_prefix"),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary
                 )
