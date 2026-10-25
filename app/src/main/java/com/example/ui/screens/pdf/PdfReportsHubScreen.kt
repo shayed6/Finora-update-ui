@@ -1,5 +1,7 @@
 package com.example.ui.screens.pdf
 
+import com.example.ads.AdManager
+import com.example.ads.PdfExportAdGate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -164,7 +166,10 @@ fun PdfReportsHubScreen(
                             }
                         },
                         onInvoiceClick = { invoice ->
-                            viewModel.generateInvoicePdf(invoice)
+                            val activity = PdfExportAdGate.findActivity(context)
+                            AdManager.onPdfExportRequested(activity) {
+                                viewModel.generateInvoicePdf(invoice)
+                            }
                         },
                         onEditInvoice = { invoice ->
                             invoiceToEdit = invoice
@@ -177,16 +182,28 @@ fun PdfReportsHubScreen(
                     1 -> GenerateReportsTabContent(
                         parties = allParties,
                         onGenerateIncomeExpense = { period, start, end ->
-                            viewModel.generateIncomeExpenseReport(period, start, end)
+                            val activity = PdfExportAdGate.findActivity(context)
+                            AdManager.onPdfExportRequested(activity) {
+                                viewModel.generateIncomeExpenseReport(period, start, end)
+                            }
                         },
                         onGenerateSavingsInvestment = {
-                            viewModel.generateSavingsInvestmentReport()
+                            val activity = PdfExportAdGate.findActivity(context)
+                            AdManager.onPdfExportRequested(activity) {
+                                viewModel.generateSavingsInvestmentReport()
+                            }
                         },
                         onGenerateDueReport = { kind ->
-                            viewModel.generateDueReport(kind)
+                            val activity = PdfExportAdGate.findActivity(context)
+                            AdManager.onPdfExportRequested(activity) {
+                                viewModel.generateDueReport(kind)
+                            }
                         },
                         onGeneratePartyStatement = { partyId ->
-                            viewModel.generatePartyStatement(partyId)
+                            val activity = PdfExportAdGate.findActivity(context)
+                            AdManager.onPdfExportRequested(activity) {
+                                viewModel.generatePartyStatement(partyId)
+                            }
                         }
                     )
                     2 -> ReportHistoryTabContent(
@@ -259,7 +276,10 @@ fun PdfReportsHubScreen(
             suggestedInvoiceNumber = suggestedInvoiceNumber,
             onDismiss = { showInvoiceDialog = false },
             onSaveInvoice = { invoice, items ->
-                viewModel.saveInvoice(invoice, items, generatePdfImmediately = true)
+                val activity = PdfExportAdGate.findActivity(context)
+                AdManager.onPdfExportRequested(activity) {
+                    viewModel.saveInvoice(invoice, items, generatePdfImmediately = true)
+                }
             }
         )
     }

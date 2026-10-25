@@ -15,6 +15,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -82,8 +83,13 @@ object AdManager {
      * Initializes Google UMP SDK and Google Mobile Ads SDK.
      */
     fun initialize(activity: Activity) {
+        val debugSettings = ConsentDebugSettings.Builder(activity)
+            .addTestDeviceHashedId(AdRequest.DEVICE_ID_EMULATOR)
+            .build()
+
         val params = ConsentRequestParameters.Builder()
             .setTagForUnderAgeOfConsent(false)
+            .setConsentDebugSettings(debugSettings)
             .build()
 
         val consentInformation = UserMessagingPlatform.getConsentInformation(activity)
@@ -584,5 +590,19 @@ object AdManager {
     @Synchronized
     fun resetManualRefreshGate() {
         manualRefreshTimestamps.clear()
+    }
+
+    fun getLoadedRewardedAd(): RewardedAd? = rewardedAd
+
+    fun clearRewardedAd() {
+        rewardedAd = null
+        _isRewardedReady.value = false
+    }
+
+    /**
+     * Delegated rewarded-ad gate for PDF export across all of "হিসাব পাতি".
+     */
+    fun onPdfExportRequested(activity: Activity?, onProceedWithExport: () -> Unit) {
+        PdfExportAdGate.onPdfExportRequested(activity, onProceedWithExport)
     }
 }

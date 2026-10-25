@@ -28,9 +28,13 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.ui.platform.LocalContext
+import com.example.ads.AdManager
+import com.example.ads.PdfExportAdGate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -83,6 +87,7 @@ fun LedgerPersonDetailScreen(
 ) {
     val partyFlow = remember(partyId) { viewModel.getParty(partyId) }
     val entriesFlow = remember(partyId) { viewModel.getPartyEntries(partyId) }
+    val context = LocalContext.current
 
     val party by partyFlow.collectAsState(initial = null)
     val entries by entriesFlow.collectAsState(initial = emptyList())
@@ -366,7 +371,23 @@ fun LedgerPersonDetailScreen(
                             }
                         }
 
-                        Row {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            IconButton(
+                                onClick = {
+                                    val activity = PdfExportAdGate.findActivity(context)
+                                    AdManager.onPdfExportRequested(activity) {
+                                        viewModel.exportPartyStatement(context, partyId, useBengaliDigits)
+                                    }
+                                },
+                                modifier = Modifier.size(34.dp).testTag("btn_export_pdf_person")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PictureAsPdf,
+                                    contentDescription = "PDF এক্সপোর্ট করুন",
+                                    tint = PrimaryBlue,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                             IconButton(
                                 onClick = { showEditPartyDialog = true },
                                 modifier = Modifier.size(34.dp).testTag("btn_edit_person")

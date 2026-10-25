@@ -386,6 +386,35 @@ class IncomeExpenseViewModel(
             }
         }
     }
+
+    // PDF Export with Rewarded Ad Gate
+    fun exportMonthlyPdf(context: android.content.Context, useBengaliDigits: Boolean = true) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val monthYear = _selectedMonthYear.value
+                val startTime = monthYear.toStartTimestamp()
+                val endTime = monthYear.toEndTimestamp()
+                val transactions = repository.getTransactionsInRange(startTime, endTime).kotlinx.coroutines.flow.first()
+                val sources = repository.allIncomeSources.kotlinx.coroutines.flow.first().associate { it.id to it.name }
+                val categories = repository.allExpenseCategories.kotlinx.coroutines.flow.first().associate { it.id to it.name }
+                val file = com.example.util.PdfReportGenerator.generateIncomeExpenseReport(
+                    context = context,
+                    transactions = transactions,
+                    sourcesMap = sources,
+                    categoriesMap = categories,
+                    filterTitle = "${monthYear.toDisplayBengali()} আয়-ব্যয় হিসাব",
+                    useBengaliDigits = useBengaliDigits
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "${monthYear.toDisplayBengali()} আয়-ব্যয় রিপোর্ট")
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 }
 
 private data class FilterTuple(

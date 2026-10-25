@@ -168,4 +168,50 @@ class LedgerViewModel @JvmOverloads constructor(
     // Party detail query
     fun getPartyEntries(partyId: Long) = repository.getEntriesForParty(partyId)
     fun getParty(partyId: Long) = repository.getParty(partyId)
+
+    // PDF Export with Rewarded Ad Gate
+    fun exportDueReport(context: android.content.Context, useBengaliDigits: Boolean = true) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val parties = repository.allParties.kotlinx.coroutines.flow.first()
+                val entries = repository.allEntries.kotlinx.coroutines.flow.first()
+                val file = com.example.util.PdfReportGenerator.generateDueReport(
+                    context = context,
+                    parties = parties,
+                    entries = entries,
+                    reportKind = "ALL",
+                    useBengaliDigits = useBengaliDigits
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "বাকির খাতা ও দেনা-পাওনা রিপোর্ট")
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun exportPartyStatement(context: android.content.Context, partyId: Long, useBengaliDigits: Boolean = true) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val party = repository.getParty(partyId).kotlinx.coroutines.flow.first() ?: return@launch
+                val entries = repository.getEntriesForParty(partyId).kotlinx.coroutines.flow.first()
+                val file = com.example.util.PdfReportGenerator.generatePartyStatementReport(
+                    context = context,
+                    party = party,
+                    entries = entries,
+                    useBengaliDigits = useBengaliDigits
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "${party.name} - খতিয়ান লেজার স্টেটমেন্ট")
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 }

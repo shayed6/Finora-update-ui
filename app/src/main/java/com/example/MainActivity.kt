@@ -34,17 +34,19 @@ import com.example.ui.theme.FinoraTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Startup optimization: Offload disk I/O to background dispatcher
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            try {
-                val jsCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/js")
-                val wasmCache = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache/wasm")
-                if (!jsCache.exists()) jsCache.mkdirs()
-                if (!wasmCache.exists()) wasmCache.mkdirs()
-            } catch (_: Exception) {
-            }
-        }
         FavoritesManager.init(this)
+        // Cleanup any corrupt/empty Chromium variations seeds created during emulator launch
+        try {
+            val webViewDir = java.io.File(applicationContext.dataDir, "app_webview")
+            if (webViewDir.exists()) {
+                val seed = java.io.File(webViewDir, "variations_seed")
+                if (seed.exists()) seed.delete()
+                val seedNew = java.io.File(webViewDir, "variations_seed_new")
+                if (seedNew.exists()) seedNew.delete()
+            }
+        } catch (_: Throwable) {
+        }
+
         // Startup optimization: Defer AdManager & UMP SDK initialization past initial render
         window.decorView.post {
             AdManager.initialize(this@MainActivity)

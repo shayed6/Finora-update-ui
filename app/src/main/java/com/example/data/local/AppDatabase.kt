@@ -294,8 +294,12 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `file_uri` TEXT NOT NULL DEFAULT ''")
-                db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `timestamp` INTEGER NOT NULL DEFAULT 0")
+                try {
+                    db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `file_uri` TEXT NOT NULL DEFAULT ''")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE `pdf_reports` ADD COLUMN `timestamp` INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_pdf_reports_timestamp` ON `pdf_reports` (`timestamp`)")
             }
         }

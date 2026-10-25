@@ -324,4 +324,29 @@ class SavingsGoalsViewModel @JvmOverloads constructor(
             }
         }
     }
+
+    // PDF Export with Rewarded Ad Gate
+    fun exportSavingsInvestmentPdf(context: android.content.Context, useBengaliDigits: Boolean = true) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val goals = repository.allGoals.kotlinx.coroutines.flow.first()
+                val entries = repository.allEntries.kotlinx.coroutines.flow.first()
+                val file = com.example.util.PdfReportGenerator.generateSavingsInvestmentReport(
+                    context = context,
+                    goals = goals,
+                    entries = entries,
+                    holdings = emptyList(),
+                    portfolioSummary = null,
+                    useBengaliDigits = useBengaliDigits
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "সঞ্চয় ও বিনিয়োগ রিপোর্ট")
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 }

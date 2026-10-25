@@ -53,7 +53,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.platform.LocalContext
+import com.example.ads.AdManager
+import com.example.ads.PdfExportAdGate
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
@@ -66,6 +71,7 @@ fun LedgerListScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     var showAddPartyDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showAddPartyDialog) {
@@ -204,6 +210,34 @@ fun LedgerListScreen(
                             )
                         }
                     }
+                }
+
+                // PDF Export Button
+                Button(
+                    onClick = {
+                        val activity = PdfExportAdGate.findActivity(context)
+                        AdManager.onPdfExportRequested(activity) {
+                            viewModel.exportDueReport(context, useBengaliDigits)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp)
+                        .testTag("btn_export_pdf_ledger")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PictureAsPdf,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "PDF এক্সপোর্ট করুন (বাকির খাতা)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.5.sp
+                    )
                 }
 
                 // Search Bar
