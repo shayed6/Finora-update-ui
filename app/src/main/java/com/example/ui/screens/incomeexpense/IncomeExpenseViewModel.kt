@@ -15,6 +15,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +23,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class IncomeExpenseUiState(
     val activeTab: CashTransactionType = CashTransactionType.INCOME,
@@ -389,27 +392,28 @@ class IncomeExpenseViewModel(
 
     // PDF Export with Rewarded Ad Gate
     fun exportMonthlyPdf(context: android.content.Context, useBengaliDigits: Boolean = true) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val monthYear = _selectedMonthYear.value
                 val startTime = monthYear.toStartTimestamp()
                 val endTime = monthYear.toEndTimestamp()
-                val transactions = repository.getTransactionsInRange(startTime, endTime).kotlinx.coroutines.flow.first()
-                val sources = repository.allIncomeSources.kotlinx.coroutines.flow.first().associate { it.id to it.name }
-                val categories = repository.allExpenseCategories.kotlinx.coroutines.flow.first().associate { it.id to it.name }
+                val transactions = repository.getTransactionsInRange(startTime, endTime).first()
+                val sources = repository.allIncomeSources.first().associate { it.id to it.name }
+                val categories = repository.allExpenseCategories.first().associate { it.id to it.name }
+                val monthLabel = IncomeExpenseFormatter.formatMonthYear(monthYear, useBengaliDigits)
                 val file = com.example.util.PdfReportGenerator.generateIncomeExpenseReport(
                     context = context,
                     transactions = transactions,
                     sourcesMap = sources,
                     categoriesMap = categories,
-                    filterTitle = "${monthYear.toDisplayBengali()} আয়-ব্যয় হিসাব",
+                    filterTitle = "$monthLabel আয়-ব্যয় হিসাব",
                     useBengaliDigits = useBengaliDigits
                 )
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    com.example.util.PdfReportGenerator.sharePdf(context, file, "${monthYear.toDisplayBengali()} আয়-ব্যয় রিপোর্ট")
+                withContext(Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "$monthLabel আয়-ব্যয় রিপোর্ট")
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }

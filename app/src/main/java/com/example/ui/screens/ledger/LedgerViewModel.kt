@@ -7,13 +7,16 @@ import com.example.data.local.entity.LedgerEntryEntity
 import com.example.data.local.entity.LedgerEntryType
 import com.example.data.local.entity.LedgerPartyEntity
 import com.example.data.repository.LedgerRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class LedgerListUiState(
     val parties: List<PartyWithBalance> = emptyList(),
@@ -171,10 +174,10 @@ class LedgerViewModel @JvmOverloads constructor(
 
     // PDF Export with Rewarded Ad Gate
     fun exportDueReport(context: android.content.Context, useBengaliDigits: Boolean = true) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val parties = repository.allParties.kotlinx.coroutines.flow.first()
-                val entries = repository.allEntries.kotlinx.coroutines.flow.first()
+                val parties = repository.allParties.first()
+                val entries = repository.allEntries.first()
                 val file = com.example.util.PdfReportGenerator.generateDueReport(
                     context = context,
                     parties = parties,
@@ -182,11 +185,11 @@ class LedgerViewModel @JvmOverloads constructor(
                     reportKind = "ALL",
                     useBengaliDigits = useBengaliDigits
                 )
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     com.example.util.PdfReportGenerator.sharePdf(context, file, "বাকির খাতা ও দেনা-পাওনা রিপোর্ট")
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
@@ -194,21 +197,21 @@ class LedgerViewModel @JvmOverloads constructor(
     }
 
     fun exportPartyStatement(context: android.content.Context, partyId: Long, useBengaliDigits: Boolean = true) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val party = repository.getParty(partyId).kotlinx.coroutines.flow.first() ?: return@launch
-                val entries = repository.getEntriesForParty(partyId).kotlinx.coroutines.flow.first()
+                val party = repository.getParty(partyId).first() ?: return@launch
+                val entries = repository.getEntriesForParty(partyId).first()
                 val file = com.example.util.PdfReportGenerator.generatePartyStatementReport(
                     context = context,
                     party = party,
                     entries = entries,
                     useBengaliDigits = useBengaliDigits
                 )
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     com.example.util.PdfReportGenerator.sharePdf(context, file, "${party.name} - খতিয়ান লেজার স্টেটমেন্ট")
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }

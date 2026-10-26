@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.IncomeSourceEntity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AccountsSummaryViewModel(
     application: Application,
@@ -161,6 +163,33 @@ class AccountsSummaryViewModel(
             repository.clearCache()
             refreshData(_currentPeriod.value, allIncomeSources.value, _sourceCustomPeriods.value)
             onComplete()
+        }
+    }
+
+    // PDF Export with Rewarded Ad Gate
+    fun exportSummaryPdf(context: android.content.Context, useBengaliDigits: Boolean = true) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val period = _currentPeriod.value
+                val transactions = repository.getTransactionsInRange(period.startTimestamp, period.endTimestamp)
+                val sources = repository.getAllIncomeSourcesList().associate { it.id to it.name }
+                val categories = repository.getAllExpenseCategoriesList().associate { it.id to it.name }
+                val file = com.example.util.PdfReportGenerator.generateIncomeExpenseReport(
+                    context = context,
+                    transactions = transactions,
+                    sourcesMap = sources,
+                    categoriesMap = categories,
+                    filterTitle = "হিসাব নিকাশ সারসংক্ষেপ (${period.label})",
+                    useBengaliDigits = useBengaliDigits
+                )
+                withContext(Dispatchers.Main) {
+                    com.example.util.PdfReportGenerator.sharePdf(context, file, "হিসাব নিকাশ সারসংক্ষেপ রিপোর্ট (${period.label})")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "PDF তৈরিতে সমস্যা: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }

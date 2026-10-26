@@ -23,8 +23,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.ui.platform.LocalContext
+import com.example.ads.AdManager
+import com.example.ads.PdfExportAdGate
+import com.example.ui.theme.PrimaryBlue
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -63,6 +68,7 @@ fun AccountsSummaryScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     var showMainPeriodDialog by remember { mutableStateOf(false) }
     var customSourceIdForDialog by remember { mutableStateOf<Long?>(null) }
@@ -126,6 +132,34 @@ fun AccountsSummaryScreen(
                 onNextClick = { viewModel.stepMainPeriod(true) },
                 onLabelClick = { showMainPeriodDialog = true }
             )
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(
+                onClick = {
+                    val activity = PdfExportAdGate.findActivity(context)
+                    AdManager.onPdfExportRequested(activity) {
+                        viewModel.exportSummaryPdf(context, useBengaliDigits)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .testTag("btn_export_pdf_accounts_summary")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PictureAsPdf,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "PDF এক্সপোর্ট করুন (হিসাব নিকাশ)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp,
+                    color = Color.White
+                )
+            }
         }
 
         // 2. Four Summary Cards

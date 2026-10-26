@@ -13,6 +13,7 @@ import com.example.data.preferences.dataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -175,5 +176,20 @@ class AccountsSummaryRepository(
             totalPaboPaisa = totalPabo,
             totalDeboPaisa = totalDebo
         )
+    }
+
+    suspend fun getTransactionsInRange(
+        startMs: Long,
+        endMs: Long
+    ): List<com.example.data.local.entity.IncomeExpenseTransactionEntity> = withContext(Dispatchers.IO) {
+        incomeExpenseDao.getTransactionsInRange(startMs, endMs).first()
+    }
+
+    suspend fun getAllIncomeSourcesList() = withContext(Dispatchers.IO) {
+        incomeExpenseDao.getAllIncomeSourcesList()
+    }
+
+    suspend fun getAllExpenseCategoriesList() = withContext(Dispatchers.IO) {
+        incomeExpenseDao.getAllExpenseCategoriesList()
     }
 }
