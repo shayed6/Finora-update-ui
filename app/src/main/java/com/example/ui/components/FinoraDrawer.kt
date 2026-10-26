@@ -228,26 +228,6 @@ fun FinoraDrawerContent(
                     .testTag("drawer_item_portfolio")
             )
 
-            // Hisab Pati (হিসাব পাতি - Notebook icon) right after Portfolio
-            NavigationDrawerItem(
-                icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "হিসাব পাতি Icon") },
-                label = {
-                    Text(
-                        text = stringResource(R.string.nav_hisab_pati),
-                        fontWeight = if (currentDestination == DrawerDestination.HISAB_PATI) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                selected = currentDestination == DrawerDestination.HISAB_PATI,
-                onClick = {
-                    onNavigate(DrawerDestination.HISAB_PATI)
-                    onCloseDrawer()
-                },
-                colors = drawerItemColors,
-                modifier = Modifier
-                    .padding(NavigationDrawerItemDefaults.ItemPadding)
-                    .testTag("drawer_item_hisab_pati")
-            )
-
             // F-Coin Rewards (শীঘ্রই আসছে)
             NavigationDrawerItem(
                 icon = {

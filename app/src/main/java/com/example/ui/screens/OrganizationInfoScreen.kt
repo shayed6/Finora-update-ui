@@ -174,7 +174,7 @@ fun OrganizationInfoScreen(
                 },
                 supportingText = {
                     Text(
-                        text = "পরে PDF রিপোর্ট ও ইনভয়েসে এই নামটি ব্যবহার হবে।",
+                        text = "পরে PDF রিপোর্টে এই নামটি ব্যবহার হবে।",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )

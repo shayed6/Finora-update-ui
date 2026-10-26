@@ -61,7 +61,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,14 +73,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.data.local.entity.InvoiceStatus
-import com.example.data.local.entity.InvoiceWithItems
 import com.example.data.local.entity.LedgerPartyEntity
 import com.example.data.local.entity.PdfReportEntity
 import com.example.ui.theme.GrowthGreen
 import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
-import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -91,26 +87,17 @@ fun PdfReportsHubScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("ইনভয়েস (Invoice)", "রিপোর্ট তৈরি", "রিপোর্ট হিস্ট্রি")
+    val tabTitles = listOf("রিপোর্ট তৈরি", "রিপোর্ট হিস্ট্রি")
 
-    val filteredInvoices by viewModel.filteredInvoices.collectAsState()
     val allReports by viewModel.allReportHistory.collectAsState()
-    val orgInfo by viewModel.orgInfo.collectAsState()
     val allParties by viewModel.allParties.collectAsState()
 
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val statusFilter by viewModel.statusFilter.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
     val userMessage by viewModel.userMessage.collectAsState()
     val activePreview by viewModel.activePreview.collectAsState()
-
-    var showInvoiceDialog by remember { mutableStateOf(false) }
-    var invoiceToEdit by remember { mutableStateOf<InvoiceWithItems?>(null) }
-    var suggestedInvoiceNumber by remember { mutableStateOf("INV-0001") }
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -152,34 +139,7 @@ fun PdfReportsHubScreen(
                 }
 
                 when (selectedTabIndex) {
-                    0 -> InvoicesTabContent(
-                        invoices = filteredInvoices,
-                        searchQuery = searchQuery,
-                        onSearchQueryChanged = { viewModel.searchQuery.value = it },
-                        statusFilter = statusFilter,
-                        onStatusFilterChanged = { viewModel.statusFilter.value = it },
-                        onCreateInvoiceClick = {
-                            scope.launch {
-                                suggestedInvoiceNumber = viewModel.getNextInvoiceNumber()
-                                invoiceToEdit = null
-                                showInvoiceDialog = true
-                            }
-                        },
-                        onInvoiceClick = { invoice ->
-                            val activity = PdfExportAdGate.findActivity(context)
-                            AdManager.onPdfExportRequested(activity) {
-                                viewModel.generateInvoicePdf(invoice)
-                            }
-                        },
-                        onEditInvoice = { invoice ->
-                            invoiceToEdit = invoice
-                            showInvoiceDialog = true
-                        },
-                        onDeleteInvoice = { invoiceId ->
-                            viewModel.deleteInvoice(invoiceId)
-                        }
-                    )
-                    1 -> GenerateReportsTabContent(
+                    0 -> GenerateReportsTabContent(
                         parties = allParties,
                         onGenerateIncomeExpense = { period, start, end ->
                             val activity = PdfExportAdGate.findActivity(context)
@@ -206,7 +166,7 @@ fun PdfReportsHubScreen(
                             }
                         }
                     )
-                    2 -> ReportHistoryTabContent(
+                    1 -> ReportHistoryTabContent(
                         reports = allReports,
                         onOpenReport = { report ->
                             val file = File(report.filePath)
@@ -265,258 +225,6 @@ fun PdfReportsHubScreen(
             onPrint = { viewModel.printActivePdf(context) },
             onSaveToUri = { uri -> viewModel.saveActivePdfToUri(context, uri) }
         )
-    }
-
-    // Invoice Creator Dialog
-    if (showInvoiceDialog) {
-        CreateEditInvoiceDialog(
-            existingInvoice = invoiceToEdit,
-            orgInfo = orgInfo,
-            existingParties = allParties,
-            suggestedInvoiceNumber = suggestedInvoiceNumber,
-            onDismiss = { showInvoiceDialog = false },
-            onSaveInvoice = { invoice, items ->
-                val activity = PdfExportAdGate.findActivity(context)
-                AdManager.onPdfExportRequested(activity) {
-                    viewModel.saveInvoice(invoice, items, generatePdfImmediately = true)
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun InvoicesTabContent(
-    invoices: List<InvoiceWithItems>,
-    searchQuery: String,
-    onSearchQueryChanged: (String) -> Unit,
-    statusFilter: String,
-    onStatusFilterChanged: (String) -> Unit,
-    onCreateInvoiceClick: () -> Unit,
-    onInvoiceClick: (InvoiceWithItems) -> Unit,
-    onEditInvoice: (InvoiceWithItems) -> Unit,
-    onDeleteInvoice: (Long) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Create Invoice Hero Button
-        Button(
-            onClick = onCreateInvoiceClick,
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .testTag("btn_create_new_invoice")
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "+ নতুন ইনভয়েস তৈরি করুন (Create Invoice)",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp
-            )
-        }
-
-        // Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChanged,
-            placeholder = { Text("ইনভয়েস নং বা গ্রাহকের নাম দিয়ে খুঁজুন...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = { onSearchQueryChanged("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                    }
-                }
-            },
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("input_search_invoices")
-        )
-
-        // Status Filter Chips
-        val statusList = listOf(
-            Pair("ALL", "সকল"),
-            Pair(InvoiceStatus.PAID.name, "পরিশোধিত"),
-            Pair(InvoiceStatus.PARTIAL.name, "আংশিক বাকি"),
-            Pair(InvoiceStatus.DUE.name, "বকেয়া")
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(statusList) { (key, label) ->
-                FilterChip(
-                    selected = statusFilter == key,
-                    onClick = { onStatusFilterChanged(key) },
-                    label = { Text(label) }
-                )
-            }
-        }
-
-        if (invoices.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ReceiptLong,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(56.dp)
-                    )
-                    Text(
-                        text = "কোন ইনভয়েস পাওয়া যায়নি",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "উপরের বাটনে ক্লিক করে নতুন ইনভয়েস তৈরি করুন।",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(invoices, key = { it.invoice.id }) { item ->
-                    InvoiceListItemCard(
-                        invoiceWithItems = item,
-                        onClick = { onInvoiceClick(item) },
-                        onEdit = { onEditInvoice(item) },
-                        onDelete = { onDeleteInvoice(item.invoice.id) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InvoiceListItemCard(
-    invoiceWithItems: InvoiceWithItems,
-    onClick: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val invoice = invoiceWithItems.invoice
-    val (statusLabel, statusBg, statusColor) = when (invoice.status) {
-        InvoiceStatus.PAID.name -> Triple("পরিশোধিত", Color(0xFFF0FDF4), GrowthGreen)
-        InvoiceStatus.PARTIAL.name -> Triple("আংশিক", Color(0xFFFFFBEB), Color(0xFFD97706))
-        else -> Triple("বকেয়া", Color(0xFFFEF2F2), Color(0xFFDC2626))
-    }
-
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("card_invoice_${invoice.id}")
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = invoice.invoiceNumber,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = PrimaryBlue
-                )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(statusBg)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = statusLabel,
-                        color = statusColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-
-            Text(
-                text = "গ্রাহক: ${invoice.customerName}" + (invoice.customerPhone?.let { " ($it)" } ?: ""),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.5.sp
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "তারিখ: ${BengaliFormatter.formatBengaliDate(invoice.invoiceDate)}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${invoiceWithItems.items.size}টি আইটেম",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "মোট: " + BengaliFormatter.formatTaka(invoice.grandTotalPaisa / 100.0),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    if (invoice.dueAmountPaisa > 0) {
-                        Text(
-                            text = "বাকি: " + BengaliFormatter.formatTaka(invoice.dueAmountPaisa / 100.0),
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onClick) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF Preview", tint = PrimaryBlue)
-                    }
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Description, contentDescription = "Edit invoice")
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete invoice", tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -777,7 +485,7 @@ private fun ReportHistoryTabContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "নতুন রিপোর্ট বা ইনভয়েস তৈরি করলে তা এখানে সংরক্ষিত থাকবে।",
+                    text = "নতুন রিপোর্ট তৈরি করলে তা এখানে সংরক্ষিত থাকবে।",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )

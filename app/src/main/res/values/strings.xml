@@ -13,7 +13,7 @@
     <string name="nav_work_type">কাজের ধরন</string>
     <string name="nav_org_info">প্রতিষ্ঠানের তথ্য</string>
     <string name="nav_savings_goals">সঞ্চয় লক্ষ্য</string>
-    <string name="nav_pdf_reports">পিডিএফ ও ইনভয়েস</string>
+    <string name="nav_pdf_reports">পিডিএফ রিপোর্ট</string>
     <string name="nav_fcoin">F-Coin (শীঘ্রই আসছে)</string>
     <string name="nav_learn_stock">শেয়ার বাজার শিখুন</string>
     <string name="nav_settings">সেটিংস</string>
@@ -25,8 +25,8 @@
     <string name="drawer_section_main">প্রধান মেনু</string>
     <string name="drawer_section_more">অন্যান্য সেবা</string>
 
-    <string name="title_pdf_reports">পিডিএফ রিপোর্ট ও ইনভয়েস</string>
-    <string name="subtitle_pdf_reports">ইনভয়েস তৈরি, আয়-ব্যয় ও বাকির প্রিন্ট-রেডি PDF</string>
+    <string name="title_pdf_reports">পিডিএফ রিপোর্ট</string>
+    <string name="subtitle_pdf_reports">আয়-ব্যয়, সঞ্চয় ও বাকির প্রিন্ট-রেডি PDF</string>
 
     <!-- Screen Titles & Subtitles -->
     <string name="title_home">Finora</string>
@@ -47,7 +47,7 @@
     <string name="title_work_type">কাজের ধরন</string>
     <string name="subtitle_work_type">পেশা ও ব্যবসার ধরন নির্ধারণ</string>
     <string name="title_org_info">প্রতিষ্ঠানের তথ্য</string>
-    <string name="subtitle_org_info">ব্যবসায়িক পরিচিতি ও ইনভয়েস প্রিফিক্স</string>
+    <string name="subtitle_org_info">ব্যবসায়িক পরিচিতি ও রিপোর্ট তথ্য</string>
     <string name="title_cycle_settings">চক্র নির্ধারণ</string>
     <string name="subtitle_cycle_settings">আয়ের উৎসের হিসাব চক্র নির্ধারণ</string>
     <string name="title_savings_goals">সঞ্চয় লক্ষ্য (Savings Goals)</string>

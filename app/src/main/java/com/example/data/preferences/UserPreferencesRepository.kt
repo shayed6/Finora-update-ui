@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import com.example.model.HomeSection
 import java.io.IOException
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "finora_user_preferences")
@@ -32,6 +33,7 @@ class UserPreferencesRepository private constructor(private val context: Context
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val USE_BENGALI_DIGITS_KEY = booleanPreferencesKey("use_bengali_digits")
         private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
+        private val HOME_SECTION_ORDER_KEY = stringPreferencesKey("home_section_order")
 
         @Volatile
         private var INSTANCE: UserPreferencesRepository? = null
@@ -110,6 +112,31 @@ class UserPreferencesRepository private constructor(private val context: Context
     suspend fun setAppLanguage(language: AppLanguage) {
         context.dataStore.edit { preferences ->
             preferences[APP_LANGUAGE_KEY] = language.name
+        }
+    }
+
+    val homeSectionOrder: Flow<List<HomeSection>> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            val orderString = preferences[HOME_SECTION_ORDER_KEY]
+            HomeSection.parseOrder(orderString)
+        }
+
+    suspend fun setHomeSectionOrder(sections: List<HomeSection>) {
+        context.dataStore.edit { preferences ->
+            preferences[HOME_SECTION_ORDER_KEY] = HomeSection.serialize(sections)
+        }
+    }
+
+    suspend fun resetHomeSectionOrder() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(HOME_SECTION_ORDER_KEY)
         }
     }
 }

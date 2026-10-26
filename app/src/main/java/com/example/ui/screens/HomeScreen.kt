@@ -28,7 +28,9 @@ import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.outlined.StarBorder
+import com.example.model.HomeSection
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -107,17 +109,13 @@ fun HomeScreen(
     onNavigateToIncomeExpense: () -> Unit = onHisabPatiClick,
     onNavigateToSummary: () -> Unit = onHisabPatiClick,
     useBengaliDigits: Boolean = true,
+    sectionOrder: List<HomeSection> = HomeSection.DEFAULT_ORDER,
+    onOpenReorderDialog: (() -> Unit)? = null,
     portfolioViewModel: PortfolioViewModel = viewModel(),
     accountsSummaryViewModel: AccountsSummaryViewModel = viewModel(),
     incomeExpenseViewModel: IncomeExpenseViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val categories = remember { CalculatorCategory.values().toList() }
-    val searchResults = remember(searchQuery) {
-        if (searchQuery.isNotBlank()) CalculatorRepository.search(searchQuery) else emptyList()
-    }
-
     val portfolioSummary by portfolioViewModel.summary.collectAsState()
     val summaryUiState by accountsSummaryViewModel.uiState.collectAsState()
     val incomeExpenseUiState by incomeExpenseViewModel.uiState.collectAsState()
@@ -154,207 +152,194 @@ fun HomeScreen(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 1. Portfolio Summary Widget (Current Investment)
-        item(key = "portfolio_summary") {
-            CurrentInvestmentWidget(
-                summary = portfolioSummary,
-                useBengaliDigits = useBengaliDigits,
-                onClick = onPortfolioClick
-            )
-        }
-
-        // 2. Financial Overview Card (Mini Chart & Total Balance Indicator just below Portfolio)
-        item(key = "financial_overview_card") {
-            HomeFinancialOverviewCard(
-                summary = summaryUiState.summary,
-                periodLabel = summaryUiState.period.label,
-                useBengaliDigits = useBengaliDigits,
-                isEnglish = isEnglish,
-                onViewDetailsClick = onNavigateToSummary
-            )
-        }
-
-        // 3. Quick Actions Row (Directly above search bar: ব্যয় যোগ, আয় যোগ, হিসাব পাতি)
-        item(key = "quick_actions_row") {
-            HomeQuickActionsRow(
-                isEnglish = isEnglish,
-                onAddExpenseClick = { showAddExpenseDialog = true },
-                onAddIncomeClick = { showAddIncomeDialog = true },
-                onOpenHisabClick = onHisabPatiClick
-            )
-        }
-
-        // 4. Search Bar
-        item(key = "search_field") {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text(
-                        text = if (isEnglish) "Search calculators (e.g. P/E, SIP, EMI)..." else "যেকোনো ক্যালকুলেটর খুঁজুন (যেমন: P/E, SIP, লাভ/ক্ষতি)",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = PrimaryBlue
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear Search",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+        // Render all sections dynamically according to user's custom sectionOrder
+        sectionOrder.forEach { section ->
+                when (section) {
+                    HomeSection.PORTFOLIO_SUMMARY -> {
+                        item(key = "portfolio_summary") {
+                            CurrentInvestmentWidget(
+                                summary = portfolioSummary,
+                                useBengaliDigits = useBengaliDigits,
+                                onClick = onPortfolioClick
                             )
                         }
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_search_field"),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryBlue,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
 
-        if (searchQuery.isNotBlank()) {
-            // Search Results Section
-            item(key = "search_header") {
-                Text(
-                    text = if (isEnglish) "Search Results (${searchResults.size})" else "অনুসন্ধানের ফলাফল (${BengaliFormatter.toBengaliDigits(searchResults.size.toString())} টি)",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                )
-            }
+                    HomeSection.FINANCIAL_OVERVIEW -> {
+                        item(key = "financial_overview_card") {
+                            HomeFinancialOverviewCard(
+                                summary = summaryUiState.summary,
+                                periodLabel = summaryUiState.period.label,
+                                useBengaliDigits = useBengaliDigits,
+                                isEnglish = isEnglish,
+                                onViewDetailsClick = onNavigateToSummary
+                            )
+                        }
+                    }
 
-            if (searchResults.isEmpty()) {
-                item(key = "search_empty") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 36.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (isEnglish) "No calculators found.\nTry searching with alternative keywords." else "কোনো ক্যালকুলেটর খুঁজে পাওয়া যায়নি।\nবানান বা ইংরেজিতে অনুসন্ধান করে দেখুন।",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
+                    HomeSection.QUICK_ACTIONS -> {
+                        item(key = "quick_actions_row") {
+                            HomeQuickActionsRow(
+                                isEnglish = isEnglish,
+                                onAddExpenseClick = { showAddExpenseDialog = true },
+                                onAddIncomeClick = { showAddIncomeDialog = true },
+                                onOpenHisabClick = onHisabPatiClick
+                            )
+                        }
+                    }
+
+
+                    HomeSection.FAVORITE_CALCULATORS -> {
+                        item(key = "favorite_calculators") {
+                            FavoriteCalculatorsSection(
+                                favoriteCalculators = favoriteCalculators,
+                                currentSlots = favoriteCalculators.size,
+                                maxSlots = maxSlots,
+                                onCalculatorClick = onCalculatorClick,
+                                onToggleFavorite = handleToggleFavorite,
+                                onUnlockSlotsClick = { showUnlockSlotsDialog = true },
+                                useBengaliDigits = useBengaliDigits
+                            )
+                        }
+                    }
+
+                    HomeSection.PRIMARY_NAV_CARDS -> {
+                        item(key = "primary_nav_cards") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("home_top_two_cards"),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Card 1: ক্যালকুলেটর
+                                HomePrimaryNavCard(
+                                    title = "ক্যালকুলেটর",
+                                    subtitle = "৩৭টি স্টক ও ব্যাংকিং ক্যালকুলেটর",
+                                    icon = Icons.Default.Calculate,
+                                    accentColor = PrimaryBlue,
+                                    onClick = onCalculatorsClick,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("home_card_calculators")
+                                )
+
+                                // Card 2: হিসাব পাতি
+                                HomePrimaryNavCard(
+                                    title = "হিসাব পাতি",
+                                    subtitle = "খাতা, আয়-ব্যয় ও সঞ্চয় হিসাব",
+                                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                                    accentColor = GrowthGreen,
+                                    onClick = onHisabPatiClick,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("home_card_hisab_pati")
+                                )
+                            }
+                        }
+                    }
+
+                    HomeSection.RECENT_TRANSACTIONS -> {
+                        item(key = "recent_transactions_card") {
+                            HomeRecentTransactionsCard(
+                                transactions = recentTransactions,
+                                useBengaliDigits = useBengaliDigits,
+                                isEnglish = isEnglish,
+                                onViewAllClick = onNavigateToIncomeExpense,
+                                onAddExpenseClick = { showAddExpenseDialog = true },
+                                onAddIncomeClick = { showAddIncomeDialog = true }
+                            )
+                        }
+                    }
+
+                    HomeSection.PRIVACY_INDICATOR -> {
+                        item(key = "privacy_indicator_footer") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp, bottom = 4.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = GrowthGreen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = if (isEnglish)
+                                        "All calculations run locally on your device. No financial data is sent to external servers."
+                                    else
+                                        "সব হিসাব সম্পূর্ণ আপনার ডিভাইসে ঘটে। কোনো আর্থিক তথ্য সংরক্ষিত বা প্রেরিত হয় না।",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
                     }
                 }
-            } else {
-                items(searchResults, key = { it.id }) { calc ->
-                    CalculatorListItem(
-                        calculator = calc,
-                        onClick = { onCalculatorClick(calc) },
-                        isFavorite = favoriteIds.contains(calc.id),
-                        onToggleFavorite = { handleToggleFavorite(calc.id) }
-                    )
-                }
-            }
-        } else {
-            // 5. Favorite Calculators Section (above Calculator and Hisab Pati)
-            item(key = "favorite_calculators") {
-                FavoriteCalculatorsSection(
-                    favoriteCalculators = favoriteCalculators,
-                    currentSlots = favoriteCalculators.size,
-                    maxSlots = maxSlots,
-                    onCalculatorClick = onCalculatorClick,
-                    onToggleFavorite = handleToggleFavorite,
-                    onUnlockSlotsClick = { showUnlockSlotsDialog = true },
-                    useBengaliDigits = useBengaliDigits
-                )
             }
 
-            // 4. Two large navigation cards: "ক্যালকুলেটর" & "হিসাব পাতি"
-            item(key = "primary_nav_cards") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("home_top_two_cards"),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Card 1: ক্যালকুলেটর
-                    HomePrimaryNavCard(
-                        title = "ক্যালকুলেটর",
-                        subtitle = "৩৭টি স্টক ও ব্যাংকিং ক্যালকুলেটর",
-                        icon = Icons.Default.Calculate,
-                        accentColor = PrimaryBlue,
-                        onClick = onCalculatorsClick,
+            // Customize Sections Button at the end of homepage
+            if (onOpenReorderDialog != null) {
+                item(key = "customize_home_sections_button") {
+                    Card(
+                        onClick = onOpenReorderDialog,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
-                            .weight(1f)
-                            .testTag("home_card_calculators")
-                    )
-
-                    // Card 2: হিসাব পাতি
-                    HomePrimaryNavCard(
-                        title = "হিসাব পাতি",
-                        subtitle = "খাতা, আয়-ব্যয় ও সঞ্চয় হিসাব",
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        accentColor = GrowthGreen,
-                        onClick = onHisabPatiClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("home_card_hisab_pati")
-                    )
-                }
-            }
-
-            // 5. Recent Transactions List Component (Below Calculator Categories and Hisab Pati)
-            item(key = "recent_transactions_card") {
-                HomeRecentTransactionsCard(
-                    transactions = recentTransactions,
-                    useBengaliDigits = useBengaliDigits,
-                    isEnglish = isEnglish,
-                    onViewAllClick = onNavigateToIncomeExpense,
-                    onAddExpenseClick = { showAddExpenseDialog = true },
-                    onAddIncomeClick = { showAddIncomeDialog = true }
-                )
-            }
-
-            // On-device privacy indicator footer
-            item(key = "privacy_indicator_footer") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 4.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = null,
-                        tint = GrowthGreen,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = if (isEnglish) "All calculations run locally on your device. No financial data is sent to external servers." else "সব হিসাব সম্পূর্ণ আপনার ডিভাইসে ঘটে। কোনো আর্থিক তথ্য সংরক্ষিত বা প্রেরিত হয় না।",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
+                            .fillMaxWidth()
+                            .testTag("btn_customize_home_sections")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapVert,
+                                    contentDescription = null,
+                                    tint = PrimaryBlue,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = if (isEnglish) "Customize Homepage Sections" else "হোমপেজ সেকশন সাজান",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp
+                                    )
+                                    Text(
+                                        text = if (isEnglish)
+                                            "Move sections up or down as you like"
+                                        else
+                                            "নিজের ইচ্ছামত সেকশনগুলো উপর-নিচে মুভ করুন",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
 
     if (showUnlockSlotsDialog) {
         UnlockFavoriteSlotsDialog(

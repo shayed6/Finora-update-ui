@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.res.stringResource
@@ -46,8 +47,10 @@ import com.example.data.preferences.AppThemeMode
 import com.example.data.preferences.UserPreferencesRepository
 import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
+import com.example.model.HomeSection
 import com.example.ads.AdManager
 import com.example.ui.components.AdMobBannerSlot
+import com.example.ui.components.CustomizeHomeSectionsDialog
 import com.example.ui.components.DrawerDestination
 import com.example.ui.components.FinoraDrawerContent
 import com.example.ui.components.FinoraTopBar
@@ -154,6 +157,8 @@ fun FinoraApp(
     }
     val currentThemeMode by userPrefs.themeMode.collectAsState(initial = themeMode)
     val useBengaliDigits by userPrefs.useBengaliDigits.collectAsState(initial = true)
+    val homeSectionOrder by userPrefs.homeSectionOrder.collectAsState(initial = HomeSection.DEFAULT_ORDER)
+    var showReorderHomeSectionsDialog by remember { mutableStateOf(false) }
 
     var pendingCalculatorReturnToHome by remember { mutableStateOf(false) }
 
@@ -429,6 +434,18 @@ fun FinoraApp(
                         }
                     },
                     actions = {
+                        if (currentScreen is Screen.Home) {
+                            IconButton(
+                                onClick = { showReorderHomeSectionsDialog = true },
+                                modifier = Modifier.testTag("top_bar_reorder_sections")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapVert,
+                                    contentDescription = if (isEnglish) "Reorder Sections" else "হোমপেজ সেকশন সাজান",
+                                    tint = Color.White
+                                )
+                            }
+                        }
                         IconButton(
                             onClick = {
                                 scope.launch {
@@ -492,7 +509,9 @@ fun FinoraApp(
                                 onNavigateToSummary = {
                                     navigateTo(Screen.AccountsSummary)
                                 },
-                                useBengaliDigits = useBengaliDigits
+                                useBengaliDigits = useBengaliDigits,
+                                sectionOrder = homeSectionOrder,
+                                onOpenReorderDialog = { showReorderHomeSectionsDialog = true }
                             )
                         }
                         is Screen.CalculatorsHub -> {
@@ -662,6 +681,27 @@ fun FinoraApp(
                 }
             }
         }
+    }
+
+    if (showReorderHomeSectionsDialog) {
+        CustomizeHomeSectionsDialog(
+            currentOrder = homeSectionOrder,
+            useBengaliDigits = useBengaliDigits,
+            isEnglish = appLanguage == AppLanguage.ENGLISH,
+            onDismiss = { showReorderHomeSectionsDialog = false },
+            onSaveOrder = { newOrder ->
+                scope.launch {
+                    userPrefs.setHomeSectionOrder(newOrder)
+                }
+                showReorderHomeSectionsDialog = false
+            },
+            onResetOrder = {
+                scope.launch {
+                    userPrefs.resetHomeSectionOrder()
+                }
+                showReorderHomeSectionsDialog = false
+            }
+        )
     }
 }
 

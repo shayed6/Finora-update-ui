@@ -162,7 +162,7 @@ fun HisabPatiHubScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "PDF রিপোর্ট ও ইনভয়েস",
+                            text = "PDF রিপোর্ট (PDF Reports)",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -185,7 +185,7 @@ fun HisabPatiHubScreen(
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "চালান ইনভয়েস তৈরি, আয়-ব্যয় ও দেনা-পাওনার প্রিন্ট-রেডি PDF",
+                        text = "আয়-ব্যয়, সঞ্চয় ও বাকির প্রিন্ট-রেডি অফিশিয়াল PDF",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
