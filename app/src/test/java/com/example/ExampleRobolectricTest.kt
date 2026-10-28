@@ -342,6 +342,33 @@ class ExampleRobolectricTest {
     assertTrue(bnBody.contains("Finora (\"আমরা\", \"অ্যাপ\")"))
     assertTrue(bnContact.contains("shayedafride@gmail.com"))
   }
+
+  @Test
+  fun `watchlist manager adds removes and limits sparkline to 30 points`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.example.data.WatchlistManager.init(context)
+
+    // Add stock
+    val added = com.example.data.WatchlistManager.addToWatchlist("DSE", "BEXIMCO")
+    assertTrue(added)
+    assertTrue(com.example.data.WatchlistManager.isWatchlisted("DSE", "BEXIMCO"))
+
+    // Record 35 distinct price points
+    for (i in 1..35) {
+      com.example.data.WatchlistManager.recordPrice("DSE", "BEXIMCO", 100.0 + i)
+    }
+
+    val sparkline = com.example.data.WatchlistManager.getSparkline("DSE", "BEXIMCO")
+    assertEquals(30, sparkline.size)
+    assertEquals(106.0, sparkline.first(), 0.001)
+    assertEquals(135.0, sparkline.last(), 0.001)
+
+    // Remove stock
+    val removed = com.example.data.WatchlistManager.removeFromWatchlist("DSE", "BEXIMCO")
+    assertTrue(removed)
+    org.junit.Assert.assertFalse(com.example.data.WatchlistManager.isWatchlisted("DSE", "BEXIMCO"))
+  }
 }
+
 
 

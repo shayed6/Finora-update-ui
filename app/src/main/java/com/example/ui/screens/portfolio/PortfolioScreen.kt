@@ -9,10 +9,10 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,18 +30,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
-import com.example.util.CsvReportGenerator
-import com.example.util.PdfReportGenerator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,6 +51,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -63,10 +59,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -77,11 +77,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,22 +95,29 @@ import com.example.ads.AdManager
 import com.example.data.local.entity.DividendEntity
 import com.example.data.local.entity.HoldingEntity
 import com.example.data.local.entity.TransactionEntity
-import com.example.data.repository.PortfolioRepository
-import com.example.ui.theme.AlertRed
-import com.example.ui.theme.FinoraNavy
-import com.example.ui.theme.GrowthGreen
-import com.example.ui.theme.PrimaryBlue
 import com.example.util.BengaliFormatter
+import com.example.util.CsvReportGenerator
+import com.example.util.PdfReportGenerator
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
+
+// Design System Colors per Requirement 8:
+private val PortfolioNavy = Color(0xFF0B1F4B)
+private val PortfolioBlue = Color(0xFF1769FF)
+private val PortfolioGreen = Color(0xFF19C77A)
+private val PortfolioRed = Color(0xFFEF5350)
+private val CsePurple = Color(0xFF8B5CF6)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PortfolioScreen(
     useBengaliDigits: Boolean = true,
     viewModel: PortfolioViewModel = viewModel(),
+    openAddSheetOnStart: Boolean = false,
+    onAddSheetOpened: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -113,21 +126,34 @@ fun PortfolioScreen(
     val summary by viewModel.summary.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val syncStatusMessage by viewModel.syncStatusMessage.collectAsState()
-    val scope = rememberCoroutineScope()
+    val watchlistItems by viewModel.watchlistItems.collectAsState()
 
-    var showAddDialog by remember { mutableStateOf(false) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) } // 0: হোল্ডিং, 1: ওয়াচলিস্ট
+    var selectedExchangeFilter by remember { mutableStateOf("সব") } // সব, DSE, CSE
+    var showAddHoldingSheet by remember { mutableStateOf(false) }
+    var showAddWatchlistDialog by remember { mutableStateOf(false) }
+
     var selectedHoldingForHistory by remember { mutableStateOf<HoldingEntity?>(null) }
     var holdingForDividend by remember { mutableStateOf<HoldingEntity?>(null) }
     var holdingToDelete by remember { mutableStateOf<HoldingEntity?>(null) }
+    var watchlistStockToDelete by remember { mutableStateOf<WatchlistItem?>(null) }
+
+    // Direct open from Home (+) button
+    LaunchedEffect(openAddSheetOnStart) {
+        if (openAddSheetOnStart) {
+            selectedTabIndex = 0
+            showAddHoldingSheet = true
+            onAddSheetOpened()
+        }
+    }
 
     // Requirement: Do NOT show any ad format inside the Portfolio buy/sell transaction flow
-    val isInsideTxFlow = showAddDialog || holdingForDividend != null
-    androidx.compose.runtime.LaunchedEffect(isInsideTxFlow) {
+    val isInsideTxFlow = showAddHoldingSheet || holdingForDividend != null
+    LaunchedEffect(isInsideTxFlow) {
         AdManager.setInsideTransactionFlow(isInsideTxFlow)
     }
 
-    // Schedule: Refresh live_prices every 50-60 seconds while Portfolio screen is active/foreground.
-    // Do NOT run background scrape when app or screen is closed.
+    // Lifecycle: Foreground 60s price polling. Stops cleanly on dispose.
     DisposableEffect(Unit) {
         viewModel.startLivePricePolling()
         onDispose {
@@ -136,217 +162,419 @@ fun PortfolioScreen(
         }
     }
 
+    // Filter holdings list by selected chip
+    val filteredHoldings = remember(holdingsWithDividends, selectedExchangeFilter) {
+        when (selectedExchangeFilter) {
+            "DSE" -> holdingsWithDividends.filter { it.holding.exchange.equals("DSE", ignoreCase = true) }
+            "CSE" -> holdingsWithDividends.filter { it.holding.exchange.equals("CSE", ignoreCase = true) }
+            else -> holdingsWithDividends
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = PrimaryBlue,
+                onClick = {
+                    if (selectedTabIndex == 0) {
+                        showAddHoldingSheet = true
+                    } else {
+                        showAddWatchlistDialog = true
+                    }
+                },
+                containerColor = PortfolioBlue,
                 contentColor = Color.White,
+                shape = CircleShape,
                 modifier = Modifier.testTag("portfolio_fab_add")
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Holding")
+                Icon(Icons.Default.Add, contentDescription = "Add Item")
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(6.dp))
-                // Header Bar with Title, Manual Refresh Button & PDF Export Button
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "আমার পোর্টফোলিও",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (isRefreshing) "বাজার থেকে লাইভ দর সংগ্রহ করা হচ্ছে..." else "DSE ও CSE লাইভ দর ও ডিভিডেন্ড আয় ট্র্যাকিং",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isRefreshing) PrimaryBlue else MaterialTheme.colorScheme.onSurfaceVariant
+            // Header Bar: Subtitle & Quick Actions (Refresh with Ad gate, CSV, PDF)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isRefreshing) "বাজার থেকে লাইভ দর সংগ্রহ করা হচ্ছে..." else "DSE ও CSE লাইভ দর ও রিয়েলটাইম হিসাব",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isRefreshing) PortfolioBlue else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            val act = findActivity(context)
+                            AdManager.onManualRefreshRequested(act) {
+                                viewModel.manualRefreshLivePrices()
+                            }
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("portfolio_refresh_button")
+                    ) {
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = PortfolioBlue
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh Live Prices",
+                                tint = PortfolioBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = {
+                            exportPortfolioCsv(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("portfolio_export_csv_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.TableChart,
+                            contentDescription = "Export CSV",
+                            tint = PortfolioBlue,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = {
-                                val act = findActivity(context)
-                                AdManager.onManualRefreshRequested(act) {
-                                    viewModel.manualRefreshLivePrices()
-                                }
-                            },
-                            modifier = Modifier.testTag("portfolio_refresh_button")
-                        ) {
-                            if (isRefreshing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = PrimaryBlue
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Refresh Live Prices",
-                                    tint = PrimaryBlue
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = {
-                                exportPortfolioCsv(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
-                            },
-                            modifier = Modifier.testTag("portfolio_export_csv_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.TableChart,
-                                contentDescription = "Export Portfolio CSV",
-                                tint = PrimaryBlue
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                exportPortfolioReport(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
-                            },
-                            modifier = Modifier.testTag("portfolio_export_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PictureAsPdf,
-                                contentDescription = "Export Portfolio PDF Report",
-                                tint = PrimaryBlue
-                            )
-                        }
+                    IconButton(
+                        onClick = {
+                            exportPortfolioReport(context, holdings, summary, useBengaliDigits, holdingsWithDividends)
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("portfolio_export_pdf_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = "Export PDF",
+                            tint = PortfolioBlue,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
 
-                // Summary Card: "Current Investment" Header
-                item {
-                    PortfolioSummaryCard(
-                        summary = summary,
-                        useBengaliDigits = useBengaliDigits
+            // Top Two Tabs: "হোল্ডিং" & "ওয়াচলিস্ট" (Requirement 4)
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = PortfolioBlue,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = PortfolioBlue,
+                        height = 3.dp
                     )
+                },
+                divider = {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = {
+                        Text(
+                            text = "হোল্ডিং (${BengaliFormatter.toBengaliDigits(holdings.size.toString())})",
+                            fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    },
+                    modifier = Modifier.testTag("portfolio_tab_holdings")
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = {
+                        Text(
+                            text = "ওয়াচলিস্ট (${BengaliFormatter.toBengaliDigits(watchlistItems.size.toString())})",
+                            fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    },
+                    modifier = Modifier.testTag("portfolio_tab_watchlist")
+                )
+            }
 
-                if (holdingsWithDividends.isEmpty()) {
+            // Main Tab Content with LazyColumn (Performance Requirement 10)
+            if (selectedTabIndex == 0) {
+                // ==================== "হোল্ডিং" TAB ====================
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                     item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // 1. Hero Card (Dark Navy #0B1F4B) per Requirement 5
+                        PortfolioHeroCard(
+                            summary = summary,
+                            useBengaliDigits = useBengaliDigits
+                        )
+                    }
+
+                    item {
+                        // 2. Two Small Cards Side-by-Side: মোট বিনিয়োগ & ডিভিডেন্ড প্রাপ্ত (মোট)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = PrimaryBlue.copy(alpha = 0.12f),
-                                    modifier = Modifier.size(56.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Default.PieChart,
-                                            contentDescription = null,
-                                            tint = PrimaryBlue,
-                                            modifier = Modifier.size(30.dp)
-                                        )
-                                    }
-                                }
+                            MetricCard(
+                                title = "মোট বিনিয়োগ",
+                                amount = BengaliFormatter.formatTaka(summary.totalInvested, useBengaliDigits),
+                                modifier = Modifier.weight(1f)
+                            )
+                            MetricCard(
+                                title = "ডিভিডেন্ড প্রাপ্ত (মোট)",
+                                amount = BengaliFormatter.formatTaka(summary.totalDividend, useBengaliDigits),
+                                amountColor = PortfolioGreen,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
 
-                                Spacer(modifier = Modifier.height(14.dp))
+                    item {
+                        // 3. Exchange Donut Chart & Legend (Requirement 5)
+                        ExchangeDonutChartCard(
+                            holdings = holdings,
+                            useBengaliDigits = useBengaliDigits
+                        )
+                    }
 
-                                Text(
-                                    text = "এখনো কোনো বিনিয়োগ যোগ করা হয়নি",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                    item {
+                        // 4. Filter Chips: সব / DSE / CSE (Requirement 5)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ফিল্টার:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            listOf("সব", "DSE", "CSE").forEach { filter ->
+                                val isSelected = selectedExchangeFilter == filter
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { selectedExchangeFilter = filter },
+                                    label = { Text(filter) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PortfolioBlue.copy(alpha = 0.15f),
+                                        selectedLabelColor = PortfolioBlue
+                                    ),
+                                    modifier = Modifier.testTag("filter_chip_$filter")
                                 )
-
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                Text(
-                                    text = "নিচের '+' বাটনে ট্যাপ করে আপনার প্রথম স্টক ক্রয় এন্ট্রি করুন। একই স্টক একাধিকবার কিনলে স্বয়ংক্রিয়ভাবে গড় ক্রয়মূল্য হিসাব হবে।",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    lineHeight = 18.sp
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = { showAddDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                                ) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("স্টক যোগ করুন")
-                                }
                             }
                         }
                     }
-                } else {
+
+                    // 5. Holding Card list
+                    if (filteredHoldings.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(28.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = PortfolioBlue.copy(alpha = 0.12f),
+                                        modifier = Modifier.size(52.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.PieChart,
+                                                contentDescription = null,
+                                                tint = PortfolioBlue,
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        text = if (holdings.isEmpty()) "আপনার পোর্টফোলিও ফাঁকা" else "এই ফিল্টারে কোনো হোল্ডিং নেই",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Text(
+                                        text = if (holdings.isEmpty()) "নিচের '+' বাটনে ট্যাপ করে আপনার প্রথম স্টক ক্রয় এন্ট্রি করুন।" else "অন্য এক্সচেঞ্জ নির্বাচন করুন অথবা নতুন স্টক যুক্ত করুন।",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        items(filteredHoldings, key = { it.holding.id }) { item ->
+                            HoldingItemCard(
+                                holdingWithDiv = item,
+                                useBengaliDigits = useBengaliDigits,
+                                onClick = { selectedHoldingForHistory = item.holding },
+                                onAddDividend = { holdingForDividend = item.holding },
+                                onDelete = { holdingToDelete = item.holding }
+                            )
+                        }
+                    }
+
                     item {
+                        Spacer(modifier = Modifier.height(72.dp)) // Padding for FAB
+                    }
+                }
+            } else {
+                // ==================== "ওয়াচলিস্ট" TAB (Requirement 6) ====================
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "হোল্ডিংস তালিকা (${BengaliFormatter.toBengaliDigits(holdingsWithDividends.size.toString())}টি স্টক)",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = "লাইভ ওয়াচলিস্ট",
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "ডিভিডেন্ড ও হিস্ট্রি বিস্তারিত",
-                                style = MaterialTheme.typography.labelSmall,
+                                text = "স্টক মুছতে সোয়াইপ বা লং-প্রেস করুন",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    items(holdingsWithDividends, key = { it.holding.id }) { item ->
-                        HoldingItemCard(
-                            holdingWithDiv = item,
-                            useBengaliDigits = useBengaliDigits,
-                            onClick = { selectedHoldingForHistory = item.holding },
-                            onAddDividend = { holdingForDividend = item.holding },
-                            onDelete = { holdingToDelete = item.holding }
-                        )
+                    if (watchlistItems.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 24.dp)
+                                    .testTag("watchlist_empty_card"),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = PortfolioBlue.copy(alpha = 0.12f),
+                                        modifier = Modifier.size(54.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = null,
+                                                tint = PortfolioBlue,
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Requirement 6 Exact Message:
+                                    Text(
+                                        text = "ওয়াচলিস্টে কোনো স্টক নেই। + চেপে যোগ করুন।",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    Button(
+                                        onClick = { showAddWatchlistDialog = true },
+                                        colors = ButtonDefaults.buttonColors(containerColor = PortfolioBlue)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("ওয়াচলিস্টে স্টক যোগ করুন")
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        items(watchlistItems, key = { "${it.exchange}:${it.symbol}" }) { item ->
+                            WatchlistItemRow(
+                                item = item,
+                                useBengaliDigits = useBengaliDigits,
+                                onLongClick = { watchlistStockToDelete = item },
+                                onDelete = { viewModel.removeFromWatchlist(item.exchange, item.symbol) }
+                            )
+                        }
                     }
 
                     item {
-                        Spacer(modifier = Modifier.height(60.dp)) // Space for FAB
+                        Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
+        }
     }
 
-    // Add Buy Transaction Dialog
-    if (showAddDialog) {
-        AddBuyTransactionDialog(
-            onDismiss = { showAddDialog = false },
+    // 6 & 7. Add Holding Bottom Sheet with Live Preview (Requirement 5)
+    if (showAddHoldingSheet) {
+        AddHoldingBottomSheet(
+            holdings = holdings,
+            useBengaliDigits = useBengaliDigits,
+            onDismiss = { showAddHoldingSheet = false },
             onSave = { exchange, stockName, buyingPrice, qty, commission ->
                 viewModel.addBuyTransaction(
                     exchange = exchange,
@@ -355,7 +583,48 @@ fun PortfolioScreen(
                     quantity = qty,
                     commissionPercent = commission
                 )
-                showAddDialog = false
+                showAddHoldingSheet = false
+            }
+        )
+    }
+
+    // Add Watchlist Dialog
+    if (showAddWatchlistDialog) {
+        AddWatchlistDialog(
+            onDismiss = { showAddWatchlistDialog = false },
+            onAdd = { exchange, symbol ->
+                val added = viewModel.addToWatchlist(exchange, symbol)
+                if (added) {
+                    Toast.makeText(context, "$symbol ওয়াচলিস্টে যোগ হয়েছে", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "$symbol ইতিমধ্যে ওয়াচলিস্টে আছে", Toast.LENGTH_SHORT).show()
+                }
+                showAddWatchlistDialog = false
+            }
+        )
+    }
+
+    // Confirm Delete Watchlist Dialog
+    watchlistStockToDelete?.let { stock ->
+        AlertDialog(
+            onDismissRequest = { watchlistStockToDelete = null },
+            title = { Text("ওয়াচলিস্ট থেকে মুছবেন?", fontWeight = FontWeight.Bold) },
+            text = { Text("${stock.exchange}: ${stock.symbol} ওয়াচলিস্ট থেকে মুছে ফেলা হবে।") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.removeFromWatchlist(stock.exchange, stock.symbol)
+                        watchlistStockToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PortfolioRed)
+                ) {
+                    Text("মুছুন")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { watchlistStockToDelete = null }) {
+                    Text("বাতিল")
+                }
             }
         )
     }
@@ -373,15 +642,14 @@ fun PortfolioScreen(
         )
     }
 
-    // Transaction & Dividend History Dialog
+    // Transaction History Dialog
     selectedHoldingForHistory?.let { holding ->
-        TransactionAndDividendHistoryDialog(
+        HoldingHistoryDialog(
             holding = holding,
+            viewModel = viewModel,
             useBengaliDigits = useBengaliDigits,
             onDismiss = { selectedHoldingForHistory = null },
-            fetchTransactions = { viewModel.getTransactionHistory(holding.id) },
-            fetchDividends = { viewModel.getDividendHistory(holding.id) },
-            onDeleteDividend = { divId -> viewModel.deleteDividend(divId) }
+            onAddDividend = { holdingForDividend = holding }
         )
     }
 
@@ -398,9 +666,9 @@ fun PortfolioScreen(
             },
             text = {
                 Text(
-                    text = "আপনি কি নিশ্চিতভাবে ${holding.exchange} এর \"${holding.stockName}\" হোল্ডিং এবং এর পূর্ববর্তী সমস্ত ক্রয়ের ও ডিভিডেন্ডের রেকর্ড মুছে ফেলতে চান?",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.5.sp
+                    text = "${holding.stockName} (${holding.exchange})-এর সকল লেনদেন ও ডিভিডেন্ড হিস্ট্রি স্থায়ীভাবে মুছে যাবে। এই কাজ পূর্বাবস্থায় ফিরিয়ে আনা যাবে না।",
+                    fontSize = 13.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -409,13 +677,13 @@ fun PortfolioScreen(
                         viewModel.deleteHolding(holding)
                         holdingToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = PortfolioRed)
                 ) {
                     Text("মুছে ফেলুন")
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { holdingToDelete = null }) {
+                TextButton(onClick = { holdingToDelete = null }) {
                     Text("বাতিল")
                 }
             }
@@ -423,181 +691,69 @@ fun PortfolioScreen(
     }
 }
 
+/**
+ * 1. Hero Card (Dark Navy #0B1F4B) per Requirement 5:
+ * মোট পোর্টফোলিও মূল্য (বড়), নিচে মোট লাভ/ক্ষতি ও শতাংশ (সবুজ ▲ / লাল ▼)
+ */
 @Composable
-private fun PortfolioSummaryCard(
+private fun PortfolioHeroCard(
     summary: PortfolioSummary,
     useBengaliDigits: Boolean
 ) {
+    val totalGL = summary.totalUnrealizedGainLoss
+    val invested = summary.totalInvested
+    val glPercent = if (invested > 0.0) (totalGL / invested) * 100.0 else 0.0
+    val isPositive = totalGL >= 0.0
+    val glColor = if (isPositive) PortfolioGreen else PortfolioRed
+    val arrow = if (isPositive) "▲" else "▼"
+    val sign = if (isPositive) "+" else "-"
+    val formattedGl = BengaliFormatter.formatTaka(abs(totalGL), useBengaliDigits)
+    val formattedPct = BengaliFormatter.formatNumber(abs(glPercent), 2, useBengaliDigits)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("portfolio_summary_card"),
+            .testTag("portfolio_hero_card"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.cardColors(containerColor = PortfolioNavy),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Current Investment (বিনিয়োগ বিবরণী)",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp,
-                    color = PrimaryBlue
-                )
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Text(
-                        text = "মোট স্টক: ${BengaliFormatter.formatNumber(summary.holdingsCount.toDouble(), 0, useBengaliDigits)}",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-            }
+            Text(
+                text = "মোট পোর্টফোলিও মূল্য",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.75f)
+            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Main Metrics: Total Invested & Current Portfolio Value
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "মোট ক্রয়মূল্য (Total Invested)",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = BengaliFormatter.formatTaka(summary.totalInvested, useBengaliDigits),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "বর্তমান বাজারমূল্য (Current Value)",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (summary.hasAnyLivePrice) BengaliFormatter.formatTaka(summary.currentTotalValue, useBengaliDigits) else "—",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = PrimaryBlue
-                    )
-                }
-            }
+            Text(
+                text = BengaliFormatter.formatTaka(summary.currentTotalValue, useBengaliDigits),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Secondary Metrics: Unrealized Gain/Loss & Total Dividend
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "অবাস্তবায়িত লাভ/ক্ষতি (Unrealized G/L)",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    if (summary.hasAnyLivePrice) {
-                        val isGain = summary.totalUnrealizedGainLoss >= 0
-                        val color = if (isGain) GrowthGreen else AlertRed
-                        val sign = if (isGain) "+" else ""
-                        val glPct = if (summary.totalInvested > 0) (summary.totalUnrealizedGainLoss / summary.totalInvested) * 100.0 else 0.0
-                        Text(
-                            text = "$sign${BengaliFormatter.formatTaka(summary.totalUnrealizedGainLoss, useBengaliDigits)} ($sign${BengaliFormatter.formatPercent(glPct, useBengaliDigits)})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.5.sp,
-                            color = color
-                        )
-                    } else {
-                        Text(
-                            text = "—",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "মোট ডিভিডেন্ড আয় (Dividends)",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = BengaliFormatter.formatTaka(summary.totalDividend, useBengaliDigits),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = GrowthGreen
-                    )
-                }
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            // Dividend Yield Banner
-            val divYieldPct = if (summary.totalInvested > 0) (summary.totalDividend / summary.totalInvested) * 100.0 else 0.0
-
             Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                color = GrowthGreen.copy(alpha = 0.10f),
-                border = BorderStroke(1.dp, GrowthGreen.copy(alpha = 0.25f))
+                shape = RoundedCornerShape(8.dp),
+                color = glColor.copy(alpha = 0.18f)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 9.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
-                            contentDescription = null,
-                            tint = GrowthGreen,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "ডিভিডেন্ড রিটার্ন (Dividend Yield):",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
                     Text(
-                        text = BengaliFormatter.formatPercent(divYieldPct, useBengaliDigits),
+                        text = "$arrow $sign$formattedGl ($sign$formattedPct%)",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.5.sp,
-                        color = GrowthGreen
+                        color = glColor
                     )
                 }
             }
@@ -606,9 +762,177 @@ private fun PortfolioSummaryCard(
 }
 
 /**
- * Holding Item Card showing investment details, live price, unrealized G/L, dividend earnings, and return per share.
- * Layout strictly follows:
- * Exchange - Stock name - Quantity - Total Price (avg price/share shown smaller below) - Current Price - Unrealized G/L - Dividend Received - Per-Share Dividend Return
+ * 2. Small Metric Card for Side-by-Side row: মোট বিনিয়োগ & ডিভিডেন্ড প্রাপ্ত (মোট)
+ */
+@Composable
+private fun MetricCard(
+    title: String,
+    amount: String,
+    modifier: Modifier = Modifier,
+    amountColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = amount,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = amountColor
+            )
+        }
+    }
+}
+
+/**
+ * 3. Donut Chart Card by Exchange (DSE Blue, CSE Green) & Legend (Requirement 5 & 10)
+ * Lightweight custom Canvas draw, zero external charting libraries.
+ */
+@Composable
+private fun ExchangeDonutChartCard(
+    holdings: List<HoldingEntity>,
+    useBengaliDigits: Boolean
+) {
+    val dseCount = holdings.count { it.exchange.equals("DSE", ignoreCase = true) }
+    val cseCount = holdings.count { it.exchange.equals("CSE", ignoreCase = true) }
+    val totalCount = dseCount + cseCount
+
+    val dseRatio = if (totalCount > 0) dseCount.toFloat() / totalCount else 1f
+    val cseRatio = if (totalCount > 0) cseCount.toFloat() / totalCount else 0f
+
+    val dsePct = if (totalCount > 0) ((dseCount.toDouble() / totalCount) * 100).toInt() else 0
+    val csePct = if (totalCount > 0) 100 - dsePct else 0
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Left Donut Canvas
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .padding(4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidth = 12.dp.toPx()
+                    val arcSize = size.minDimension - strokeWidth
+                    val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+
+                    if (totalCount == 0) {
+                        drawArc(
+                            color = Color.LightGray.copy(alpha = 0.4f),
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = Size(arcSize, arcSize),
+                            style = Stroke(width = strokeWidth)
+                        )
+                    } else {
+                        // DSE arc
+                        val dseSweep = dseRatio * 360f
+                        drawArc(
+                            color = PortfolioBlue,
+                            startAngle = -90f,
+                            sweepAngle = dseSweep,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = Size(arcSize, arcSize),
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                        )
+                        // CSE arc
+                        if (cseCount > 0) {
+                            val cseSweep = cseRatio * 360f
+                            drawArc(
+                                color = PortfolioGreen,
+                                startAngle = -90f + dseSweep,
+                                sweepAngle = cseSweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = Size(arcSize, arcSize),
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = "${BengaliFormatter.toBengaliDigits(totalCount.toString())}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Right Legend
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "এক্সচেঞ্জ অনুপাত",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(PortfolioBlue))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "DSE: ${BengaliFormatter.toBengaliDigits(dsePct.toString())}% (${BengaliFormatter.toBengaliDigits(dseCount.toString())}টি)",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(PortfolioGreen))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "CSE: ${BengaliFormatter.toBengaliDigits(csePct.toString())}% (${BengaliFormatter.toBengaliDigits(cseCount.toString())}টি)",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 5. Holding Card Item per Requirement 5:
+ * - উপরে বামে: এক্সচেঞ্জ ট্যাগ + স্টকের নাম; নিচে "X শেয়ার · গড় ৳Y"
+ * - উপরে ডানে: মোট খরচ; নিচে ছোট করে বর্তমান মূল্য
+ * - নিচের সারিতে তিনটি তথ্য: আনরিয়ালাইজড লাভ/ক্ষতি (টাকা ও %), ডিভিডেন্ড প্রাপ্ত, শেয়ার প্রতি রিটার্ন
  */
 @Composable
 private fun HoldingItemCard(
@@ -619,7 +943,19 @@ private fun HoldingItemCard(
     onDelete: () -> Unit
 ) {
     val holding = holdingWithDiv.holding
-    val totalPrice = holding.quantity * holding.averagePrice
+    val totalCost = holding.quantity * holding.averagePrice
+    val currentVal = if (holdingWithDiv.currentPrice != null && holdingWithDiv.currentPrice > 0.0) {
+        holdingWithDiv.currentPrice * holding.quantity
+    } else {
+        totalCost
+    }
+
+    val unrealizedGL = holdingWithDiv.unrealizedGainLoss ?: 0.0
+    val glPercent = holdingWithDiv.unrealizedGainLossPercent ?: 0.0
+    val isPositive = unrealizedGL >= 0.0
+    val glColor = if (isPositive) PortfolioGreen else PortfolioRed
+    val arrow = if (isPositive) "▲" else "▼"
+    val sign = if (isPositive) "+" else "-"
 
     Card(
         modifier = Modifier
@@ -637,279 +973,127 @@ private fun HoldingItemCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Row 1: Exchange badge (DSE/CSE) + Stock Name + Quantity + Outdated indicator + Actions
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (holding.exchange.uppercase() == "DSE") PrimaryBlue else Color(0xFF8B5CF6)
-                    ) {
-                        Text(
-                            text = holding.exchange.uppercase(),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = holding.stockName,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    Text(
-                        text = "· ${BengaliFormatter.formatNumber(holding.quantity.toDouble(), 0, useBengaliDigits)}টি শেয়ার",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    if (holdingWithDiv.isPriceOutdated) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Color(0xFFFFF3CD),
-                            border = BorderStroke(0.5.dp, Color(0xFFFFC107))
-                        ) {
-                            Text(
-                                text = "পুরোনো",
-                                fontSize = 9.5.sp,
-                                color = Color(0xFF856404),
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            )
-                        }
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onAddDividend,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add Dividend",
-                            tint = GrowthGreen,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onClick,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.History,
-                            contentDescription = "History",
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = AlertRed.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Row 2: Total Price (avg price/share shown smaller below) - Current Price - Unrealized G/L
+            // Top Row:
+            // Left: Exchange Tag + Stock Name. Below: "X শেয়ার · গড় ৳Y"
+            // Right: Total Cost. Below: Current Value
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Total Price + avg price below
-                Column(modifier = Modifier.weight(1.1f)) {
-                    Text(
-                        text = "মোট ক্রয়মূল্য",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = BengaliFormatter.formatTaka(totalPrice, useBengaliDigits),
-                        fontSize = 15.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "গড়: ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}",
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Current Price
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "বর্তমান দর",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    val cp = holdingWithDiv.currentPrice
-                    if (cp != null && cp > 0.0) {
-                        Text(
-                            text = BengaliFormatter.formatTaka(cp, useBengaliDigits),
-                            fontSize = 15.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue
-                        )
-                        val changePct = holdingWithDiv.livePrice?.changePercent
-                        if (changePct != null && changePct != 0.0) {
-                            val sign = if (changePct > 0) "+" else ""
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (holding.exchange.uppercase() == "DSE") PortfolioBlue else CsePurple
+                        ) {
                             Text(
-                                text = "$sign${BengaliFormatter.formatPercent(changePct, useBengaliDigits)}",
+                                text = holding.exchange.uppercase(),
+                                color = Color.White,
                                 fontSize = 10.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (changePct > 0) GrowthGreen else AlertRed
-                            )
-                        } else {
-                            Text(
-                                text = "০.০০%",
-                                fontSize = 10.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
-                    } else {
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
-                            text = "—",
-                            fontSize = 16.sp,
+                            text = holding.stockName,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "পাওয়া যায়নি",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "${BengaliFormatter.toBengaliDigits(holding.quantity.toString())} শেয়ার · গড় ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
-                // Unrealized G/L
-                Column(
-                    modifier = Modifier.weight(1.2f),
-                    horizontalAlignment = Alignment.End
-                ) {
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "অবাস্তবায়িত লাভ/ক্ষতি",
+                        text = BengaliFormatter.formatTaka(totalCost, useBengaliDigits),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "বর্তমান: ${BengaliFormatter.formatTaka(currentVal, useBengaliDigits)}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    val ugl = holdingWithDiv.unrealizedGainLoss
-                    val uglPct = holdingWithDiv.unrealizedGainLossPercent
-                    if (ugl != null) {
-                        val isGain = ugl >= 0
-                        val color = if (isGain) GrowthGreen else AlertRed
-                        val sign = if (isGain) "+" else ""
-                        Text(
-                            text = "$sign${BengaliFormatter.formatTaka(ugl, useBengaliDigits)}",
-                            fontSize = 15.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = color
-                        )
-                        Text(
-                            text = "($sign${BengaliFormatter.formatPercent(uglPct ?: 0.0, useBengaliDigits)})",
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = color
-                        )
-                    } else {
-                        Text(
-                            text = "—",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "—",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
 
-            // Row 3: Dividend Received (ডিভিডেন্ড প্রাপ্ত) & Per-Share Dividend Return (শেয়ার প্রতি রিটার্ন)
+            // Bottom Row: 3 Metrics: আনরিয়ালাইজড লাভ/ক্ষতি, ডিভিডেন্ড প্রাপ্ত, শেয়ার প্রতি রিটার্ন
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                // Metric 1: Unrealized G/L
+                Column(modifier = Modifier.weight(1.1f)) {
                     Text(
-                        text = "ডিভিডেন্ড প্রাপ্ত:",
+                        text = "লাভ/ক্ষতি",
                         fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "${BengaliFormatter.formatTaka(holdingWithDiv.totalDividend, useBengaliDigits)} (${BengaliFormatter.toBengaliDigits(holdingWithDiv.dividendCount.toString())} বার)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GrowthGreen
+                        text = "$arrow $sign${BengaliFormatter.formatTaka(abs(unrealizedGL), useBengaliDigits)} ($sign${BengaliFormatter.formatNumber(abs(glPercent), 1, useBengaliDigits)}%)",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = glColor
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "শেয়ার প্রতি রিটার্ন:",
-                            fontSize = 10.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${BengaliFormatter.formatTaka(holdingWithDiv.returnPerShare, useBengaliDigits)}/শেয়ার",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = GrowthGreen
-                        )
-                    }
+                // Metric 2: Dividend Received
+                Column(
+                    modifier = Modifier.weight(0.9f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "ডিভিডেন্ড",
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = BengaliFormatter.formatTaka(holdingWithDiv.totalDividend, useBengaliDigits),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PortfolioGreen
+                    )
+                }
 
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    TextButton(
-                        onClick = onAddDividend,
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 0.dp)
-                    ) {
-                        Text(
-                            text = "+ ডিভিডেন্ড",
-                            fontSize = 11.sp,
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                // Metric 3: Return per Share
+                Column(
+                    modifier = Modifier.weight(0.9f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "প্রতি শেয়ার আয়",
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = BengaliFormatter.formatTaka(holdingWithDiv.returnPerShare, useBengaliDigits),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
@@ -917,14 +1101,191 @@ private fun HoldingItemCard(
 }
 
 /**
- * Add Buy Transaction Form Dialog
+ * Watchlist Item Row per Requirement 6:
+ * নাম, এক্সচেঞ্জ, ছোট স্পার্কলাইন, বর্তমান দাম, দৈনিক পরিবর্তন % (সবুজ/লাল)
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun WatchlistItemRow(
+    item: WatchlistItem,
+    useBengaliDigits: Boolean,
+    onLongClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val change = item.changePercent ?: 0.0
+    val isPositive = change >= 0.0
+    val changeColor = if (isPositive) PortfolioGreen else PortfolioRed
+    val sign = if (isPositive) "+" else "-"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
+            )
+            .testTag("watchlist_row_${item.symbol}"),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Left: Exchange Badge + Name
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1.2f)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(5.dp),
+                    color = if (item.exchange.uppercase() == "DSE") PortfolioBlue else CsePurple
+                ) {
+                    Text(
+                        text = item.exchange.uppercase(),
+                        color = Color.White,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = item.symbol,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            // Center: Sparkline Canvas (Lightweight custom draw per Requirement 6 & 10)
+            Box(
+                modifier = Modifier
+                    .size(width = 68.dp, height = 26.dp)
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SparklineView(
+                    points = item.sparkline,
+                    lineColor = changeColor
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Right: Current Price & Daily change %
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = if (item.currentPrice != null && item.currentPrice > 0.0) {
+                        BengaliFormatter.formatTaka(item.currentPrice, useBengaliDigits)
+                    } else {
+                        "—"
+                    },
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "$sign${BengaliFormatter.formatNumber(abs(change), 2, useBengaliDigits)}%",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = changeColor
+                )
+            }
+
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .size(28.dp)
+                    .padding(start = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove from Watchlist",
+                    tint = PortfolioRed.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Lightweight Sparkline Custom Canvas View (Requirement 6 & 10):
+ * Draws local points (max 30 points). Draws straight horizontal line if no data.
+ */
+@Composable
+private fun SparklineView(
+    points: List<Double>,
+    lineColor: Color
+) {
+    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+
+        if (points.size < 2) {
+            // Straight line when no history or single point
+            drawLine(
+                color = lineColor.copy(alpha = 0.4f),
+                start = Offset(0f, h / 2f),
+                end = Offset(w, h / 2f),
+                strokeWidth = 2.dp.toPx()
+            )
+            return@Canvas
+        }
+
+        val min = points.minOrNull() ?: 0.0
+        val max = points.maxOrNull() ?: 1.0
+        val range = if (max > min) max - min else 1.0
+
+        val path = Path()
+        val stepX = w / (points.size - 1)
+
+        points.forEachIndexed { i, p ->
+            val x = i * stepX
+            val normalizedY = (p - min) / range
+            val y = (h - (normalizedY * h)).toFloat().coerceIn(0f, h)
+            if (i == 0) {
+                path.moveTo(x, y)
+            } else {
+                path.lineTo(x, y)
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = lineColor,
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        )
+    }
+}
+
+/**
+ * 6 & 7. Add Holding Bottom Sheet with Live Preview (Requirement 5)
+ * Shows live preview:
+ * - If stock already exists: "মার্জ হয়ে হবে X শেয়ার, গড় ৳Y"
+ * - If not exists: "নতুন হোল্ডিং"
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddBuyTransactionDialog(
+private fun AddHoldingBottomSheet(
+    holdings: List<HoldingEntity>,
+    useBengaliDigits: Boolean,
     onDismiss: () -> Unit,
     onSave: (exchange: String, stockName: String, buyingPrice: Double, quantity: Int, commissionPercent: Double) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var exchange by remember { mutableStateOf("DSE") }
     var stockName by remember { mutableStateOf("") }
     var buyingPriceText by remember { mutableStateOf("") }
@@ -933,15 +1294,241 @@ private fun AddBuyTransactionDialog(
 
     val parsedPrice = BengaliFormatter.parseAmount(buyingPriceText) ?: 0.0
     val parsedQty = BengaliFormatter.parseInt(quantityText) ?: 0
+    val parsedComm = BengaliFormatter.parseAmount(commissionText) ?: 0.40
     val isValid = stockName.isNotBlank() && parsedPrice > 0.0 && parsedQty > 0
+
+    // Live preview calculation:
+    val trimmedStock = stockName.trim().uppercase()
+    val existingHolding = remember(exchange, trimmedStock, holdings) {
+        if (trimmedStock.isNotBlank()) {
+            holdings.find {
+                it.exchange.equals(exchange, ignoreCase = true) &&
+                        it.stockName.trim().equals(trimmedStock, ignoreCase = true)
+            }
+        } else null
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = "নতুন শেয়ার ক্রয় এন্ট্রি (Add Holding)",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Exchange Selection Chips (DSE / CSE)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                FilterChip(
+                    selected = exchange == "DSE",
+                    onClick = { exchange = "DSE" },
+                    label = { Text("ঢাকা স্টক এক্সচেঞ্জ (DSE)") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = PortfolioBlue.copy(alpha = 0.15f),
+                        selectedLabelColor = PortfolioBlue
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = exchange == "CSE",
+                    onClick = { exchange = "CSE" },
+                    label = { Text("চট্টগ্রাম (CSE)") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = CsePurple.copy(alpha = 0.15f),
+                        selectedLabelColor = CsePurple
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Stock Name (plain text input per Requirement 1)
+            OutlinedTextField(
+                value = stockName,
+                onValueChange = { stockName = it },
+                label = { Text("স্টক নাম / কোড (যেমন: GP, CITYBANK)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PortfolioBlue,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = buyingPriceText,
+                    onValueChange = { buyingPriceText = it },
+                    label = { Text("ক্রয় মূল্য প্রতি শেয়ার (৳)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PortfolioBlue,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
+                )
+
+                OutlinedTextField(
+                    value = quantityText,
+                    onValueChange = { quantityText = it },
+                    label = { Text("শেয়ার সংখ্যা") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PortfolioBlue,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
+                )
+            }
+
+            OutlinedTextField(
+                value = commissionText,
+                onValueChange = { commissionText = it },
+                label = { Text("ব্রোকারেজ কমিশন (%) [ডিফল্ট ০.৪০%]") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PortfolioBlue,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+
+            // 7. Live Preview Card before saving (Requirement 5)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("add_holding_live_preview"),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (existingHolding != null) PortfolioBlue.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    if (existingHolding != null) PortfolioBlue.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        text = "লাইভ প্রিভিউ (Live Preview):",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (isValid) {
+                        val effectivePrice = parsedPrice * (1.0 + (parsedComm / 100.0))
+                        if (existingHolding != null) {
+                            val oldQty = existingHolding.quantity
+                            val oldAvgPrice = existingHolding.averagePrice
+                            val newTotalQty = oldQty + parsedQty
+                            val newAvgPrice = ((oldQty * oldAvgPrice) + (parsedQty * effectivePrice)) / newTotalQty
+
+                            Text(
+                                text = "মার্জ হয়ে হবে ${BengaliFormatter.toBengaliDigits(newTotalQty.toString())} শেয়ার, গড় ${BengaliFormatter.formatTaka(newAvgPrice, useBengaliDigits)}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PortfolioBlue
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "পূর্বের রেকর্ড: ${BengaliFormatter.toBengaliDigits(oldQty.toString())} শেয়ার @ ${BengaliFormatter.formatTaka(oldAvgPrice, useBengaliDigits)}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text(
+                                text = "নতুন হোল্ডিং",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PortfolioGreen
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "${BengaliFormatter.toBengaliDigits(parsedQty.toString())} শেয়ার, কার্যকর গড় ক্রয়মূল্য ${BengaliFormatter.formatTaka(effectivePrice, useBengaliDigits)}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = if (stockName.isNotBlank() && existingHolding != null) {
+                                "স্টকটি আগে থেকেই আছে — দর ও পরিমাণ লিখলে মার্জ ফলাফল দেখতে পাবেন"
+                            } else {
+                                "স্টকের নাম, দর ও পরিমাণ লিখলে প্রিভিউ দেখতে পাবেন"
+                            },
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Save Button
+            Button(
+                onClick = {
+                    if (isValid) {
+                        onSave(exchange, stockName, parsedPrice, parsedQty, parsedComm)
+                    }
+                },
+                enabled = isValid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("add_holding_save_button"),
+                colors = ButtonDefaults.buttonColors(containerColor = PortfolioBlue)
+            ) {
+                Text(
+                    text = "ক্রয় এন্ট্রি সংরক্ষণ করুন",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Add Stock to Watchlist Dialog
+ */
+@Composable
+private fun AddWatchlistDialog(
+    onDismiss: () -> Unit,
+    onAdd: (exchange: String, symbol: String) -> Unit
+) {
+    var exchange by remember { mutableStateOf("DSE") }
+    var symbol by remember { mutableStateOf("") }
+    val isValid = symbol.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "নতুন শেয়ার ক্রয় এন্ট্রি (Buy)",
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                text = "ওয়াচলিস্টে স্টক যোগ করুন",
+                fontWeight = FontWeight.Bold
             )
         },
         text = {
@@ -949,92 +1536,38 @@ private fun AddBuyTransactionDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Exchange selector: DSE / CSE
-                Column {
-                    Text(
-                        text = "এক্সচেঞ্জ (Exchange)",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    text = "ক্রয় ব্যতীত স্টক ট্র্যাক করতে ওয়াচলিস্টে যোগ করুন।",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = exchange == "DSE",
+                        onClick = { exchange = "DSE" },
+                        label = { Text("DSE") },
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        FilterChip(
-                            selected = exchange == "DSE",
-                            onClick = { exchange = "DSE" },
-                            label = { Text("ঢাকা স্টক এক্সচেঞ্জ (DSE)") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryBlue.copy(alpha = 0.15f),
-                                selectedLabelColor = PrimaryBlue
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = exchange == "CSE",
-                            onClick = { exchange = "CSE" },
-                            label = { Text("চট্টগ্রাম (CSE)") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                                selectedLabelColor = Color(0xFF8B5CF6)
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    FilterChip(
+                        selected = exchange == "CSE",
+                        onClick = { exchange = "CSE" },
+                        label = { Text("CSE") },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                // Stock Name (plain text input)
                 OutlinedTextField(
-                    value = stockName,
-                    onValueChange = { stockName = it },
-                    label = { Text("স্টক নাম / কোড (যেমন: GP, CITYBANK)") },
+                    value = symbol,
+                    onValueChange = { symbol = it },
+                    label = { Text("স্টক কোড (যেমন: GP, BEXIMCO)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryBlue,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-
-                // Buying Price
-                OutlinedTextField(
-                    value = buyingPriceText,
-                    onValueChange = { buyingPriceText = it },
-                    label = { Text("ক্রয় মূল্য প্রতি শেয়ার (৳)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryBlue,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-
-                // Quantity
-                OutlinedTextField(
-                    value = quantityText,
-                    onValueChange = { quantityText = it },
-                    label = { Text("শেয়ার সংখ্যা (Quantity)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryBlue,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-
-                // Commission %
-                OutlinedTextField(
-                    value = commissionText,
-                    onValueChange = { commissionText = it },
-                    label = { Text("ব্রোকারেজ কমিশন (%) [ডিফল্ট ০.৪০%]") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryBlue,
+                        focusedBorderColor = PortfolioBlue,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
@@ -1043,21 +1576,18 @@ private fun AddBuyTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val price = BengaliFormatter.parseAmount(buyingPriceText) ?: 0.0
-                    val qty = BengaliFormatter.parseInt(quantityText) ?: 0
-                    val comm = BengaliFormatter.parseAmount(commissionText) ?: 0.40
                     if (isValid) {
-                        onSave(exchange, stockName, price, qty, comm)
+                        onAdd(exchange, symbol.trim().uppercase())
                     }
                 },
                 enabled = isValid,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                colors = ButtonDefaults.buttonColors(containerColor = PortfolioBlue)
             ) {
-                Text("সেভ করুন")
+                Text("যোগ করুন")
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss) {
                 Text("বাতিল")
             }
         }
@@ -1081,67 +1611,51 @@ private fun AddDividendDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = GrowthGreen)
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = "ডিভিডেন্ড যোগ করুন",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${holding.stockName} (${holding.exchange})",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            Text(
+                text = "ডিভিডেন্ড আয় যুক্ত করুন",
+                fontWeight = FontWeight.Bold
+            )
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
-                    text = "প্রাপ্ত নগদ ডিভিডেন্ডের মোট পরিমাণ লিখুন:",
+                    text = "${holding.stockName} (${holding.exchange})-এর প্রাপ্ত মোট ডিভিডেন্ড টাকা লিখুন।",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("ডিভিডেন্ড পরিমাণ (৳)") },
+                    label = { Text("মোট প্রাপ্ত ডিভিডেন্ড (৳)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GrowthGreen,
+                        focusedBorderColor = PortfolioBlue,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
-
-                if (parsedAmount > 0.0 && holding.quantity > 0) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val perShare = parsedAmount / holding.quantity
-                    Text(
-                        text = "প্রতি শেয়ারে আয়: ${BengaliFormatter.formatTaka(perShare, useBengaliDigits)}",
-                        fontSize = 11.5.sp,
-                        color = GrowthGreen,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { if (isValid) onSave(parsedAmount) },
+                onClick = {
+                    if (isValid) {
+                        onSave(parsedAmount)
+                    }
+                },
                 enabled = isValid,
-                colors = ButtonDefaults.buttonColors(containerColor = GrowthGreen)
+                colors = ButtonDefaults.buttonColors(containerColor = PortfolioGreen)
             ) {
-                Text("যোগ করুন")
+                Text("সংরক্ষণ করুন")
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss) {
                 Text("বাতিল")
             }
         }
@@ -1149,27 +1663,25 @@ private fun AddDividendDialog(
 }
 
 /**
- * Combined Transaction and Dividend History Dialog with Tabs
+ * Dialog showing transaction history and dividend records for a holding.
  */
 @Composable
-private fun TransactionAndDividendHistoryDialog(
+private fun HoldingHistoryDialog(
     holding: HoldingEntity,
+    viewModel: PortfolioViewModel,
     useBengaliDigits: Boolean,
     onDismiss: () -> Unit,
-    fetchTransactions: suspend () -> List<TransactionEntity>,
-    fetchDividends: suspend () -> List<DividendEntity>,
-    onDeleteDividend: (Long) -> Unit
+    onAddDividend: () -> Unit
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Transactions, 1: Dividends
-    var txList by remember { mutableStateOf<List<TransactionEntity>>(emptyList()) }
-    var divList by remember { mutableStateOf<List<DividendEntity>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    val coroutineScope = rememberCoroutineScope()
+    var transactions by remember { mutableStateOf<List<TransactionEntity>>(emptyList()) }
+    var dividends by remember { mutableStateOf<List<DividendEntity>>(emptyList()) }
+    val scope = rememberCoroutineScope()
 
-    androidx.compose.runtime.LaunchedEffect(holding.id) {
-        txList = fetchTransactions()
-        divList = fetchDividends()
-        isLoading = false
+    LaunchedEffect(holding.id) {
+        scope.launch {
+            transactions = viewModel.getTransactionHistory(holding.id)
+            dividends = viewModel.getDividendHistory(holding.id)
+        }
     }
 
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
@@ -1177,224 +1689,126 @@ private fun TransactionAndDividendHistoryDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.History, contentDescription = null, tint = PrimaryBlue)
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = "${holding.stockName} (${holding.exchange})",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "লেনদেন ও ডিভিডেন্ড হিস্ট্রি",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            Text(
+                text = "${holding.stockName} (${holding.exchange}) বিবরণ",
+                fontWeight = FontWeight.Bold
+            )
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color.Transparent,
-                    contentColor = PrimaryBlue,
-                    divider = {}
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = {
-                            Text(
-                                text = "ক্রয় লেনদেন (${BengaliFormatter.toBengaliDigits(txList.size.toString())})",
-                                fontSize = 12.sp,
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                    Text(
+                        text = "মোট শেয়ার: ${BengaliFormatter.toBengaliDigits(holding.quantity.toString())}টি",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = {
-                            Text(
-                                text = "ডিভিডেন্ড (${BengaliFormatter.toBengaliDigits(divList.size.toString())})",
-                                fontSize = 12.sp,
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                    Text(
+                        text = "গড় দর: ${BengaliFormatter.formatTaka(holding.averagePrice, useBengaliDigits)}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
+                Text(
+                    text = "ক্রয় লেনদেনের ইতিহাস (${BengaliFormatter.toBengaliDigits(transactions.size.toString())}টি):",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                transactions.forEach { tx ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("লোড হচ্ছে...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                } else if (selectedTab == 0) {
-                    // Buy Transactions List
-                    if (txList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Column {
                             Text(
-                                text = "কোনো লেনদেনের তথ্য পাওয়া যায়নি।",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
+                                text = "${BengaliFormatter.toBengaliDigits(tx.quantity.toString())} শেয়ার @ ${BengaliFormatter.formatTaka(tx.buyingPrice, useBengaliDigits)}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = dateFormat.format(Date(tx.dateTimestamp)),
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(260.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(txList, key = { it.id }) { tx ->
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = "${BengaliFormatter.formatNumber(tx.quantity.toDouble(), 0, useBengaliDigits)}টি শেয়ার @ ${BengaliFormatter.formatTaka(tx.buyingPrice, useBengaliDigits)}",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.5.sp,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = BengaliFormatter.formatTaka(tx.totalCost, useBengaliDigits),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.5.sp,
-                                                color = PrimaryBlue
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(3.dp))
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = "কমিশন: ${BengaliFormatter.formatPercent(tx.commissionPercent, useBengaliDigits)} (কার্যকর: ${BengaliFormatter.formatTaka(tx.effectivePricePerShare, useBengaliDigits)}/টি)",
-                                                fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                text = dateFormat.format(Date(tx.dateTimestamp)),
-                                                fontSize = 9.5.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        Text(
+                            text = "কমিশন ${BengaliFormatter.formatNumber(tx.commissionPercent, 2, useBengaliDigits)}%",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                } else {
-                    // Dividends List
-                    if (divList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "এখনো কোনো ডিভিডেন্ড যোগ করা হয়নি।",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(260.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(divList, key = { it.id }) { div ->
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = GrowthGreen.copy(alpha = 0.08f),
-                                    border = BorderStroke(1.dp, GrowthGreen.copy(alpha = 0.25f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = BengaliFormatter.formatTaka(div.amount, useBengaliDigits),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
-                                                color = GrowthGreen
-                                            )
-                                            val perShare = if (holding.quantity > 0) div.amount / holding.quantity else 0.0
-                                            Text(
-                                                text = "প্রতি শেয়ার: ${BengaliFormatter.formatTaka(perShare, useBengaliDigits)} · ${dateFormat.format(Date(div.dateTimestamp))}",
-                                                fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                }
 
-                                        IconButton(
-                                            onClick = {
-                                                onDeleteDividend(div.id)
-                                                divList = divList.filter { it.id != div.id }
-                                            },
-                                            modifier = Modifier.size(26.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Delete Dividend",
-                                                tint = AlertRed.copy(alpha = 0.6f),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ডিভিডেন্ড আয় (${BengaliFormatter.toBengaliDigits(dividends.size.toString())}টি):",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    TextButton(onClick = onAddDividend) {
+                        Text("+ ডিভিডেন্ড", fontSize = 12.sp, color = PortfolioGreen)
+                    }
+                }
+
+                dividends.forEach { div ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = BengaliFormatter.formatTaka(div.amount, useBengaliDigits),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PortfolioGreen
+                        )
+                        IconButton(
+                            onClick = {
+                                viewModel.deleteDividend(div.id)
+                                scope.launch {
+                                    dividends = viewModel.getDividendHistory(holding.id)
                                 }
-                            }
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Dividend",
+                                tint = PortfolioRed.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
-                Text("ঠিক আছে")
+            TextButton(onClick = onDismiss) {
+                Text("বন্ধ করুন")
             }
         }
     )
 }
 
-/**
- * Exports the tracked stock portfolio data as a beautifully formatted PDF report with watermark.
- */
+// Helpers for CSV and PDF export (Preserved per Requirement 1 & 9)
 fun exportPortfolioReport(
     context: Context,
     holdings: List<HoldingEntity>,
@@ -1411,9 +1825,6 @@ fun exportPortfolioReport(
     )
 }
 
-/**
- * Exports the current portfolio status and unrealized gain/loss data to a local CSV file.
- */
 fun exportPortfolioCsv(
     context: Context,
     holdings: List<HoldingEntity>,
@@ -1438,5 +1849,3 @@ private fun findActivity(context: Context): Activity? {
     }
     return null
 }
-
-

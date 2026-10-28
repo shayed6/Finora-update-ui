@@ -103,6 +103,7 @@ fun HomeScreen(
     onCategoryClick: (CalculatorCategory) -> Unit,
     onCalculatorClick: (CalculatorDef) -> Unit,
     onPortfolioClick: () -> Unit,
+    onAddHoldingClick: () -> Unit = onPortfolioClick,
     onFCoinClick: () -> Unit = {},
     onCalculatorsClick: () -> Unit = {},
     onHisabPatiClick: () -> Unit = {},
@@ -160,7 +161,8 @@ fun HomeScreen(
                             CurrentInvestmentWidget(
                                 summary = portfolioSummary,
                                 useBengaliDigits = useBengaliDigits,
-                                onClick = onPortfolioClick
+                                onClick = onPortfolioClick,
+                                onAddStockClick = onAddHoldingClick
                             )
                         }
                     }

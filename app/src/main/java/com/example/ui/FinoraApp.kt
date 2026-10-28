@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -159,6 +160,7 @@ fun FinoraApp(
     val useBengaliDigits by userPrefs.useBengaliDigits.collectAsState(initial = true)
     val homeSectionOrder by userPrefs.homeSectionOrder.collectAsState(initial = HomeSection.DEFAULT_ORDER)
     var showReorderHomeSectionsDialog by remember { mutableStateOf(false) }
+    var openAddHoldingDirectly by remember { mutableStateOf(false) }
 
     fun navigateTo(screen: Screen) {
         if (currentScreen != screen) {
@@ -289,10 +291,10 @@ fun FinoraApp(
                 showLevelPlayBanner = true
             }
             is Screen.Portfolio -> {
-                title = stringResource(R.string.title_portfolio)
-                subtitle = stringResource(R.string.subtitle_portfolio)
+                title = if (isEnglish) "Portfolio" else "পোর্টফোলিও"
+                subtitle = null
                 canNavigateBack = true
-                showLevelPlayBanner = false
+                showLevelPlayBanner = true
             }
             is Screen.LedgerList -> {
                 title = stringResource(R.string.title_ledger)
@@ -419,6 +421,18 @@ fun FinoraApp(
                                 )
                             }
                         }
+                        if (currentScreen is Screen.Portfolio) {
+                            IconButton(
+                                onClick = { scope.launch { drawerState.open() } },
+                                modifier = Modifier.testTag("top_bar_portfolio_menu")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "মেনু খুলুন (Menu)",
+                                    tint = Color.White
+                                )
+                            }
+                        }
                         IconButton(
                             onClick = {
                                 scope.launch {
@@ -465,6 +479,10 @@ fun FinoraApp(
                                     navigateTo(Screen.Calculator(calc))
                                 },
                                 onPortfolioClick = {
+                                    navigateTo(Screen.Portfolio)
+                                },
+                                onAddHoldingClick = {
+                                    openAddHoldingDirectly = true
                                     navigateTo(Screen.Portfolio)
                                 },
                                 onFCoinClick = {
@@ -524,7 +542,9 @@ fun FinoraApp(
                         }
                         is Screen.Portfolio -> {
                             PortfolioScreen(
-                                useBengaliDigits = useBengaliDigits
+                                useBengaliDigits = useBengaliDigits,
+                                openAddSheetOnStart = openAddHoldingDirectly,
+                                onAddSheetOpened = { openAddHoldingDirectly = false }
                             )
                         }
                         is Screen.LedgerList -> {

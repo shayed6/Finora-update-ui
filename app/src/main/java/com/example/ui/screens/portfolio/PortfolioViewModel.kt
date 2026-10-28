@@ -25,6 +25,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.data.WatchlistManager
+import com.example.data.WatchlistStockKey
+
+data class WatchlistItem(
+    val exchange: String,
+    val symbol: String,
+    val currentPrice: Double? = null,
+    val changePercent: Double? = null,
+    val delta: Double? = null,
+    val sparkline: List<Double> = emptyList()
+)
 
 data class PortfolioSummary(
     val totalInvested: Double = 0.0,
@@ -177,6 +188,46 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PortfolioSummary()
     )
+
+    val watchlistItems: StateFlow<List<WatchlistItem>> = combine(
+        WatchlistManager.watchlist,
+        repository.allLivePrices,
+        WatchlistManager.sparklineCache
+    ) { symbolsSet, livePricesList, sparklinesMap ->
+        val priceMap = livePricesList.associateBy {
+            "${it.exchange.uppercase().trim()}:${it.symbol.uppercase().trim()}"
+        }
+
+        symbolsSet.mapNotNull { rawKey ->
+            val keyObj = WatchlistStockKey.fromKey(rawKey) ?: return@mapNotNull null
+            val live = priceMap[keyObj.key]
+            val currentPrice = live?.ltp
+            if (currentPrice != null && currentPrice > 0.0) {
+                WatchlistManager.recordPrice(keyObj.exchange, keyObj.symbol, currentPrice)
+            }
+            val sparkline = sparklinesMap[keyObj.key].orEmpty()
+            WatchlistItem(
+                exchange = keyObj.exchange,
+                symbol = keyObj.symbol,
+                currentPrice = currentPrice,
+                changePercent = live?.changePercent,
+                delta = live?.delta,
+                sparkline = sparkline
+            )
+        }.sortedBy { it.symbol }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun addToWatchlist(exchange: String, symbol: String): Boolean {
+        return WatchlistManager.addToWatchlist(exchange, symbol)
+    }
+
+    fun removeFromWatchlist(exchange: String, symbol: String): Boolean {
+        return WatchlistManager.removeFromWatchlist(exchange, symbol)
+    }
 
     /**
      * Starts refreshing live prices every 60 seconds (fixed interval) while the Portfolio screen is active/foreground.

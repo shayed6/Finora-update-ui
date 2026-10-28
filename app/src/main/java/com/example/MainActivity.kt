@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FavoritesManager.init(this)
+        com.example.data.WatchlistManager.init(this)
         // Cleanup any corrupt/empty Chromium variations seeds created during emulator launch
         try {
             val webViewDir = java.io.File(applicationContext.dataDir, "app_webview")
