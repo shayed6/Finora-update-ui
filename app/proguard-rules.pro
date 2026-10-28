@@ -16,10 +16,32 @@
     @com.squareup.moshi.* <fields>;
 }
 
-# AdMob & Google Play Services Ads
--keep class com.google.android.gms.ads.** { *; }
--keep interface com.google.android.gms.ads.** { *; }
--keep class com.google.android.ump.** { *; }
+# Unity LevelPlay (IronSource) Mediation SDK
+-keepclassmembers class * implements com.ironsource.mediationsdk.adunit.adapter.internal.AdapterBaseInterface {
+    public *;
+}
+-keepclassmembers class * implements com.ironsource.mediationsdk.adunit.adapter.internal.AdapterConsentInterface {
+    public *;
+}
+-keep class com.ironsource.mediationsdk.** { *; }
+-keep class com.ironsource.lifecycle.** { *; }
+-keep class com.ironsource.adapters.** { *; }
+-dontwarn com.ironsource.mediationsdk.**
+
+# InMobi Adapter & SDK
+-keep class com.inmobi.** { *; }
+-dontwarn com.inmobi.**
+-keepattributes SourceFile,LineNumberTable
+
+# Mintegral Adapter & SDK
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepclassmembers class com.mbridge.msdk.** {
+    <fields>;
+    <methods>;
+}
+-keep class com.mbridge.msdk.** { *; }
+-dontwarn com.mbridge.msdk.**
 
 # Strip verbose and debug logging in release builds
 -assumenosideeffects class android.util.Log {

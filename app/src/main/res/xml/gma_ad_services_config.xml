@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ad-services-config>
-    <attribution allowAdPartnersToAccess="false" />
-    <topics allowAdPartnersToAccess="false" />
-    <protected-audiences allowAdPartnersToAccess="false" />
-</ad-services-config>

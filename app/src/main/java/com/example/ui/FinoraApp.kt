@@ -49,7 +49,7 @@ import com.example.model.CalculatorCategory
 import com.example.model.CalculatorDef
 import com.example.model.HomeSection
 import com.example.ads.AdManager
-import com.example.ui.components.AdMobBannerSlot
+import com.example.ui.components.LevelPlayBannerSlot
 import com.example.ui.components.CustomizeHomeSectionsDialog
 import com.example.ui.components.DrawerDestination
 import com.example.ui.components.FinoraDrawerContent
@@ -160,8 +160,6 @@ fun FinoraApp(
     val homeSectionOrder by userPrefs.homeSectionOrder.collectAsState(initial = HomeSection.DEFAULT_ORDER)
     var showReorderHomeSectionsDialog by remember { mutableStateOf(false) }
 
-    var pendingCalculatorReturnToHome by remember { mutableStateOf(false) }
-
     fun navigateTo(screen: Screen) {
         if (currentScreen != screen) {
             screenBackStack.add(screen)
@@ -170,26 +168,7 @@ fun FinoraApp(
 
     fun popBack(): Boolean {
         if (screenBackStack.size > 1) {
-            val leavingScreen = screenBackStack.removeAt(screenBackStack.size - 1)
-            val targetScreen = screenBackStack.last()
-
-            // Requirement 2: Only trigger interstitial when user navigates BACK from a calculator to Home
-            if (leavingScreen is Screen.Calculator && targetScreen is Screen.Home) {
-                pendingCalculatorReturnToHome = false
-                findActivity(context)?.let { activity ->
-                    AdManager.onNavigateBackFromCalculator(activity)
-                }
-            } else if (leavingScreen is Screen.Calculator && targetScreen is Screen.Category) {
-                // Navigated back from calculator to category; if user subsequently pops to Home, trigger
-                pendingCalculatorReturnToHome = true
-            } else if (leavingScreen is Screen.Category && targetScreen is Screen.Home && pendingCalculatorReturnToHome) {
-                pendingCalculatorReturnToHome = false
-                findActivity(context)?.let { activity ->
-                    AdManager.onNavigateBackFromCalculator(activity)
-                }
-            } else {
-                pendingCalculatorReturnToHome = false
-            }
+            screenBackStack.removeAt(screenBackStack.size - 1)
             return true
         }
         return false
@@ -198,14 +177,8 @@ fun FinoraApp(
     fun navigateFromDrawer(destination: DrawerDestination) {
         when (destination) {
             DrawerDestination.HOME -> {
-                val wasOnCalculator = currentScreen is Screen.Calculator
                 screenBackStack.clear()
                 screenBackStack.add(Screen.Home)
-                if (wasOnCalculator) {
-                    findActivity(context)?.let { activity ->
-                        AdManager.onNavigateBackFromCalculator(activity)
-                    }
-                }
             }
             DrawerDestination.PORTFOLIO -> navigateTo(Screen.Portfolio)
             DrawerDestination.HISAB_PATI -> navigateTo(Screen.HisabPati)
@@ -274,7 +247,7 @@ fun FinoraApp(
         val title: String
         val subtitle: String?
         val canNavigateBack: Boolean
-        val showAdMobBanner: Boolean
+        val showLevelPlayBanner: Boolean
 
         val isEnglish = appLanguage == AppLanguage.ENGLISH
 
@@ -283,139 +256,139 @@ fun FinoraApp(
                 title = AppConfig.APP_NAME
                 subtitle = null
                 canNavigateBack = false
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.CalculatorsHub -> {
                 title = stringResource(R.string.title_calculators)
                 subtitle = stringResource(R.string.subtitle_calculators)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.HisabPati -> {
                 title = stringResource(R.string.title_hisab_pati)
                 subtitle = stringResource(R.string.subtitle_hisab_pati)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.WorkType -> {
                 title = stringResource(R.string.title_work_type)
                 subtitle = stringResource(R.string.subtitle_work_type)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.OrganizationInfo -> {
                 title = stringResource(R.string.title_org_info)
                 subtitle = stringResource(R.string.subtitle_org_info)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.Category -> {
                 title = if (isEnglish) currentScreen.category.titleEn else currentScreen.category.titleBn
                 subtitle = if (isEnglish) currentScreen.category.titleBn else currentScreen.category.titleEn
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.Portfolio -> {
                 title = stringResource(R.string.title_portfolio)
                 subtitle = stringResource(R.string.subtitle_portfolio)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.LedgerList -> {
                 title = stringResource(R.string.title_ledger)
                 subtitle = stringResource(R.string.subtitle_ledger)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.LedgerPersonDetail -> {
                 title = stringResource(R.string.title_ledger)
                 subtitle = null
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.IncomeExpense -> {
                 title = stringResource(R.string.title_income_expense)
                 subtitle = stringResource(R.string.subtitle_income_expense)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.SavingsGoals -> {
                 title = stringResource(R.string.title_savings_investment)
                 subtitle = stringResource(R.string.subtitle_savings_investment)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.SavingsGoalDetail -> {
                 title = stringResource(R.string.title_savings_investment)
                 subtitle = null
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.AccountsSummary -> {
                 title = stringResource(R.string.title_accounts_summary)
                 subtitle = stringResource(R.string.subtitle_accounts_summary)
                 canNavigateBack = true
-                showAdMobBanner = true
+                showLevelPlayBanner = true
             }
             is Screen.CycleSettings -> {
                 title = stringResource(R.string.title_cycle_settings)
                 subtitle = stringResource(R.string.subtitle_cycle_settings)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.PdfReports -> {
                 title = stringResource(R.string.title_pdf_reports)
                 subtitle = stringResource(R.string.subtitle_pdf_reports)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.FCoin -> {
                 title = "F-Coin"
                 subtitle = null
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.Calculator -> {
                 title = if (isEnglish) currentScreen.calculator.titleEn else currentScreen.calculator.titleBn
                 subtitle = if (isEnglish) currentScreen.calculator.category.titleEn else currentScreen.calculator.category.titleBn
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.LearnStock -> {
                 title = stringResource(R.string.title_learn_stock)
                 subtitle = stringResource(R.string.subtitle_learn_stock)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.Settings -> {
                 title = stringResource(R.string.title_settings)
                 subtitle = stringResource(R.string.subtitle_settings)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.About -> {
                 title = stringResource(R.string.title_about)
                 subtitle = AppConfig.APP_NAME
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.PrivacyPolicy -> {
                 title = stringResource(R.string.title_privacy_policy)
                 subtitle = stringResource(R.string.subtitle_privacy_policy)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.ContactUs -> {
                 title = stringResource(R.string.title_contact_us)
                 subtitle = stringResource(R.string.subtitle_contact_us)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
             is Screen.OrderApp -> {
                 title = stringResource(R.string.title_order_app)
                 subtitle = stringResource(R.string.subtitle_order_app)
                 canNavigateBack = true
-                showAdMobBanner = false
+                showLevelPlayBanner = false
             }
         }
 
@@ -464,8 +437,8 @@ fun FinoraApp(
                 )
             },
             bottomBar = {
-                if (showAdMobBanner) {
-                    AdMobBannerSlot()
+                if (showLevelPlayBanner) {
+                    LevelPlayBannerSlot()
                 }
             }
         ) { paddingValues ->
@@ -669,7 +642,7 @@ fun FinoraApp(
                             AboutScreen(onShowSplash = onShowSplash)
                         }
                         is Screen.PrivacyPolicy -> {
-                            PrivacyPolicyScreen()
+                            PrivacyPolicyScreen(appLanguage = appLanguage)
                         }
                         is Screen.ContactUs -> {
                             ContactUsScreen()

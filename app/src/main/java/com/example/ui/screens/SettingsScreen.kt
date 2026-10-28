@@ -472,13 +472,11 @@ fun SettingsScreen(
             }
         }
 
-        // Developer & AdMob Info & GDPR Consent Card
+        // Developer & LevelPlay Info & GDPR Consent Card
         val context = LocalContext.current
+        val isInitialized by AdManager.isInitialized.collectAsState()
         val canRequestAds by AdManager.canRequestAds.collectAsState()
-        val isPrivacyRequired by AdManager.isPrivacyOptionsRequired.collectAsState()
-        val isInterstitialReady by AdManager.isInterstitialReady.collectAsState()
         val isRewardedReady by AdManager.isRewardedReady.collectAsState()
-        val sessionInterstitials by AdManager.sessionInterstitialCount.collectAsState()
         val maxSlots by FavoritesManager.maxSlots.collectAsState()
         val adLogs by AdLog.logs.collectAsState()
         var showLogs by remember { mutableStateOf(false) }
@@ -486,7 +484,7 @@ fun SettingsScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("settings_admob_card"),
+                .testTag("settings_levelplay_card"),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -512,16 +510,18 @@ fun SettingsScreen(
                             )
                         }
                     }
+
                     Spacer(modifier = Modifier.width(12.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "লাইটওয়েট AdMob ও গোপনীয়তা",
+                            text = "Unity LevelPlay মধ্যস্থতা ও গোপনীয়তা",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "ব্যবহারকারী-বান্ধব বিজ্ঞাপন ও ঐচ্ছিক রিওয়ার্ড নীতি",
+                            text = "ব্যবহারকারী-বান্ধব ব্যানার ও ঐচ্ছিক রিওয়ার্ড নীতি",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -609,7 +609,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Option in Settings to review/change ad consent later (Google UMP SDK)
+                // LevelPlay Mediation Status
                 Card(
                     shape = RoundedCornerShape(10.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -626,7 +626,7 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "বিজ্ঞাপন সম্মতি ও GDPR নিয়ন্ত্রণ",
+                                text = "মেডিয়েশন নেটওয়ার্ক ও পলিসি স্ট্যাটাস",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -635,45 +635,26 @@ fun SettingsScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
+                        val statusText = if (AdConfig.isKeyConfigured()) {
+                            if (isInitialized) "LevelPlay স্ট্যাটাস: ইনিশিয়ালাইজড (InMobi + Mintegral সক্রিয়)" else "LevelPlay স্ট্যাটাস: সংযোগ প্রক্রিয়াধীন..."
+                        } else {
+                            "LevelPlay স্ট্যাটাস: REPLACE_ME (কোনো বিজ্ঞাপন পরিবেশন করা হবে না)"
+                        }
+
                         Text(
-                            text = if (canRequestAds) {
-                                "সম্মতি স্থিতি: সক্রিয় (বিজ্ঞাপন প্রদর্শনের অনুমতি রয়েছে)"
-                            } else {
-                                "সম্মতি স্থিতি: অপেক্ষমাণ অথবা সংরক্ষিত (অ-ব্যক্তিগত বিজ্ঞাপন)"
-                            },
+                            text = statusText,
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (canRequestAds) GrowthGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isInitialized) GrowthGreen else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                        Button(
-                            onClick = {
-                                val activity = findActivity(context)
-                                if (activity != null) {
-                                    AdManager.showPrivacyOptions(activity)
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(42.dp)
-                                .testTag("btn_review_ad_consent")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Tune,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "বিজ্ঞাপন সম্মতি পর্যালোচনা / পরিবর্তন করুন",
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                        Text(
+                            text = "টেস্ট মোড: ${if (AdConfig.USE_TEST_MODE) "সক্রিয় (Test Mode ON)" else "বন্ধ (Production Mode)"} | COPPA: শিশু-নির্দেশিত নয় (False)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 
@@ -688,18 +669,19 @@ fun SettingsScreen(
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = "কনফিগার করা AdMob টেস্ট ইউনিট ও লাইটওয়েট নীতি:",
+                        text = "কনফিগার করা Unity LevelPlay সেটিংস:",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Banner: ${AdConfig.BANNER_AD_UNIT_ID.takeLast(12)} (শুধুমাত্র হোম ও ক্যাটাগরি পেজে)\n" +
-                                "• Interstitial: ${AdConfig.INTERSTITIAL_AD_UNIT_ID.takeLast(12)} (রেডি: $isInterstitialReady, সেশনে প্রদর্শিত: $sessionInterstitials/3)\n" +
-                                "• Rewarded: ${AdConfig.REWARDED_AD_UNIT_ID.takeLast(12)} (রেডি: $isRewardedReady, ঐচ্ছিক স্লট আনলক)\n" +
-                                "• ইন্টারস্টিশিয়াল শুধুমাত্র ক্যালকুলেটর থেকে হোমে ফেরার সময় ট্রিগার হয় (৩-মিনিট ব্যবধান)\n" +
-                                "• ইনপুট/রেজাল্ট/পোর্টফোলিও স্ক্রিনে ব্যানার বা ইন্টারস্টিশিয়াল নেই",
+                        text = "• App Key: ${if (AdConfig.isKeyConfigured()) AdConfig.LEVELPLAY_APP_KEY else "REPLACE_ME (নীরব নিষ্ক্রিয়)"}\n" +
+                                "• Banner Placement: ${AdConfig.BANNER_PLACEMENT} (স্থির ৫০dp বটম বার, কোনো জাম্প নেই)\n" +
+                                "• Rewarded Placement: ${AdConfig.REWARDED_PLACEMENT} (রেডি: $isRewardedReady, ৫-সেকেন্ড ফেইল-সেফ)\n" +
+                                "• হিসাব পাতি PDF এক্সপোর্ট: দৈনিক ১ম বার রিওয়ার্ডেড বিজ্ঞাপন (পরেরগুলো ফ্রি)\n" +
+                                "• পোর্টফোলিও রিফ্রেশ: ৫ মিনিটে ৩টির বেশি ম্যানুয়াল রিফ্রেশে ১টি বিজ্ঞাপন\n" +
+                                "• AdMob সম্পূর্ণ সরানো হয়েছে (কোনো ইন্টারস্টিশিয়াল বা নেটিভ বিজ্ঞাপন নেই)",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp

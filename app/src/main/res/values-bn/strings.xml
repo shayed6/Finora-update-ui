@@ -41,7 +41,7 @@
     <string name="title_about">আমাদের সম্পর্কে (About)</string>
     <string name="subtitle_about">Finora • ব্যক্তিগত অর্থায়ন ও স্টক ক্যালকুলেটর</string>
     <string name="title_privacy_policy">গোপনীয়তা নীতি</string>
-    <string name="subtitle_privacy_policy">১০০% অন-ডিভাইস হিসাব</string>
+    <string name="subtitle_privacy_policy">সর্বশেষ হালনাগাদ: ২৭ অক্টোবর ২০২৬</string>
     <string name="title_contact_us">যোগাযোগ করুন</string>
     <string name="subtitle_contact_us">Shayed Afride • GZ Holdings LTD</string>
     <string name="title_order_app">আপনার অ্যাপ অর্ডার করুন</string>
@@ -113,7 +113,7 @@
     <string name="settings_section_brokerage">ডিফল্ট ব্রোকারেজ কমিশন</string>
     <string name="settings_brokerage_subtitle">বাংলাদেশের বেশিরভাগ ব্রোকারেজে ০.৪০% কমিশন প্রচলিত</string>
     <string name="settings_brokerage_desc">স্টক লেনদেনের ক্যালকুলেটরগুলোতে স্বয়ংক্রিয়ভাবে ০.৪০% কমিশন ইনপুট হিসেবে সেট করা থাকবে। লেনদেনের সময় আপনি প্রয়োজনে এটি পরিবর্তন করতে পারবেন।</string>
-    <string name="settings_section_admob">লাইটওয়েট AdMob ও গোপনীয়তা</string>
+    <string name="settings_section_admob">Unity LevelPlay মধ্যস্থতা ও গোপনীয়তা</string>
     <string name="settings_admob_subtitle">ব্যবহারকারী-বান্ধব বিজ্ঞাপন ও ঐচ্ছিক রিওয়ার্ড নীতি</string>
     <string name="settings_reward_title">প্রিয় ক্যালকুলেটর স্লট আনলক (Rewarded Perk)</string>
     <string name="settings_reward_desc">বর্তমান স্লট সীমা: %1$sটি। একটি বিজ্ঞাপন দেখে অতিরিক্ত ৩টি প্রিয় স্লট আনলক করুন। সম্পূর্ণ ঐচ্ছিক এবং কখনো স্বয়ংক্রিয়ভাবে চালু হয় না।</string>
@@ -144,4 +144,74 @@
     <string name="calc_error_required">%1$s প্রদান করুন</string>
     <string name="calc_error_invalid_number">সঠিক সংখ্যা লিখুন (যেমন: ১২০ বা 120)</string>
     <string name="calc_copied_toast">হিসাবের সারাংশ ক্লিপবোর্ডে কপি করা হয়েছে</string>
+
+    <!-- Privacy Policy Bengali (Verbatim) -->
+    <string name="privacy_policy_title">গোপনীয়তা নীতি</string>
+    <string name="privacy_header_subtitle">Finora — আপনার আর্থিক হিসাব ও তথ্যের সুরক্ষা</string>
+    <string name="privacy_effective_date">কার্যকর হওয়ার তারিখ: ২৬ সেপ্টেম্বর ২০২৬</string>
+    <string name="privacy_last_updated">সর্বশেষ হালনাগাদ: ২৭ অক্টোবর ২০২৬</string>
+    <string name="privacy_developer">ডেভেলপার: গাজী হোল্ডিং লিমিটেড</string>
+
+    <string name="privacy_sec1_title">১. ভূমিকা</string>
+    <string name="privacy_sec1_body">Finora (\"আমরা\", \"অ্যাপ\") বাংলাদেশি বিনিয়োগকারী ও সাধারণ মানুষের জন্য তৈরি একটি আর্থিক হিসাবের অ্যাপ। এতে আছে পোর্টফোলিও ট্র্যাকার, ৩৭টি স্টক ও ব্যাংকিং ক্যালকুলেটর, হিসাব পাতি (বাকির খাতা, আয়-ব্যয়, সঞ্চয় ও বিনিয়োগ, হিসাব নিকাশ) এবং PDF রিপোর্ট। অ্যাপ ব্যবহার করলে আপনি এই নীতিতে সম্মত হচ্ছেন বলে ধরা হবে।</string>
+
+    <string name="privacy_sec2_title">২. আমরা কোন তথ্য সংগ্রহ করি</string>
+    <string name="privacy_sec2_bullet1">• আপনার নিজের দেওয়া আর্থিক তথ্য (পোর্টফোলিওর শেয়ার ও দর, আয়-ব্যয়, বাকি-বকেয়া, সঞ্চয় ও লক্ষ্য): শুধু আপনার ডিভাইসে থাকে।</string>
+    <string name="privacy_sec2_bullet2">• অ্যাপ সেটিংস (ডার্ক মোড, প্রিয় ক্যালকুলেটর): শুধু আপনার ডিভাইসে থাকে।</string>
+    <string name="privacy_sec2_bullet3">• বিজ্ঞাপন-সংক্রান্ত তথ্য (অ্যাডভার্টাইজিং আইডি, ডিভাইসের ধরন, IP থেকে আনুমানিক অবস্থান, বিজ্ঞাপনে ইন্টারঅ্যাকশন): বিজ্ঞাপন নেটওয়ার্কের মাধ্যমে (ধারা ৫)।</string>
+    <string name="privacy_sec2_bullet4">• প্রযুক্তিগত তথ্য (অপারেটিং সিস্টেম, নেটওয়ার্কের ধরন, বিজ্ঞাপন SDK-এর ক্র্যাশ ডায়াগনস্টিক): বিজ্ঞাপন SDK-গুলোর মাধ্যমে।</string>
+    <string name="privacy_sec2_closing">আমরা আপনার নাম, ফোন নম্বর, ইমেইল, ব্যাংক বা কার্ডের তথ্য চাই না এবং সংগ্রহ করি না। অ্যাপে বর্তমানে কোনো লগইন বা অ্যাকাউন্ট নেই।</string>
+
+    <string name="privacy_sec3_title">৩. আর্থিক তথ্য আপনার ডিভাইসেই থাকে</string>
+    <string name="privacy_sec3_body">আপনার সব হিসাব অ্যাপের ভেতরে আপনার ডিভাইসে সংরক্ষিত থাকে। এই তথ্য আমাদের সার্ভারে পাঠানো বা সংরক্ষণ করা হয় না। অ্যাপ আনইনস্টল করলে বা অ্যাপের ডেটা মুছলে এই তথ্য স্থায়ীভাবে মুছে যেতে পারে, তাই গুরুত্বপূর্ণ তথ্যের PDF এক্সপোর্ট বা নিজস্ব ব্যাকআপ রাখুন।</string>
+
+    <string name="privacy_sec4_title">৪. শেয়ারবাজারের তথ্য</string>
+    <string name="privacy_sec4_body">DSE ও CSE-র শেয়ারের দর দেখাতে অ্যাপ ইন্টারনেট থেকে প্রকাশ্য বাজার-তথ্য ডাউনলোড করে (dse.com.bd, dsebd.org ও cse.com.bd থেকে)। এটি শুধু পোর্টফোলিও খুললে বা ম্যানুয়াল রিফ্রেশ করলে ঘটে। এতে শুধু শেয়ারের নাম ও সর্বশেষ দর নেওয়া হয়; আপনার পোর্টফোলিও, পরিমাণ, ক্রয়মূল্য বা লাভ-ক্ষতি পাঠানো হয় না। তবে যেকোনো ওয়েবসাইটের মতো ওই সাইটগুলো আপনার IP ঠিকানা দেখতে পারে। লাভ-ক্ষতির হিসাব আপনার ডিভাইসেই হয়।</string>
+
+    <string name="privacy_sec5_title">৫. বিজ্ঞাপন</string>
+    <string name="privacy_sec5_intro">অ্যাপে বিজ্ঞাপন দেখানো হয়। এর জন্য আমরা Unity LevelPlay (মিডিয়েশন প্ল্যাটফর্ম) এবং তার মাধ্যমে InMobi ও Mintegral বিজ্ঞাপন নেটওয়ার্ক ব্যবহার করি। এই SDK-গুলো বিজ্ঞাপন দেখানো, পরিমাপ ও ডায়াগনস্টিকের জন্য নিচের তথ্য সংগ্রহ করতে পারে:</string>
+    <string name="privacy_sec5_bullet1">• Unity LevelPlay: অ্যাডভার্টাইজিং আইডি (GAID), GAID না থাকলে অ্যান্ড্রয়েড আইডি, ডিভাইসের মডেল, OS ভার্সন, ক্যারিয়ার, নেটওয়ার্কের ধরন, IP থেকে আনুমানিক অবস্থান (দেশ/অঞ্চল/শহর), SDK চালুর সময় ও ক্র্যাশ/ANR ডায়াগনস্টিক, বিজ্ঞাপনের ইম্প্রেশন, ক্লিক ও রিওয়ার্ড।</string>
+    <string name="privacy_sec5_bullet2">• InMobi: GAID, ডিভাইসের স্পেসিফিকেশন, স্ক্রিন রেজোলিউশন, ভাষা, ডিভাইসের ওরিয়েন্টেশন, IP থেকে আনুমানিক অবস্থান, বিজ্ঞাপন প্রদর্শন ও ক্লিকের তথ্য।</string>
+    <string name="privacy_sec5_bullet3">• Mintegral: GAID, সিস্টেম ভার্সন, ভাষা, স্ক্রিন dpi, ডিস্কের খালি জায়গা, IP থেকে আনুমানিক অঞ্চল, ইম্প্রেশন ও রিওয়ার্ডেড ভিডিও সম্পন্ন হওয়ার তথ্য।</string>
+    <string name="privacy_sec5_p2">এই SDK-গুলো সুনির্দিষ্ট GPS অবস্থান সংগ্রহ করে না। অ্যাপে দুই ধরনের বিজ্ঞাপন থাকতে পারে: নিচে ব্যানার বিজ্ঞাপন এবং কিছু ফিচার ব্যবহারের আগে রিওয়ার্ডেড ভিডিও বিজ্ঞাপন (যেমন দিনের প্রথম PDF এক্সপোর্ট)। আপনি ফোনের সেটিংস (Settings → Google → Ads) থেকে অ্যাডভার্টাইজিং আইডি রিসেট বা ব্যক্তিগতকৃত বিজ্ঞাপন বন্ধ করতে পারেন। আপনার আর্থিক হিসাবের তথ্য বিজ্ঞাপনদাতাদের সাথে শেয়ার করা হয় না।</string>
+    <string name="privacy_sec5_p3">নেটওয়ার্কগুলোর নীতি: Unity [লিংক], InMobi [লিংক], Mintegral [লিংক]।</string>
+
+    <string name="privacy_sec6_title">৬. PDF রিপোর্ট (PRO)</string>
+    <string name="privacy_sec6_body">PDF রিপোর্ট আপনার ডিভাইসেই তৈরি হয়। তৈরি ফাইলটি আপনি কোথায় সেভ করবেন বা কার সাথে শেয়ার করবেন (WhatsApp, ইমেইল ইত্যাদি) তা সম্পূর্ণ আপনার সিদ্ধান্ত। শেয়ার করার পর সেই ফাইলের ওপর আমাদের নিয়ন্ত্রণ থাকে না।</string>
+
+    <string name="privacy_sec7_title">৭. PRO সাবস্ক্রিপশন ও পেমেন্ট</string>
+    <string name="privacy_sec7_body">PRO ফিচারের জন্য কোনো মূল্য পরিশোধ করতে হলে তা [Google Play Billing / অন্য মাধ্যম] দিয়ে হবে। আমরা আপনার কার্ড বা পেমেন্ট তথ্য দেখি না বা সংরক্ষণ করি না।</string>
+
+    <string name="privacy_sec8_title">৮. ডিভাইস অনুমতি</string>
+    <string name="privacy_sec8_bullet1">• ইন্টারনেট: শেয়ারের দর আনা ও বিজ্ঞাপন দেখানো।</string>
+    <string name="privacy_sec8_bullet2">• নেটওয়ার্ক অবস্থা: ইন্টারনেট সংযোগ আছে কি না দেখা।</string>
+    <string name="privacy_sec8_closing">অ্যাপ লোকেশন, স্টোরেজ, ক্যামেরা বা ফোন-পরিচয়ের অনুমতি চায় না।</string>
+
+    <string name="privacy_sec9_title">৯. তৃতীয় পক্ষের লিংক</string>
+    <string name="privacy_sec9_body">\"শেয়ার বাজার শিখুন\" অংশে Investaloy, Investment mentor Kabir ও Finance with Rafyq-এর মতো বাইরের ওয়েবসাইট বা প্ল্যাটফর্মের লিংক আছে। লিংকে ক্লিক করলে আপনি অ্যাপের বাইরে সেই সাইটে যাবেন। তাদের তথ্য সংগ্রহ ও গোপনীয়তা নীতির জন্য আমরা দায়ী নই।</string>
+
+    <string name="privacy_sec10_title">১০. F-Coin ও ভবিষ্যৎ ফিচার</string>
+    <string name="privacy_sec10_body">F-Coin এখনো চালু হয়নি। চালু হলে অ্যাকাউন্ট, কয়েন ব্যালেন্স বা পুরস্কার সংক্রান্ত নতুন তথ্য সংগ্রহ করা হতে পারে। তখন আমরা এই নীতি হালনাগাদ করব এবং প্রয়োজনে আপনার সম্মতি নেব।</string>
+
+    <string name="privacy_sec11_title">১১. তথ্যের নিরাপত্তা</string>
+    <string name="privacy_sec11_body">আপনার তথ্য ডিভাইসে থাকায় তার নিরাপত্তা অনেকটাই আপনার ফোনের নিরাপত্তার ওপর নির্ভর করে। স্ক্রিন লক ব্যবহার করুন এবং অ্যাপ শুধু Google Play বা বিশ্বস্ত উৎস থেকে ইনস্টল করুন। কোনো পদ্ধতিই শতভাগ নিরাপদ নয়, তবে আমরা তথ্য সুরক্ষায় যুক্তিসংগত ব্যবস্থা নিই।</string>
+
+    <string name="privacy_sec12_title">১২. আপনার নিয়ন্ত্রণ ও অধিকার</string>
+    <string name="privacy_sec12_bullet1">• অ্যাপের ভেতরে যেকোনো এন্ট্রি দেখতে, সম্পাদনা করতে বা মুছতে পারেন।</string>
+    <string name="privacy_sec12_bullet2">• সব তথ্য মুছতে ফোনের সেটিংস থেকে অ্যাপের ডেটা ক্লিয়ার করুন বা অ্যাপ আনইনস্টল করুন।</string>
+    <string name="privacy_sec12_bullet3">• বিজ্ঞাপন সংক্রান্ত তথ্যের জন্য ফোনের অ্যাড সেটিংস ব্যবহার করুন।</string>
+    <string name="privacy_sec12_bullet4">• আমাদের কাছে আপনার কোনো ব্যক্তিগত তথ্য থাকলে তা দেখতে বা মুছতে ধারা ১৬-র ঠিকানায় যোগাযোগ করুন।</string>
+
+    <string name="privacy_sec13_title">১৩. শিশুদের গোপনীয়তা</string>
+    <string name="privacy_sec13_body">Finora ১৮ বছরের কম বয়সীদের জন্য তৈরি নয়। আমরা জেনেশুনে শিশুদের ব্যক্তিগত তথ্য সংগ্রহ করি না।</string>
+
+    <string name="privacy_sec14_title">১৪. আর্থিক পরামর্শ নয়</string>
+    <string name="privacy_sec14_body">অ্যাপের ক্যালকুলেটর, শেয়ারের দর ও হিসাব শুধু তথ্য ও সহায়তার জন্য। এটি বিনিয়োগ, কর বা আইনি পরামর্শ নয়। বিনিয়োগের সিদ্ধান্তের দায়িত্ব ব্যবহারকারীর নিজের। শেয়ারের দর কিছুটা বিলম্বিত বা ভুল হতে পারে।</string>
+
+    <string name="privacy_sec15_title">১৫. নীতি পরিবর্তন</string>
+    <string name="privacy_sec15_body">অ্যাপে নতুন ফিচার যোগ হলে এই নীতি হালনাগাদ হতে পারে। পরিবর্তনের পর অ্যাপ ব্যবহার চালিয়ে গেলে নতুন নীতিতে সম্মতি দেওয়া হয়েছে বলে ধরা হবে। বড় পরিবর্তন হলে অ্যাপে জানানো হবে। এই পাতার ওপরের \"সর্বশেষ হালনাগাদ\" তারিখ দেখে নিন।</string>
+
+    <string name="privacy_sec16_title">১৬. যোগাযোগ</string>
+    <string name="privacy_sec16_p1">এই নীতি নিয়ে প্রশ্ন থাকলে যোগাযোগ করুন:</string>
+    <string name="privacy_sec16_p2">ইমেইল: shayedafride@gmail.com</string>
 </resources>

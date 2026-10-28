@@ -313,6 +313,35 @@ class ExampleRobolectricTest {
     org.junit.Assert.assertTrue(content.contains("Total Unrealized Gain/Loss (BDT),\"+120.00\""))
     org.junit.Assert.assertTrue(content.contains("Total Dividend Income Received (BDT),\"650.00\""))
   }
+
+  @Test
+  fun `verify bilingual privacy policy strings exist and match official text`() {
+    val baseContext = ApplicationProvider.getApplicationContext<Context>()
+
+    // English configuration
+    val enConfig = android.content.res.Configuration(baseContext.resources.configuration).apply {
+      setLocale(java.util.Locale.ENGLISH)
+    }
+    val enContext = baseContext.createConfigurationContext(enConfig)
+    val enTitle = enContext.getString(R.string.privacy_sec1_title)
+    val enBody = enContext.getString(R.string.privacy_sec1_body)
+    val enContact = enContext.getString(R.string.privacy_sec16_p2)
+    assertEquals("1. Introduction", enTitle)
+    assertTrue(enBody.contains("Finora (\"we\", \"our\", \"the app\")"))
+    assertTrue(enContact.contains("t.me/gz_holdings"))
+
+    // Bengali configuration
+    val bnConfig = android.content.res.Configuration(baseContext.resources.configuration).apply {
+      setLocale(java.util.Locale.Builder().setLanguage("bn").setRegion("BD").build())
+    }
+    val bnContext = baseContext.createConfigurationContext(bnConfig)
+    val bnTitle = bnContext.getString(R.string.privacy_sec1_title)
+    val bnBody = bnContext.getString(R.string.privacy_sec1_body)
+    val bnContact = bnContext.getString(R.string.privacy_sec16_p2)
+    assertEquals("১. ভূমিকা", bnTitle)
+    assertTrue(bnBody.contains("Finora (\"আমরা\", \"অ্যাপ\")"))
+    assertTrue(bnContact.contains("shayedafride@gmail.com"))
+  }
 }
 
 

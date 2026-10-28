@@ -41,7 +41,7 @@
     <string name="title_about">About Us</string>
     <string name="subtitle_about">Finora • Finance &amp; Stock Calculators</string>
     <string name="title_privacy_policy">Privacy Policy</string>
-    <string name="subtitle_privacy_policy">100% On-Device Calculations</string>
+    <string name="subtitle_privacy_policy">Last Updated: 27 October 2026</string>
     <string name="title_contact_us">Contact Us</string>
     <string name="subtitle_contact_us">Shayed Afride • GZ Holdings LTD</string>
     <string name="title_order_app">Order Your App</string>
@@ -115,7 +115,7 @@
     <string name="settings_section_brokerage">Default Brokerage Commission</string>
     <string name="settings_brokerage_subtitle" formatted="false">0.40% commission standard across most Bangladesh brokerages</string>
     <string name="settings_brokerage_desc" formatted="false">Stock transaction calculators default to 0.40% commission automatically. You can adjust this for any transaction as needed.</string>
-    <string name="settings_section_admob">Lightweight AdMob &amp; Privacy</string>
+    <string name="settings_section_admob">Unity LevelPlay Mediation &amp; Privacy</string>
     <string name="settings_admob_subtitle">User-friendly ad placements &amp; optional rewarded perks</string>
     <string name="settings_reward_title">Unlock Favorite Slots (Rewarded Perk)</string>
     <string name="settings_reward_desc">Current slot limit: %1$s. Watch a short video ad to unlock +3 favorite calculator slots. Completely optional and never launched automatically.</string>
@@ -146,4 +146,74 @@
     <string name="calc_error_required">Please enter %1$s</string>
     <string name="calc_error_invalid_number">Please enter a valid number (e.g. 120 or ১২০)</string>
     <string name="calc_copied_toast">Calculation report copied to clipboard</string>
+
+    <!-- Privacy Policy English (Verbatim) -->
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_header_subtitle">Finora – Personal Finance &amp; Information Security</string>
+    <string name="privacy_effective_date">Effective date: 26 September 2026</string>
+    <string name="privacy_last_updated">Last updated: 27 October 2026</string>
+    <string name="privacy_developer">Developer: Gazi Holding Limited</string>
+
+    <string name="privacy_sec1_title">1. Introduction</string>
+    <string name="privacy_sec1_body">Finora (\"we\", \"our\", \"the app\") is a personal finance app built for Bangladeshi investors and everyday users. It includes a portfolio tracker, 37 stock and banking calculators, a Hisab Pati section (due ledger, income and expense, savings and investment, account summary) and PDF reports. By using the app, you agree to this policy.</string>
+
+    <string name="privacy_sec2_title">2. Information we collect</string>
+    <string name="privacy_sec2_bullet1">• Financial information you enter yourself (portfolio shares and prices, income and expenses, dues, savings and goals): stored only on your device.</string>
+    <string name="privacy_sec2_bullet2">• App settings (dark mode, favorite calculators): stored only on your device.</string>
+    <string name="privacy_sec2_bullet3">• Advertising-related information (advertising ID, device type, approximate location derived from IP address, interactions with ads): collected through ad networks (see Section 5).</string>
+    <string name="privacy_sec2_bullet4">• Technical information (operating system, network type, crash diagnostics of the ad SDKs): collected through the ad SDKs.</string>
+    <string name="privacy_sec2_closing">We do not ask for or collect your name, phone number, email address, or bank or card details. The app currently has no login or account.</string>
+
+    <string name="privacy_sec3_title">3. Your financial data stays on your device</string>
+    <string name="privacy_sec3_body">All your records are stored inside the app on your device. This data is not sent to or stored on our servers. If you uninstall the app or clear its data, this information may be permanently deleted, so please export important records as PDF or keep your own backup.</string>
+
+    <string name="privacy_sec4_title">4. Stock market data</string>
+    <string name="privacy_sec4_body">To show current share prices for DSE and CSE, the app downloads public market data from the internet (from dse.com.bd, dsebd.org and cse.com.bd). This happens only when you open the Portfolio or refresh it manually. Only share names and latest prices are retrieved; your portfolio, quantities, purchase prices or profit and loss are never sent. As with any website, those sites can see your IP address. Profit and loss calculations are done on your device.</string>
+
+    <string name="privacy_sec5_title">5. Advertising</string>
+    <string name="privacy_sec5_intro">The app shows ads. For this we use Unity LevelPlay (a mediation platform) and, through it, the InMobi and Mintegral ad networks. To show and measure ads and for diagnostics, these SDKs may collect the following:</string>
+    <string name="privacy_sec5_bullet1">• Unity LevelPlay: advertising ID (GAID), Android ID when GAID is unavailable, device model, OS version, carrier, network type, approximate location from IP address (country, region, city), SDK start-up time and crash/ANR diagnostics, ad impressions, clicks and rewards.</string>
+    <string name="privacy_sec5_bullet2">• InMobi: GAID, device specifications, screen resolution, language, device orientation, approximate location from IP address, ad display and click data.</string>
+    <string name="privacy_sec5_bullet3">• Mintegral: GAID, system version, language, screen dpi, free disk space, approximate region from IP address, impressions and rewarded video completion data.</string>
+    <string name="privacy_sec5_p2">These SDKs do not collect precise GPS location. The app may show two kinds of ads: a banner ad at the bottom, and rewarded video ads before some features (for example, the first PDF export of the day). You can reset your advertising ID or turn off personalized ads in your phone settings (Settings → Google → Ads). Your financial data is never shared with advertisers.</string>
+    <string name="privacy_sec5_p3">Network policies: Unity [link], InMobi [link], Mintegral [link].</string>
+
+    <string name="privacy_sec6_title">6. PDF reports (PRO)</string>
+    <string name="privacy_sec6_body">PDF reports are generated on your device. Where you save the file and whom you share it with (WhatsApp, email, etc.) is entirely your decision. Once shared, we have no control over that file.</string>
+
+    <string name="privacy_sec7_title">7. PRO subscription and payments</string>
+    <string name="privacy_sec7_body">If a payment is required for PRO features, it will be made through [Google Play Billing / other method]. We do not see or store your card or payment details.</string>
+
+    <string name="privacy_sec8_title">8. Device permissions</string>
+    <string name="privacy_sec8_bullet1">• Internet: to fetch share prices and show ads.</string>
+    <string name="privacy_sec8_bullet2">• Network state: to check whether an internet connection is available.</string>
+    <string name="privacy_sec8_closing">The app does not request location, storage, camera or phone identity permissions.</string>
+
+    <string name="privacy_sec9_title">9. Third-party links</string>
+    <string name="privacy_sec9_body">The \"Learn the Share Market\" section contains links to external websites and platforms such as Investaloy, Investment mentor Kabir and Finance with Rafyq. When you tap a link you leave the app and visit that site. We are not responsible for their data collection or privacy policies.</string>
+
+    <string name="privacy_sec10_title">10. F-Coin and future features</string>
+    <string name="privacy_sec10_body">F-Coin has not launched yet. When it does, we may collect new information related to accounts, coin balances or rewards. We will then update this policy and, where needed, ask for your consent.</string>
+
+    <string name="privacy_sec11_title">11. Data security</string>
+    <string name="privacy_sec11_body">Because your data is stored on your device, its security depends largely on your phone\'s security. Use a screen lock and install apps only from Google Play or trusted sources. No method is 100% secure, but we take reasonable steps to protect information.</string>
+
+    <string name="privacy_sec12_title">12. Your control and rights</string>
+    <string name="privacy_sec12_bullet1">• You can view, edit or delete any entry inside the app.</string>
+    <string name="privacy_sec12_bullet2">• To delete all data, clear the app\'s data in your phone settings or uninstall the app.</string>
+    <string name="privacy_sec12_bullet3">• For advertising data, use your phone\'s ad settings.</string>
+    <string name="privacy_sec12_bullet4">• If we hold any personal information about you and you want to view or delete it, contact us at the address in Section 16.</string>
+
+    <string name="privacy_sec13_title">13. Children\'s privacy</string>
+    <string name="privacy_sec13_body">Finora is not intended for children under 18. We do not knowingly collect personal information from children.</string>
+
+    <string name="privacy_sec14_title">14. Not financial advice</string>
+    <string name="privacy_sec14_body">The app\'s calculators, share prices and records are for information and convenience only. They are not investment, tax or legal advice. You are responsible for your own investment decisions. Share prices may be delayed or inaccurate.</string>
+
+    <string name="privacy_sec15_title">15. Changes to this policy</string>
+    <string name="privacy_sec15_body">We may update this policy when new features are added. Continuing to use the app after a change means you accept the updated policy. Major changes will be announced in the app. Please check the \"Last updated\" date above.</string>
+
+    <string name="privacy_sec16_title">16. Contact</string>
+    <string name="privacy_sec16_p1">For questions about this policy, contact us:</string>
+    <string name="privacy_sec16_p2"> t.me/gz_holdings</string>
 </resources>

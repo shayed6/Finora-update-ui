@@ -2,607 +2,395 @@ package com.example.ads
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import com.example.BuildConfig
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardItem
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import com.google.android.ump.ConsentDebugSettings
-import com.google.android.ump.ConsentInformation
-import com.google.android.ump.ConsentRequestParameters
-import com.google.android.ump.UserMessagingPlatform
+import android.widget.Toast
+import com.ironsource.mediationsdk.IronSource
+import com.ironsource.mediationsdk.adunit.adapter.utility.AdInfo
+import com.ironsource.mediationsdk.integration.IntegrationHelper
+import com.ironsource.mediationsdk.logger.IronSourceError
+import com.ironsource.mediationsdk.model.Placement
+import com.ironsource.mediationsdk.sdk.LevelPlayRewardedVideoListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.math.min
+import kotlinx.coroutines.withContext
 
 /**
- * Production-ready modular AdManager for Google AdMob and Google UMP SDK.
- * Implements a light-touch, user-friendly ad system prioritizing UX:
- * 1. Banner: Allowed ONLY on Home and Calculator Category list screens; Never on calculators or portfolio.
- * 2. Interstitial: Max 3 times per session; Only triggers when navigating BACK from calculator to Home;
- *    Minimum 3-minute gap between interstitials; Never in first 90 seconds of session.
- * 3. Rewarded: Optional opt-in perks only (e.g. extra favorite slots); Never forced.
- * 4. UMP Consent: Standard GDPR consent flow with settings review option.
- * 5. Fail-Safe: All failures fail silently without blocking or delaying the UI.
+ * Unity LevelPlay (ironSource) Mediation Manager for Finora.
+ *
+ * Implements lightweight, user-first monetization:
+ * 1. Bottom Banner: Displayed across app with reserved 50dp height to eliminate layout jumping.
+ * 2. Rewarded Video:
+ *    a) First PDF export of the day in হিসাব পাতি (resets midnight local time).
+ *    b) Portfolio manual refresh: >3 manual refreshes in rolling 5 minutes triggers one rewarded ad.
+ * 3. Asynchronous Initialization: Runs off the main startup path post-first-frame.
+ * 4. UX Fail-Safe: If rewarded ad fails or is not ready, lets user proceed anyway after 5 seconds.
+ * 5. Safety: No ads on half-filled dialogs/forms or offline screens.
+ * 6. Silent No-Op: If AdConfig.LEVELPLAY_APP_KEY == "REPLACE_ME", ads do nothing without crashes.
  */
 object AdManager {
-    private const val TAG = "AdManager"
+    private const val TAG = "LevelPlayAdManager"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val mainHandler = Handler(Looper.getMainLooper())
 
-    // Initialization and Consent State
+    // Initialization and state flows
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     private val _canRequestAds = MutableStateFlow(false)
     val canRequestAds: StateFlow<Boolean> = _canRequestAds.asStateFlow()
 
-    private val _isPrivacyOptionsRequired = MutableStateFlow(false)
-    val isPrivacyOptionsRequired: StateFlow<Boolean> = _isPrivacyOptionsRequired.asStateFlow()
-
-    // Session and timing guards
-    private var sessionStartTimeMs: Long = System.currentTimeMillis()
-    private var lastInterstitialShowTimeMs: Long = 0L
-
-    // Interstitial counter (Max 3 per session)
-    private val _sessionInterstitialCount = MutableStateFlow(0)
-    val sessionInterstitialCount: StateFlow<Int> = _sessionInterstitialCount.asStateFlow()
-
-    // Cached ads
-    private var interstitialAd: InterstitialAd? = null
-    private var isInterstitialLoading = false
-    private val _isInterstitialReady = MutableStateFlow(false)
-    val isInterstitialReady: StateFlow<Boolean> = _isInterstitialReady.asStateFlow()
-    private var interstitialRetryDelayMs = AdConfig.INITIAL_RETRY_DELAY_MS
-    private var interstitialRetryAttempts = 0
-
-    // Rewarded Ad (Optional feature unlocks only - loaded on-demand or when perk dialog opens)
-    private var rewardedAd: RewardedAd? = null
-    private var isRewardedLoading = false
     private val _isRewardedReady = MutableStateFlow(false)
     val isRewardedReady: StateFlow<Boolean> = _isRewardedReady.asStateFlow()
 
-    // Safety guard: Suppress any ad inside portfolio buy/sell transactions
+    private val _isSafetyBlocked = MutableStateFlow(false)
+    val isSafetyBlocked: StateFlow<Boolean> = _isSafetyBlocked.asStateFlow()
+
+    // Safety guards
     private var isInsideTransactionFlow = false
+    private var isOfflineState = false
+
+    // Pending callbacks for rewarded ad
+    private var pendingRewardCallback: (() -> Unit)? = null
+    private var pendingFallbackCallback: (() -> Unit)? = null
+    private var timeoutRunnable: Runnable? = null
+    private var isAdShowingNow = false
+
+    // Rolling 5-minute manual refresh timestamps for Portfolio
+    private val manualRefreshTimestamps = mutableListOf<Long>()
+    private const val FIVE_MINUTES_MS = 5 * 60 * 1000L
 
     /**
-     * Initializes Google UMP SDK and Google Mobile Ads SDK.
+     * Initializes LevelPlay SDK asynchronously after the first screen renders.
      */
     fun initialize(activity: Activity) {
-        val debugSettings = ConsentDebugSettings.Builder(activity)
-            .addTestDeviceHashedId(AdRequest.DEVICE_ID_EMULATOR)
-            .build()
-
-        val params = ConsentRequestParameters.Builder()
-            .setTagForUnderAgeOfConsent(false)
-            .setConsentDebugSettings(debugSettings)
-            .build()
-
-        val consentInformation = UserMessagingPlatform.getConsentInformation(activity)
-
-        consentInformation.requestConsentInfoUpdate(
-            activity,
-            params,
-            {
-                _isPrivacyOptionsRequired.value =
-                    consentInformation.privacyOptionsRequirementStatus ==
-                            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
-
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
-                    if (formError != null) {
-                        AdLog.log(
-                            AdLog.AdFormat.CONSENT,
-                            AdLog.EventType.FAILED_TO_LOAD,
-                            "Consent form error [${formError.errorCode}]: ${formError.message}"
-                        )
-                    } else {
-                        AdLog.log(
-                            AdLog.AdFormat.CONSENT,
-                            AdLog.EventType.CONSENT_UPDATED,
-                            "Consent form presented / satisfied"
-                        )
-                    }
-
-                    checkAndInitMobileAds(activity)
-                }
-            },
-            { requestConsentError ->
-                AdLog.log(
-                    AdLog.AdFormat.CONSENT,
-                    AdLog.EventType.FAILED_TO_LOAD,
-                    "Consent info update error [${requestConsentError.errorCode}]: ${requestConsentError.message}"
-                )
-                // Fallback attempt to initialize ads if allowed
-                checkAndInitMobileAds(activity)
-            }
-        )
-    }
-
-    private fun checkAndInitMobileAds(activity: Activity) {
-        val consentInformation = UserMessagingPlatform.getConsentInformation(activity)
-        val canRequest = consentInformation.canRequestAds()
-        _canRequestAds.value = canRequest
-
-        _isPrivacyOptionsRequired.value =
-            consentInformation.privacyOptionsRequirementStatus ==
-                    ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
-
-        if (canRequest && !_isInitialized.value) {
-            val testConfig = RequestConfiguration.Builder()
-                .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
-                .build()
-            MobileAds.setRequestConfiguration(testConfig)
-
-            MobileAds.initialize(activity.applicationContext) { initStatus ->
-                _isInitialized.value = true
-                AdLog.log(
-                    AdLog.AdFormat.CONSENT,
-                    AdLog.EventType.LOADED,
-                    "MobileAds initialized successfully"
-                )
-                // Preload interstitial silently in background; rewarded ads are purely opt-in
-                preloadInterstitial(activity.applicationContext)
-            }
-        } else if (!canRequest) {
-            AdLog.log(
-                AdLog.AdFormat.CONSENT,
-                AdLog.EventType.CLOSED,
-                "Ads cannot be requested yet per consent status"
-            )
-        }
-    }
-
-    /**
-     * Shows the Google UMP Privacy Options Form (allows user to review or revoke consent later from Settings)
-     */
-    fun showPrivacyOptions(activity: Activity, onComplete: () -> Unit = {}) {
-        UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
-            if (formError != null) {
-                AdLog.log(
-                    AdLog.AdFormat.CONSENT,
-                    AdLog.EventType.FAILED_TO_LOAD,
-                    "Privacy options error: ${formError.message}"
-                )
-            } else {
-                AdLog.log(
-                    AdLog.AdFormat.CONSENT,
-                    AdLog.EventType.CONSENT_UPDATED,
-                    "Privacy options updated by user"
-                )
-            }
-            checkAndInitMobileAds(activity)
-            onComplete()
-        }
-    }
-
-    /**
-     * Builds standard AdRequest.
-     */
-    fun buildAdRequest(): AdRequest {
-        return AdRequest.Builder().build()
-    }
-
-    // ==========================================
-    // INTERSTITIAL AD MANAGEMENT (LIGHT-TOUCH)
-    // ==========================================
-
-    /**
-     * Preloads the next interstitial ad silently in the background.
-     */
-    fun preloadInterstitial(context: Context) {
-        if (interstitialAd != null || isInterstitialLoading || !_canRequestAds.value) {
+        if (!AdConfig.isKeyConfigured()) {
+            Log.d(TAG, "AdConfig key is 'REPLACE_ME' or ADS_ENABLED=false. Ads silently disabled.")
+            _isInitialized.value = false
+            _canRequestAds.value = false
             return
         }
 
-        isInterstitialLoading = true
-        val adRequest = buildAdRequest()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // COPPA compliance: Child-directed = false
+                IronSource.setMetaData("is_child_directed", "false")
+                // Consent & Privacy handling
+                IronSource.setConsent(true)
 
-        InterstitialAd.load(
-            context,
-            AdConfig.INTERSTITIAL_AD_UNIT_ID,
-            adRequest,
-            object : InterstitialAdLoadCallback() {
-                override fun onAdLoaded(ad: InterstitialAd) {
-                    interstitialAd = ad
-                    isInterstitialLoading = false
-                    _isInterstitialReady.value = true
-                    interstitialRetryDelayMs = AdConfig.INITIAL_RETRY_DELAY_MS // Reset retry delay
-                    interstitialRetryAttempts = 0
-                    AdLog.log(
-                        AdLog.AdFormat.INTERSTITIAL,
-                        AdLog.EventType.LOADED,
-                        "Interstitial preloaded successfully"
+                withContext(Dispatchers.Main) {
+                    setupRewardedVideoListener()
+
+                    IronSource.init(
+                        activity,
+                        AdConfig.LEVELPLAY_APP_KEY,
+                        {
+                            _isInitialized.value = true
+                            _canRequestAds.value = true
+                            AdLog.log(AdLog.AdFormat.CONSENT, AdLog.EventType.LOADED, "LevelPlay init completed")
+                            Log.d(TAG, "Unity LevelPlay initialized successfully.")
+
+                            // Validate adapter integration in test mode
+                            if (AdConfig.USE_TEST_MODE) {
+                                try {
+                                    IntegrationHelper.validateIntegration(activity)
+                                } catch (e: Throwable) {
+                                    Log.w(TAG, "IntegrationHelper validation note: ${e.message}")
+                                }
+                            }
+
+                            // Preload rewarded video ad in advance
+                            preloadRewardedVideo()
+                        },
+                        IronSource.AD_UNIT.BANNER,
+                        IronSource.AD_UNIT.REWARDED_VIDEO
                     )
-
-                    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                        override fun onAdDismissedFullScreenContent() {
-                            AdLog.log(
-                                AdLog.AdFormat.INTERSTITIAL,
-                                AdLog.EventType.CLOSED,
-                                "Interstitial dismissed by user"
-                            )
-                            interstitialAd = null
-                            _isInterstitialReady.value = false
-                            // Preload the next interstitial in background
-                            preloadInterstitial(context)
-                        }
-
-                        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                            AdLog.log(
-                                AdLog.AdFormat.INTERSTITIAL,
-                                AdLog.EventType.FAILED_TO_LOAD,
-                                "Interstitial failed to show: ${adError.message}"
-                            )
-                            interstitialAd = null
-                            _isInterstitialReady.value = false
-                            preloadInterstitial(context)
-                        }
-
-                        override fun onAdShowedFullScreenContent() {
-                            AdLog.log(
-                                AdLog.AdFormat.INTERSTITIAL,
-                                AdLog.EventType.IMPRESSION,
-                                "Interstitial showed full screen"
-                            )
-                            lastInterstitialShowTimeMs = System.currentTimeMillis()
-                        }
-
-                        override fun onAdClicked() {
-                            AdLog.log(
-                                AdLog.AdFormat.INTERSTITIAL,
-                                AdLog.EventType.CLICK,
-                                "Interstitial ad clicked"
-                            )
-                        }
-                    }
                 }
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    interstitialAd = null
-                    isInterstitialLoading = false
-                    _isInterstitialReady.value = false
-                    AdLog.log(
-                        AdLog.AdFormat.INTERSTITIAL,
-                        AdLog.EventType.FAILED_TO_LOAD,
-                        "Interstitial load failed [${loadAdError.code}]: ${loadAdError.message}"
-                    )
-
-                    // Retry with exponential backoff silently up to 3 times
-                    if (interstitialRetryAttempts < 3) {
-                        interstitialRetryAttempts++
-                        scope.launch {
-                            delay(interstitialRetryDelayMs)
-                            interstitialRetryDelayMs = min(
-                                interstitialRetryDelayMs * 2,
-                                AdConfig.MAX_RETRY_DELAY_MS
-                            )
-                            preloadInterstitial(context)
-                        }
-                    }
-                }
+            } catch (e: Throwable) {
+                Log.e(TAG, "Safe LevelPlay init error (non-fatal): ${e.message}")
             }
-        )
-    }
-
-    /**
-     * Requirement 2: Reduced frequency interstitial ad trigger.
-     * - Show at most 3 times per session
-     * - Only trigger when user navigates BACK from a calculator to Home (never immediately after showing a result)
-     * - Minimum 3-minute gap between two interstitials
-     * - Never show in first 90 seconds of a session
-     * - Preload next interstitial silently in background
-     * - If ad not ready or condition not met, fails silently without blocking navigation
-     */
-    fun onNavigateBackFromCalculator(activity: Activity) {
-        if (isInsideTransactionFlow) {
-            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Inside portfolio transaction flow")
-            return
-        }
-
-        // 1. Session cap: at most 3 times per session
-        if (_sessionInterstitialCount.value >= AdConfig.MAX_INTERSTITIALS_PER_SESSION) {
-            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Session cap of 3 reached (${_sessionInterstitialCount.value}/3)")
-            return
-        }
-
-        val currentTime = System.currentTimeMillis()
-        val sessionDuration = currentTime - sessionStartTimeMs
-        val timeSinceLastInterstitial = if (lastInterstitialShowTimeMs == 0L) {
-            Long.MAX_VALUE
-        } else {
-            currentTime - lastInterstitialShowTimeMs
-        }
-
-        // 2. Never show in first 90 seconds of session
-        if (sessionDuration < AdConfig.INITIAL_SESSION_DELAY_MS) {
-            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Session duration ${sessionDuration / 1000}s < 90s")
-            return
-        }
-
-        // 3. Minimum 3-minute gap (180,000 ms) between two interstitials
-        if (timeSinceLastInterstitial < AdConfig.MIN_INTERSTITIAL_INTERVAL_MS) {
-            if (BuildConfig.DEBUG) Log.d(TAG, "Suppressed interstitial: Interval ${timeSinceLastInterstitial / 1000}s < 180s (3 min)")
-            return
-        }
-
-        val ad = interstitialAd
-        if (ad != null) {
-            _sessionInterstitialCount.value += 1
-            ad.show(activity)
-        } else {
-            if (BuildConfig.DEBUG) Log.d(TAG, "Interstitial ad not preloaded yet; preloading silently in background")
-            preloadInterstitial(activity.applicationContext)
         }
     }
 
-    // ==========================================
-    // REWARDED AD MANAGEMENT (OPT-IN PERKS ONLY)
-    // ==========================================
-
     /**
-     * Preloads the Rewarded Ad silently in background when needed.
+     * Preloads Rewarded Video in background.
      */
-    fun preloadRewardedAd(context: Context) {
-        if (rewardedAd != null || isRewardedLoading || !_canRequestAds.value) {
-            return
+    fun preloadRewardedVideo() {
+        if (!AdConfig.isKeyConfigured() || !_isInitialized.value) return
+        try {
+            IronSource.loadRewardedVideo()
+        } catch (e: Throwable) {
+            Log.w(TAG, "Error preloading rewarded video: ${e.message}")
         }
+    }
 
-        isRewardedLoading = true
-        val adRequest = buildAdRequest()
-
-        RewardedAd.load(
-            context,
-            AdConfig.REWARDED_AD_UNIT_ID,
-            adRequest,
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    rewardedAd = ad
-                    isRewardedLoading = false
+    private fun setupRewardedVideoListener() {
+        try {
+            IronSource.setLevelPlayRewardedVideoListener(object : LevelPlayRewardedVideoListener {
+                override fun onAdAvailable(adInfo: AdInfo) {
                     _isRewardedReady.value = true
-                    AdLog.log(
-                        AdLog.AdFormat.REWARDED,
-                        AdLog.EventType.LOADED,
-                        "Rewarded ad preloaded successfully"
-                    )
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.LOADED, "Rewarded ad available")
                 }
 
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    rewardedAd = null
-                    isRewardedLoading = false
+                override fun onAdUnavailable() {
                     _isRewardedReady.value = false
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.FAILED_TO_LOAD, "Rewarded ad unavailable")
+                }
+
+                override fun onAdOpened(adInfo: AdInfo) {
+                    isAdShowingNow = true
+                    cancelTimeout()
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.OPENED, "Rewarded ad opened")
+                }
+
+                override fun onAdShowFailed(error: IronSourceError, adInfo: AdInfo) {
+                    isAdShowingNow = false
+                    cancelTimeout()
                     AdLog.log(
                         AdLog.AdFormat.REWARDED,
                         AdLog.EventType.FAILED_TO_LOAD,
-                        "Rewarded load failed [${loadAdError.code}]: ${loadAdError.message}"
+                        "Rewarded ad show failed [${error.errorCode}]: ${error.errorMessage}"
                     )
+                    val fallback = pendingFallbackCallback
+                    clearCallbacks()
+                    fallback?.invoke()
+                    preloadRewardedVideo()
                 }
-            }
-        )
+
+                override fun onAdClicked(placement: Placement?, adInfo: AdInfo) {
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.CLICK, "Rewarded ad clicked")
+                }
+
+                override fun onAdRewarded(placement: Placement?, adInfo: AdInfo) {
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.REWARD_EARNED, "User earned reward")
+                    val rewardCb = pendingRewardCallback
+                    pendingRewardCallback = null
+                    rewardCb?.invoke()
+                }
+
+                override fun onAdClosed(adInfo: AdInfo) {
+                    isAdShowingNow = false
+                    AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.CLOSED, "Rewarded ad closed")
+                    val fallback = pendingFallbackCallback
+                    clearCallbacks()
+                    fallback?.invoke()
+                    preloadRewardedVideo()
+                }
+            })
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error setting up LevelPlayRewardedVideoListener: ${e.message}")
+        }
     }
 
     /**
-     * Shows a Rewarded ad for opt-in perks (e.g. bonus favorite slots).
-     * Clear opt-in only, never forced or auto-triggered.
+     * Triggers a rewarded video ad with a strict 5-second fail-safe timeout.
+     * Never traps or blocks the user if an ad fails or is unconfigured.
      */
     fun showRewardedAd(
-        activity: Activity,
-        onUserEarnedReward: (RewardItem) -> Unit,
-        onDismissedOrFailed: () -> Unit = {}
+        activity: Activity?,
+        onUserEarnedReward: () -> Unit,
+        onDismissedOrFailed: () -> Unit
     ) {
-        val ad = rewardedAd
-        if (ad != null) {
-            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    AdLog.log(
-                        AdLog.AdFormat.REWARDED,
-                        AdLog.EventType.CLOSED,
-                        "Rewarded ad dismissed"
-                    )
-                    rewardedAd = null
-                    _isRewardedReady.value = false
-                    onDismissedOrFailed()
-                }
+        if (!AdConfig.isKeyConfigured() || activity == null || isInsideTransactionFlow || isOfflineState) {
+            // Silently allow user to continue if unconfigured or in safety state
+            onUserEarnedReward()
+            return
+        }
 
-                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    AdLog.log(
-                        AdLog.AdFormat.REWARDED,
-                        AdLog.EventType.FAILED_TO_LOAD,
-                        "Rewarded ad failed to show: ${adError.message}"
-                    )
-                    rewardedAd = null
-                    _isRewardedReady.value = false
-                    onDismissedOrFailed()
-                }
-
-                override fun onAdShowedFullScreenContent() {
-                    AdLog.log(
-                        AdLog.AdFormat.REWARDED,
-                        AdLog.EventType.IMPRESSION,
-                        "Rewarded ad showed"
-                    )
-                }
-
-                override fun onAdClicked() {
-                    AdLog.log(
-                        AdLog.AdFormat.REWARDED,
-                        AdLog.EventType.CLICK,
-                        "Rewarded ad clicked"
-                    )
-                }
+        var isRewardGranted = false
+        pendingRewardCallback = {
+            isRewardGranted = true
+            onUserEarnedReward()
+        }
+        pendingFallbackCallback = {
+            if (!isRewardGranted) {
+                onDismissedOrFailed()
             }
-            ad.show(activity) { rewardItem ->
-                AdLog.log(
-                    AdLog.AdFormat.REWARDED,
-                    AdLog.EventType.REWARD_EARNED,
-                    "User earned reward: ${rewardItem.type} (${rewardItem.amount})"
-                )
-                onUserEarnedReward(rewardItem)
-            }
-        } else {
-            // Load on-demand and show when ready
-            isRewardedLoading = true
-            RewardedAd.load(
-                activity,
-                AdConfig.REWARDED_AD_UNIT_ID,
-                buildAdRequest(),
-                object : RewardedAdLoadCallback() {
-                    override fun onAdLoaded(loadedAd: RewardedAd) {
-                        isRewardedLoading = false
-                        rewardedAd = loadedAd
-                        _isRewardedReady.value = true
-                        showRewardedAd(activity, onUserEarnedReward, onDismissedOrFailed)
-                    }
+        }
 
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        isRewardedLoading = false
-                        rewardedAd = null
-                        _isRewardedReady.value = false
-                        AdLog.log(
-                            AdLog.AdFormat.REWARDED,
-                            AdLog.EventType.FAILED_TO_LOAD,
-                            "On-demand rewarded load failed: ${loadAdError.message}"
-                        )
-                        onDismissedOrFailed()
-                    }
+        // 5-second fail-safe timeout
+        timeoutRunnable = Runnable {
+            if (!isAdShowingNow) {
+                Log.w(TAG, "Rewarded ad 5-second timeout reached. Releasing user gracefully.")
+                AdLog.log(AdLog.AdFormat.REWARDED, AdLog.EventType.FAILED_TO_LOAD, "5s timeout fail-safe triggered")
+                val fallback = pendingFallbackCallback
+                clearCallbacks()
+                fallback?.invoke()
+            }
+        }
+        mainHandler.postDelayed(timeoutRunnable!!, AdConfig.REWARDED_TIMEOUT_MS)
+
+        try {
+            val isReady = IronSource.isRewardedVideoAvailable()
+            if (isReady) {
+                if (AdConfig.REWARDED_PLACEMENT.isNotBlank() && AdConfig.REWARDED_PLACEMENT != "REPLACE_ME") {
+                    IronSource.showRewardedVideo(activity, AdConfig.REWARDED_PLACEMENT)
+                } else {
+                    IronSource.showRewardedVideo(activity)
                 }
-            )
+            } else {
+                Toast.makeText(activity, "বিজ্ঞাপন প্রস্তুত হচ্ছে...", Toast.LENGTH_SHORT).show()
+                preloadRewardedVideo()
+                // Check readiness in a quick poll before 5s timeout
+                pollForReadinessAndShow(activity, remainingAttempts = 8)
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "Safe showRewardedVideo catch: ${e.message}")
+            cancelTimeout()
+            clearCallbacks()
+            onDismissedOrFailed()
         }
     }
 
-    // ==========================================
-    // TRANSACTION FLOW SAFETY GUARDS
-    // ==========================================
+    private fun pollForReadinessAndShow(activity: Activity, remainingAttempts: Int) {
+        if (remainingAttempts <= 0 || isAdShowingNow || timeoutRunnable == null) return
+        mainHandler.postDelayed({
+            if (isAdShowingNow || timeoutRunnable == null) return@postDelayed
+            try {
+                if (IronSource.isRewardedVideoAvailable()) {
+                    if (AdConfig.REWARDED_PLACEMENT.isNotBlank() && AdConfig.REWARDED_PLACEMENT != "REPLACE_ME") {
+                        IronSource.showRewardedVideo(activity, AdConfig.REWARDED_PLACEMENT)
+                    } else {
+                        IronSource.showRewardedVideo(activity)
+                    }
+                } else {
+                    pollForReadinessAndShow(activity, remainingAttempts - 1)
+                }
+            } catch (e: Throwable) {
+                Log.w(TAG, "Poll show rewarded error: ${e.message}")
+            }
+        }, 500L)
+    }
+
+    private fun cancelTimeout() {
+        timeoutRunnable?.let {
+            mainHandler.removeCallbacks(it)
+            timeoutRunnable = null
+        }
+    }
+
+    private fun clearCallbacks() {
+        cancelTimeout()
+        pendingRewardCallback = null
+        pendingFallbackCallback = null
+    }
 
     /**
-     * Disables any ad display during portfolio buy/sell transactions.
+     * Portfolio manual refresh ad gate:
+     * More than 3 manual refreshes within a rolling 5 minutes triggers one rewarded ad.
+     * Failed/missing ad lets the user continue anyway after 5 seconds.
      */
-    fun setInsideTransactionFlow(isInside: Boolean) {
-        isInsideTransactionFlow = isInside
-        if (BuildConfig.DEBUG) {
-            if (isInside) {
-                Log.d(TAG, "AdManager: Entered transaction flow. Ads locked.")
-            } else {
-                Log.d(TAG, "AdManager: Exited transaction flow. Ads unlocked.")
-            }
+    fun onPortfolioRefreshRequested(activity: Activity?, onProceed: () -> Unit) {
+        val now = System.currentTimeMillis()
+        val windowStart = now - FIVE_MINUTES_MS
+
+        synchronized(manualRefreshTimestamps) {
+            manualRefreshTimestamps.removeAll { it < windowStart }
         }
+
+        val currentCount = synchronized(manualRefreshTimestamps) { manualRefreshTimestamps.size }
+
+        // If user has already refreshed 3 times in past 5 minutes, this 4th refresh triggers rewarded ad
+        if (currentCount >= 3) {
+            if (!AdConfig.isKeyConfigured() || activity == null) {
+                // Silently allow refresh
+                onProceed()
+                return
+            }
+
+            Toast.makeText(
+                activity,
+                "ঘন ঘন রিফ্রেশ সীমিত রাখতে বিজ্ঞাপন দেখা হচ্ছে...",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            showRewardedAd(
+                activity = activity,
+                onUserEarnedReward = {
+                    synchronized(manualRefreshTimestamps) {
+                        manualRefreshTimestamps.clear()
+                    }
+                    onProceed()
+                },
+                onDismissedOrFailed = {
+                    onProceed()
+                }
+            )
+        } else {
+            synchronized(manualRefreshTimestamps) {
+                manualRefreshTimestamps.add(now)
+            }
+            onProceed()
+        }
+    }
+
+    /**
+     * Backwards compatibility for portfolio refresh callers.
+     */
+    fun onManualRefreshRequested(activity: Activity?, onProceed: () -> Unit) {
+        onPortfolioRefreshRequested(activity, onProceed)
+    }
+
+    /**
+     * Shared PDF export ad gate caller for হিসাব পাতি.
+     */
+    fun onPdfExportRequested(activity: Activity?, onProceed: () -> Unit) {
+        PdfExportAdGate.onPdfExportRequested(activity, onProceed)
+    }
+
+    // Safety guards
+    fun setInsideTransactionFlow(inside: Boolean) {
+        isInsideTransactionFlow = inside
+        updateSafetyBlocked()
+    }
+
+    fun setOffline(offline: Boolean) {
+        isOfflineState = offline
+        updateSafetyBlocked()
     }
 
     fun isInsideTransactionFlow(): Boolean = isInsideTransactionFlow
 
-    // ==========================================
-    // REFRESH-GATE REWARDED VIDEO AD
-    // ==========================================
-    private const val REFRESH_GATE_WINDOW_MS = 5 * 60 * 1000L // 5 minutes rolling window
-    private const val MAX_FREE_MANUAL_REFRESHES = 3 // Up to 3 free manual refreshes in 5 min
+    private fun updateSafetyBlocked() {
+        _isSafetyBlocked.value = isInsideTransactionFlow || isOfflineState
+    }
 
-    private val manualRefreshTimestamps = mutableListOf<Long>()
-
-    /**
-     * Requirement 3: Refresh-Gate Rewarded Video Ad.
-     * Tracks manual refresh button taps with timestamps in a rolling 5-minute window.
-     * If the user manually refreshes more than 3 times within 5 minutes, shows a rewarded video ad
-     * before allowing the next manual refresh to proceed.
-     * After ad completes (or skipped/failed), allows the refresh and resets the counter while keeping
-     * the rolling window active. Automatic 60-second background refresh is NOT affected.
-     */
-    @Synchronized
-    fun onManualRefreshRequested(activity: Activity?, onProceedWithRefresh: () -> Unit) {
-        val now = System.currentTimeMillis()
-        // Prune timestamps older than 5 minutes
-        manualRefreshTimestamps.removeAll { now - it > REFRESH_GATE_WINDOW_MS }
-
-        if (manualRefreshTimestamps.size < MAX_FREE_MANUAL_REFRESHES) {
-            // Free manual refresh allowed (< 4th tap)
-            manualRefreshTimestamps.add(now)
-            AdLog.log(
-                AdLog.AdFormat.REWARDED,
-                AdLog.EventType.CLICK,
-                "Manual refresh allowed (${manualRefreshTimestamps.size}/$MAX_FREE_MANUAL_REFRESHES in 5 min window)"
-            )
-            onProceedWithRefresh()
-        } else {
-            // User exceeded 3 manual refreshes in 5 minutes -> Gate with Rewarded Video Ad
-            AdLog.log(
-                AdLog.AdFormat.REWARDED,
-                AdLog.EventType.IMPRESSION,
-                "Manual refresh gate triggered (4th+ tap in 5 min). Presenting rewarded ad."
-            )
-
-            if (activity != null) {
-                val hasProceeded = java.util.concurrent.atomic.AtomicBoolean(false)
-                val safeProceed = {
-                    if (hasProceeded.compareAndSet(false, true)) {
-                        synchronized(this) {
-                            manualRefreshTimestamps.clear()
-                            manualRefreshTimestamps.add(System.currentTimeMillis())
-                        }
-                        onProceedWithRefresh()
-                    }
-                }
-
-                showRewardedAd(
-                    activity = activity,
-                    onUserEarnedReward = {
-                        // User watched ad -> reset counter and proceed
-                        safeProceed()
-                    },
-                    onDismissedOrFailed = {
-                        // If user skipped or ad failed to load, do not block refresh
-                        safeProceed()
-                    }
-                )
-            } else {
-                // If activity is null, allow refresh and log failure silently
-                manualRefreshTimestamps.clear()
-                manualRefreshTimestamps.add(System.currentTimeMillis())
-                onProceedWithRefresh()
+    // Lifecycle hooks
+    fun onResume(activity: Activity) {
+        if (AdConfig.isKeyConfigured()) {
+            try {
+                IronSource.onResume(activity)
+            } catch (e: Throwable) {
+                Log.w(TAG, "IronSource.onResume error: ${e.message}")
             }
         }
     }
 
-    /**
-     * Returns count of manual refreshes recorded in the active 5-minute rolling window (for testing/debug).
-     */
-    @Synchronized
-    fun getManualRefreshCountInWindow(): Int {
-        val now = System.currentTimeMillis()
-        manualRefreshTimestamps.removeAll { now - it > REFRESH_GATE_WINDOW_MS }
-        return manualRefreshTimestamps.size
+    fun onPause(activity: Activity) {
+        if (AdConfig.isKeyConfigured()) {
+            try {
+                IronSource.onPause(activity)
+            } catch (e: Throwable) {
+                Log.w(TAG, "IronSource.onPause error: ${e.message}")
+            }
+        }
     }
 
-    /**
-     * Resets the manual refresh gate timestamps (for tests).
-     */
-    @Synchronized
-    fun resetManualRefreshGate() {
-        manualRefreshTimestamps.clear()
+    // Dead-code elimination helpers for callers that previously interacted with AdMob
+    fun onNavigateBackFromCalculator(activity: Activity?) {
+        // No interstitial policy: strictly do nothing
     }
-
-    fun getLoadedRewardedAd(): RewardedAd? = rewardedAd
 
     fun clearRewardedAd() {
-        rewardedAd = null
-        _isRewardedReady.value = false
+        // Handled internally by LevelPlay SDK
     }
 
-    /**
-     * Delegated rewarded-ad gate for PDF export across all of "হিসাব পাতি".
-     */
-    fun onPdfExportRequested(activity: Activity?, onProceedWithExport: () -> Unit) {
-        PdfExportAdGate.onPdfExportRequested(activity, onProceedWithExport)
-    }
+    fun getLoadedRewardedAd(): Any? = null
 }
